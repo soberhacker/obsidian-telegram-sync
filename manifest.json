@@ -1,0 +1,15 @@
+{
+	"id": "obsidian-telegram-sync",
+	"name": "Telegram Sync",
+	"version": "0.0.1",
+	"minAppVersion": "1.0.0",
+	"description": "Sync notes between Telegram chat and Obsidian with voice(speech) recognition.",
+	"author": "soberHacker",
+	"authorUrl": "https://github.com/soberhacker/obsidian-telegram-sync",
+	"fundingUrl": {
+        "Buy Me a Coffee": "https://buymeacoffee.com",
+        "GitHub Sponsor": "https://github.com/sponsors",
+        "Patreon": "https://www.patreon.com/"
+    },
+	"isDesktopOnly": true
+}
