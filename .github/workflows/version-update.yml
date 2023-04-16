@@ -13,32 +13,32 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+
+      - name: Run release-please
+        id: release
+        uses: GoogleCloudPlatform/release-please-action@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          release-type: node
+          package-name: obsidian-telegram-sync          
+          include-v-in-tag: false       
+                          
       - name: Checkout repository
-        uses: actions/checkout@v3
+        if: ${{ steps.release.outputs.releases_created }}
+        uses: actions/checkout@v3              
 
       - name: Set up Node.js
+        if: ${{ steps.release.outputs.releases_created }}
         uses: actions/setup-node@v3
         with:
           node-version: "18.x"
 
       - name: Install dependencies
+        if: ${{ steps.release.outputs.releases_created }}
         run: npm ci
 
-      - name: Run release-please
-        id: release_please
-        uses: GoogleCloudPlatform/release-please-action@v3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          release-type: node
-          package-name: obsidian-telegram-sync
-          include-component-in-tag: false
-          include-v-in-tag: false       
-                          
-      - name: Checkout pull request
-        uses: actions/checkout@v3
-
       - name: Update manifest.json and versions.json
-        if: ${{ steps.release_please.outputs.releases_created }}
+        if: ${{ steps.release.outputs.releases_created }}
         run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
@@ -49,8 +49,8 @@ jobs:
           git commit -m "release $VERSION" 
 
       - name: Push changes
-        if: ${{ steps.release_please.outputs.releases_created }}
+        if: ${{ steps.release.outputs.releases_created }}
         uses: ad-m/github-push-action@v0.6.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ steps.release_please.outputs.branch }}
+          branch: ${{ steps.release.outputs.branch }}
