@@ -28,32 +28,28 @@ jobs:
         id: release_please
         uses: GoogleCloudPlatform/release-please-action@v3
         with:
-          token: ${{ secrets.RELEASE_PR_TOKEN }}         
+          token: ${{ secrets.GITHUB_TOKEN }}
           release-type: node
-          package-name: obsidian-telegram-sync    
-          include-v-in-tag: false      
-                    
-      - name: Extract version
-        if: ${{ steps.release_please.outputs.pr_created }}
-        id: extract_version
-        run: |
-          VERSION=$(node -p "require('./package.json').version")
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          package-name: obsidian-telegram-sync
+          include-component-in-tag: false
+          include-v-in-tag: false       
+                          
+      - name: Checkout pull request
+        uses: actions/checkout@v3
 
       - name: Update manifest.json and versions.json
-        if: ${{ steps.release_please.outputs.pr_created }}
-        run: node version-bump.mjs
-
-      - name: Commit changes
-        if: ${{ steps.release_please.outputs.pr_created }}
+        if: ${{ steps.release_please.outputs.releases_created }}
         run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add CHANGELOG.md manifest.json versions.json package.json
-          git commit -m "chore: update CHANGELOG.md, manifest.json, versions.json and package.json to version $VERSION"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git remote add gh-token "https://${{ secrets.GITHUB_TOKEN }}@github.com/google-github-actions/release-please-action.git"
+          node version-bump.mjs
+          git add manifest.json versions.json
+          VERSION=${{ steps.release_please.outputs.major }}.${{ steps.release_please.outputs.minor }}.${{ steps.release_please.outputs.patch }}
+          git commit -m "release $VERSION" 
 
       - name: Push changes
-        if: ${{ steps.release_please.outputs.pr_created }}
+        if: ${{ steps.release_please.outputs.releases_created }}
         uses: ad-m/github-push-action@v0.6.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
