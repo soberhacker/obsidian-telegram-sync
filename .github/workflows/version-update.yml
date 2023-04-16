@@ -28,12 +28,9 @@ jobs:
         id: release_please
         uses: GoogleCloudPlatform/release-please-action@v3
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          default-branch: main
+          token: ${{ secrets.GITHUB_TOKEN }}          
           release-type: node
-          package-name: obsidian-telegram-sync
-          monorepo-tags: true
-          changelog-types: '{"feat":"Features","fix":"Bug Fixes","perf":"Performance Improvements","docs":"Documentation","chore":"Miscellaneous Chores","refactor":"Code Refactoring","test":"Tests","build":"Build System","ci":"Continuous Integration","revert":"Reverts"}'
+          package-name: obsidian-telegram-sync          
                     
       - name: Extract version
         if: ${{ steps.release_please.outputs.pr_created }}
