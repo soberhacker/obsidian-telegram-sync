@@ -28,9 +28,10 @@ jobs:
         id: release_please
         uses: GoogleCloudPlatform/release-please-action@v3
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}          
+          token: ${{ secrets.RELEASE_PR_TOKEN }}         
           release-type: node
-          package-name: obsidian-telegram-sync          
+          package-name: obsidian-telegram-sync    
+          include-v-in-tag: false      
                     
       - name: Extract version
         if: ${{ steps.release_please.outputs.pr_created }}
