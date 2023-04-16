@@ -1,8 +1,7 @@
-/*
-
-This CSS file will be included with your plugin, and
-available in the app when your plugin is enabled.
-
-If your plugin does not need CSS, delete this file.
-
-*/
+.telegramSyncSettingsDonationSection {
+    width: 65%;
+    height: 50vh;
+    margin: 0 auto;
+    text-align: center;
+    color: var(--text-normal);
+  }

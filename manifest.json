@@ -1,15 +1,15 @@
 {
 	"id": "obsidian-telegram-sync",
 	"name": "Telegram Sync",
-	"version": "0.0.1",
+	"version": "0.1.0",
 	"minAppVersion": "1.0.0",
-	"description": "Sync notes between Telegram chat and Obsidian with voice(speech) recognition.",
-	"author": "soberHacker",
+	"description": "Transfer messages and files from Telegram bot to Obsidian.",
+	"author": "soberHacker🍃🧘💻",
 	"authorUrl": "https://github.com/soberhacker/obsidian-telegram-sync",
 	"fundingUrl": {
-        "Buy Me a Coffee": "https://buymeacoffee.com",
-        "GitHub Sponsor": "https://github.com/sponsors",
-        "Patreon": "https://www.patreon.com/"
+        "Buy Me a Banana": "https://www.buymeacoffee.com/soberhacker",
+        "PayPal": "https://www.paypal.com/donate/?hosted_button_id=VYSCUZX8MYGCU",
+        "Ko-Fi": "https://ko-fi.com/soberhacker"
     },
 	"isDesktopOnly": true
 }
