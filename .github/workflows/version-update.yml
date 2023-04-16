@@ -20,8 +20,10 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           release-type: node
+          command: release-pr
           package-name: obsidian-telegram-sync          
-          include-v-in-tag: false       
+          include-v-in-tag: false          
+          component: ""
                           
       - name: Checkout repository
         if: ${{ steps.release.outputs.releases_created }}
