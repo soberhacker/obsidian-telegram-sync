@@ -9,7 +9,7 @@ env:
   PLUGIN_NAME: obsidian-telegram-sync
 
 jobs:
-  build:
+  release:
     runs-on: ubuntu-latest
 
     steps:

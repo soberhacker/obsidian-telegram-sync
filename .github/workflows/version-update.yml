@@ -10,7 +10,7 @@ permissions:
   pull-requests: write
 
 jobs:
-  release:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
