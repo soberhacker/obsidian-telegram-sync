@@ -18,7 +18,8 @@ jobs:
     steps:
 
       - name: Print github
-        run: echo "github: toJson(${{ github.event }})"
+        run: |
+          echo '${{ toJson(github.event) }}'
 
       - name: Update version in CHANGELOG.md and package.json}}
         id: release
