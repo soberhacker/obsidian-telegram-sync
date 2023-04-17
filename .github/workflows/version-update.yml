@@ -24,7 +24,7 @@ jobs:
           include-v-in-tag: false          
                           
       - name: log
-        run: echo "Release ${{ steps.release.outputs }}"
+        run: echo "Release ${{ steps }}"
     
       - name: Checkout repository
         if: ${{ steps.release.outputs.release_created }}
