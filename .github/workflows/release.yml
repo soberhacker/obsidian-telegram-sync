@@ -15,6 +15,7 @@ permissions:
 jobs:
   release:    
     runs-on: ubuntu-latest       
+    if: ${{ !github.event.ref }}
     steps:
 
       - name: Print github
