@@ -46,7 +46,7 @@ jobs:
           git commit -m "release $VERSION" 
 
       - name: Push changes
-        if: ${{ steps.release.outputs.pr.number }}
+        if: ${{ steps.release.outputs.pr }}
         uses: ad-m/github-push-action@v0.6.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}          
