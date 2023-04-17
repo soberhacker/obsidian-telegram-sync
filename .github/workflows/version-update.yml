@@ -21,7 +21,9 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           release-type: node          
           package-name: obsidian-telegram-sync          
-          include-v-in-tag: false          
+          include-v-in-tag: false     
+          pull-request-title-pattern: release ${version}   
+          skip-labeling: true  
     
       - name: Checkout repository
         if: ${{ steps.release.outputs.pr }}
@@ -41,8 +43,7 @@ jobs:
           git fetch origin
           git checkout release-please--branches--main--components--obsidian-telegram-sync          
           npm ci          
-          node version-bump.mjs          
-          git add manifest.json versions.json
+          npm run version
           VERSION=$(node -p "require('./package.json').version")
           git commit -m "release $VERSION" 
-          git push       
+          git push
