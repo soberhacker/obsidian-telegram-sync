@@ -24,17 +24,17 @@ jobs:
           include-v-in-tag: false          
     
       - name: Checkout repository
-        if: ${{ steps.release.outputs.pr.number }}
+        if: ${{ steps.release.outputs.pr }}
         uses: actions/checkout@v3              
 
       - name: Set up Node.js
-        if: ${{ steps.release.outputs.pr.number }}
+        if: ${{ steps.release.outputs.pr }}
         uses: actions/setup-node@v3
         with:
           node-version: "18.x"      
 
       - name: Update manifest.json and versions.json
-        if: ${{ steps.release.outputs.pr.number }}
+        if: ${{ steps.release.outputs.pr }}
         run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
@@ -49,5 +49,4 @@ jobs:
         if: ${{ steps.release.outputs.pr.number }}
         uses: ad-m/github-push-action@v0.6.0
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ steps.release.outputs.pr.headBranchName }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}          
