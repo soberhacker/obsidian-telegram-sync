@@ -19,13 +19,12 @@ jobs:
         uses: GoogleCloudPlatform/release-please-action@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          release-type: node
-          command: release_pr
+          release-type: node          
           package-name: obsidian-telegram-sync          
           include-v-in-tag: false          
                           
       - name: Checkout repository
-        if: ${{ steps.release.outputs.branch }}
+        if: ${{ steps.release.outputs.release_created }}
         uses: actions/checkout@v3              
 
       - name: Set up Node.js
