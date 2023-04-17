@@ -17,8 +17,8 @@ jobs:
     runs-on: ubuntu-latest       
     steps:
 
-      - name: Print github.event
-        run: echo "github.event: ${{ toJson(github.event) }}"
+      - name: Print github
+        run: echo "github: toJson(${{ github.event }})"
 
       - name: Update version in CHANGELOG.md and package.json}}
         id: release
