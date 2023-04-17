@@ -20,38 +20,34 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           release-type: node
-          command: github-release
+          command: release_pr
           package-name: obsidian-telegram-sync          
           include-v-in-tag: false          
-          component: ""
                           
       - name: Checkout repository
-        if: ${{ steps.release.outputs.releases_created }}
+        if: ${{ steps.release.outputs.release_created }}
         uses: actions/checkout@v3              
 
       - name: Set up Node.js
-        if: ${{ steps.release.outputs.releases_created }}
+        if: ${{ steps.release.outputs.release_created }}
         uses: actions/setup-node@v3
         with:
-          node-version: "18.x"
-
-      - name: Install dependencies
-        if: ${{ steps.release.outputs.releases_created }}
-        run: npm ci
+          node-version: "18.x"      
 
       - name: Update manifest.json and versions.json
-        if: ${{ steps.release.outputs.releases_created }}
+        if: ${{ steps.release.outputs.release_created }}
         run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git remote add gh-token "https://${{ secrets.GITHUB_TOKEN }}@github.com/google-github-actions/release-please-action.git"
+          npm ci
           node version-bump.mjs
           git add manifest.json versions.json
           VERSION=${{ steps.release_please.outputs.major }}.${{ steps.release_please.outputs.minor }}.${{ steps.release_please.outputs.patch }}
           git commit -m "release $VERSION" 
 
       - name: Push changes
-        if: ${{ steps.release.outputs.releases_created }}
+        if: ${{ steps.release.outputs.release_created }}
         uses: ad-m/github-push-action@v0.6.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
