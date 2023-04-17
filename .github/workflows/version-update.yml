@@ -20,7 +20,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           release-type: node
-          command: release-pr
+          command: github-release
           package-name: obsidian-telegram-sync          
           include-v-in-tag: false          
           component: ""
