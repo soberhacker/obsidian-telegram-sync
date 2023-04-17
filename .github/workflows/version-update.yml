@@ -36,6 +36,7 @@ jobs:
       - name: Update manifest.json and versions.json
         if: ${{ steps.release.outputs.pr }}
         run: |
+          git fetch origin
           git checkout release-please--branches--main--components--obsidian-telegram-sync          
           npm ci          
           node version-bump.mjs
