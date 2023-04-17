@@ -36,17 +36,10 @@ jobs:
       - name: Update manifest.json and versions.json
         if: ${{ steps.release.outputs.pr }}
         run: |
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git remote add gh-token "https://${{ secrets.GITHUB_TOKEN }}@github.com/google-github-actions/release-please-action.git"
+          git checkout release-please--branches--main--components--obsidian-telegram-sync          
           npm ci          
           node version-bump.mjs
           git add manifest.json versions.json
           VERSION=$(node -p "require('./package.json').version")
           git commit -m "release $VERSION" 
-
-      - name: Push changes
-        if: ${{ steps.release.outputs.pr }}
-        uses: ad-m/github-push-action@v0.6.0
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}          
+          git push       
