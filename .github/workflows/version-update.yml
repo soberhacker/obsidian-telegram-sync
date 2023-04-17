@@ -23,6 +23,9 @@ jobs:
           package-name: obsidian-telegram-sync          
           include-v-in-tag: false          
                           
+      - name: log
+        run: echo "Release ${{ steps.release.outputs }}"
+    
       - name: Checkout repository
         if: ${{ steps.release.outputs.release_created }}
         uses: actions/checkout@v3              
