@@ -21,13 +21,10 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           release-type: node          
           package-name: obsidian-telegram-sync          
-          include-v-in-tag: false          
-                          
-      - name: log
-        run: echo "Release ${{ steps }}"
+          include-v-in-tag: false                                          
     
       - name: Checkout repository
-        if: ${{ steps.release.outputs.release_created }}
+        if: steps.release.outputs.release_created
         uses: actions/checkout@v3              
 
       - name: Set up Node.js
