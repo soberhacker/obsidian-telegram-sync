@@ -10,53 +10,40 @@ permissions:
   pull-requests: write
 
 jobs:
-  release:
+  version-update:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v2
-        with:
-          node-version: "18.x"
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run release-please
-        id: release_please
+      - name: Update version in CHANGELOG.md and package.json}}
+        id: release
         uses: GoogleCloudPlatform/release-please-action@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          default-branch: main
-          release-type: node
-          package-name: obsidian-telegram-sync
-          monorepo-tags: true
-          changelog-types: '{"feat":"Features","fix":"Bug Fixes","perf":"Performance Improvements","docs":"Documentation","chore":"Miscellaneous Chores","refactor":"Code Refactoring","test":"Tests","build":"Build System","ci":"Continuous Integration","revert":"Reverts"}'
-                    
-      - name: Extract version
-        if: ${{ steps.release_please.outputs.pr_created }}
-        id: extract_version
-        run: |
-          VERSION=$(node -p "require('./package.json').version")
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          release-type: node  
+          command: release-pr
+          package-name: obsidian-telegram-sync          
+          include-v-in-tag: false     
+          pull-request-title-pattern: release ${version}   
+          skip-labeling: true  
+    
+      - name: Checkout repository
+        if: ${{ steps.release.outputs.pr }}
+        uses: actions/checkout@v3              
+
+      - name: Set up Node.js
+        if: ${{ steps.release.outputs.pr }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18.x"      
 
       - name: Update manifest.json and versions.json
-        if: ${{ steps.release_please.outputs.pr_created }}
-        run: node version-bump.mjs
-
-      - name: Commit changes
-        if: ${{ steps.release_please.outputs.pr_created }}
+        if: ${{ steps.release.outputs.pr }}
         run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add CHANGELOG.md manifest.json versions.json package.json
-          git commit -m "chore: update CHANGELOG.md, manifest.json, versions.json and package.json to version $VERSION"
-
-      - name: Push changes
-        if: ${{ steps.release_please.outputs.pr_created }}
-        uses: ad-m/github-push-action@v0.6.0
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ steps.release_please.outputs.branch }}
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git fetch origin
+          git checkout release-please--branches--main--components--obsidian-telegram-sync          
+          npm ci          
+          npm run version
+          VERSION=$(node -p "require('./package.json').version")
+          git commit -m "release $VERSION" 
+          git push
