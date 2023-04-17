@@ -10,7 +10,7 @@ permissions:
   pull-requests: write
 
 jobs:
-  build:
+  release-please:
     runs-on: ubuntu-latest
     steps:
 
@@ -21,10 +21,15 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           release-type: node          
           package-name: obsidian-telegram-sync          
-          include-v-in-tag: false                                          
+          include-v-in-tag: false          
+                          
+      - name: Dump GitHub context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(steps) }}
+        run: echo "$GITHUB_CONTEXT"
     
       - name: Checkout repository
-        if: steps.release.outputs.release_created
+        if: ${{ steps.release.outputs.release_created }}
         uses: actions/checkout@v3              
 
       - name: Set up Node.js
