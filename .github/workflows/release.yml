@@ -1,5 +1,8 @@
 name: Release Obsidian plugin
 
+env:
+  PLUGIN_NAME: obsidian-telegram-sync
+
 on:
   push:
     branches:
