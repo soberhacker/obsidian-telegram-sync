@@ -2,27 +2,54 @@ name: Release Obsidian plugin
 
 on:
   push:
-    tags:
-      - "*"
+    branches:
+      - main
 
-env:
-  PLUGIN_NAME: obsidian-telegram-sync
+permissions:
+  contents: write
+  pull-requests: write
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-
+  release:    
+    runs-on: ubuntu-latest    
     steps:
+      - name: Update version in CHANGELOG.md and package.json}}
+        id: release
+        uses: GoogleCloudPlatform/release-please-action@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          release-type: node  
+          command: release-pr
+          package-name: obsidian-telegram-sync          
+          include-v-in-tag: false     
+          pull-request-title-pattern: release ${version}   
+          skip-labeling: true  
+    
       - name: Checkout repository
-        uses: actions/checkout@v2
+        if: ${{ steps.release.outputs.pr }}
+        uses: actions/checkout@v3              
 
       - name: Set up Node.js
-        uses: actions/setup-node@v2
+        if: ${{ steps.release.outputs.pr }}
+        uses: actions/setup-node@v3
         with:
-          node-version: "18.x"
+          node-version: "18.x"      
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Update manifest.json and versions.json
+        if: ${{ steps.release.outputs.pr }}
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git fetch origin
+          git checkout release-please--branches--main--components--obsidian-telegram-sync          
+          npm ci          
+          npm run version
+          VERSION=$(node -p "require('./package.json').version")
+          git commit -m "release $VERSION" 
+          git push          
+          git tag -a $VERSION -m "$VERSION"
+          git push origin $VERSION
+
 
       - name: Build
         id: build
@@ -34,7 +61,7 @@ jobs:
           ls
           echo "::set-output name=tag_name::$(git tag --sort version:refname | tail -n 1)"
 
-      - name: Create Release
+      - name: Create release
         id: create_release
         uses: actions/create-release@v1
         env:
