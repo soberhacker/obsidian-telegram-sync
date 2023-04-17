@@ -10,8 +10,9 @@ permissions:
   pull-requests: write
 
 jobs:
-  version-update:
+  version-update:    
     runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == false
     steps:
       - name: Update version in CHANGELOG.md and package.json}}
         id: release
@@ -46,4 +47,6 @@ jobs:
           npm run version
           VERSION=$(node -p "require('./package.json').version")
           git commit -m "release $VERSION" 
-          git push
+          git push          
+          git tag -a $VERSION -m "$VERSION"
+          git push origin $VERSION
