@@ -1,91 +1,87 @@
 name: Release Obsidian plugin
 
-on:
-  push:
-    tags:
-      - "*"
-
 env:
   PLUGIN_NAME: obsidian-telegram-sync
 
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
-  build:
-    runs-on: ubuntu-latest
-
+  release:    
+    runs-on: ubuntu-latest   
+    if: ${{ github.event.head_commit.author.name != 'github-actions[bot]' }}        
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v2
+      - name: Print github
+        run: |
+          echo '${{ toJson(github) }}'
+          echo '${{ github.event.ref }}'          
+
+      - name: Update version in CHANGELOG.md and package.json}}
+        id: release
+        uses: google-github-actions/release-please-action@v3
         with:
-          node-version: "18.x"
+          token: ${{ secrets.GITHUB_TOKEN }}
+          release-type: node  
+          command: release-pr
+          package-name: obsidian-telegram-sync          
+          include-v-in-tag: false     
+          pull-request-title-pattern: release ${version}   
+          skip-labeling: true  
+      
+      - name: Print release
+        run: |
+          echo '${{ toJson(steps.release.outputs) }}'
+    
+      - name: Checkout repository        
+        uses: actions/checkout@v3              
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Set up Node.js        
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18.x"      
+
+      - name: Update manifest.json and versions.json        
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git fetch origin
+          git checkout release-please--branches--main--components--obsidian-telegram-sync          
+          npm ci          
+          npm run version
+          VERSION=$(node -p "require('./package.json').version")
+          git commit -m "release $VERSION" 
+          git push          
+          git tag -a $VERSION -m "$VERSION"
+          git push origin $VERSION
+
 
       - name: Build
         id: build
         run: |
           npm run build
-          mkdir ${{ env.PLUGIN_NAME }}
+          TAG_NAME=$(git tag --sort version:refname | tail -n 1)
+          echo "TAG_NAME=$TAG_NAME" >> $GITHUB_ENV
+          mkdir ${{ env.PLUGIN_NAME }}          
           cp main.js manifest.json styles.css ${{ env.PLUGIN_NAME }}
-          zip -r ${{ env.PLUGIN_NAME }}.zip ${{ env.PLUGIN_NAME }}
-          ls
-          echo "::set-output name=tag_name::$(git tag --sort version:refname | tail -n 1)"
+          zip -r ${{ env.PLUGIN_NAME }}-${{ env.TAG_NAME }}.zip ${{ env.PLUGIN_NAME }}
+          ls                
 
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ github.ref }}
+      - name: Create release
+        uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ github.ref }}
-          release_name: ${{ github.ref }}
-          draft: false
+          files:  |
+            main.js
+            manifest.json
+            styles.css
+            ${{ env.PLUGIN_NAME }}-${{ env.TAG_NAME }}.zip
+          token: ${{ secrets.GITHUB_TOKEN }}          
+          tag_name: ${{ env.TAG_NAME }}          
           prerelease: false
-
-      - name: Upload zip file
-        id: upload-zip
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./${{ env.PLUGIN_NAME }}.zip
-          asset_name: ${{ env.PLUGIN_NAME }}-${{ steps.build.outputs.tag_name }}.zip
-          asset_content_type: application/zip
-
-      - name: Upload main.js
-        id: upload-main
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./main.js
-          asset_name: main.js
-          asset_content_type: text/javascript
-
-      - name: Upload manifest.json
-        id: upload-manifest
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./manifest.json
-          asset_name: manifest.json
-          asset_content_type: application/json
-
-      - name: Upload styles.css
-        id: upload-css
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./styles.css
-          asset_name: styles.css
-          asset_content_type: text/css
+          draft: false
