@@ -14,13 +14,13 @@ permissions:
 
 jobs:
   release:    
-    runs-on: ubuntu-latest       
-    if: ${{ !github.event.ref }}
+    runs-on: ubuntu-latest           
     steps:
 
       - name: Print github
         run: |
-          echo '${{ toJson(github.event) }}'
+          echo '${{ toJson(github) }}'
+          echo '${{ github.event.ref }}'          
 
       - name: Update version in CHANGELOG.md and package.json}}
         id: release
