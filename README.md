@@ -29,7 +29,6 @@ This Obsidian plugin allows you to transfer messages and files from a Telegram b
 5. Configure the remaining settings according to your preferences.
 6. Start sending messages and files to your Telegram bot. The plugin will automatically sync them to your Obsidian vault.
 
-
 ## Support
 
 If you have any issues or feature requests, please open an issue on the [GitHub repository](https://github.com/soberhacker/obsidian-telegram-sync).
