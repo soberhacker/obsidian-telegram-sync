@@ -2,7 +2,7 @@
 
 This Obsidian plugin allows you to transfer messages and files from a Telegram bot to your Obsidian vault. You can easily save text, images, and other files from your Telegram conversations to Obsidian for further processing and organization.
 
-  
+
 ## Features
 
 - Synchronize text messages and files from a Telegram bot to Obsidian
@@ -31,7 +31,7 @@ This Obsidian plugin allows you to transfer messages and files from a Telegram b
 
 ## Support
 
-If you have any issues or feature requests, please open an issue on the [GitHub repository](https://github.com/soberhacker/obsidian-telegram-sync).
+If you have any issues or feature requests, please open an issue on the [GitHub](https://github.com/soberhacker/obsidian-telegram-sync).
 
 If you like this plugin and are considering donating to support continued development, use the buttons below!
 
@@ -40,4 +40,3 @@ If you like this plugin and are considering donating to support continued develo
 [![Ko-fi Donation](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/soberhacker)
 
 [![PayPal Donation](https://www.paypalobjects.com/webstatic/en_US/i/buttons/PP_logo_h_100x26.png)](https://www.paypal.com/donate/?hosted_button_id=VYSCUZX8MYGCU)
- 
