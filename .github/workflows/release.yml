@@ -71,32 +71,17 @@ jobs:
           mkdir ${{ env.PLUGIN_NAME }}          
           cp main.js manifest.json styles.css ${{ env.PLUGIN_NAME }}
           zip -r ${{ env.PLUGIN_NAME }}-${{ env.TAG_NAME }}.zip ${{ env.PLUGIN_NAME }}
-          ls          
+          ls                
 
       - name: Create release
-        id: create_release
-        uses: elgohr/Github-Release-Action@v4
-        with:
-          args: release
-          token: ${{ secrets.GITHUB_TOKEN }}
-          name: ${{ github.ref }}
-          tag: ${{ github.ref }}
-          prerelease: false
-          draft: false
-
-      - name: Upload zip file
         uses: softprops/action-gh-release@v1
         with:
-          files: ${{ env.PLUGIN_NAME }}-${{ env.TAG_NAME }}.zip
-          token: ${{ secrets.GITHUB_TOKEN }}          
-          tag_name: ${{ github.ref }}
-
-      - name: Upload main.js manifest.json styles.css        
-        uses: softprops/action-gh-release@v1
-        with:
-          files: |
+          files:  |
             main.js
             manifest.json
             styles.css
-          token: ${{ secrets.GITHUB_TOKEN }}
-          tag_name: ${{ github.ref }}
+            ${{ env.PLUGIN_NAME }}-${{ env.TAG_NAME }}.zip
+          token: ${{ secrets.GITHUB_TOKEN }}          
+          tag_name: ${{ env.TAG_NAME }}          
+          prerelease: false
+          draft: false
