@@ -3,7 +3,7 @@ name: Update version of plugin
 on:
   push:
     branches:
-      - main
+      - developer
 
 permissions:
   contents: write
