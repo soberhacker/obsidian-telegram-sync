@@ -6,7 +6,7 @@ import {
 } from "./settings/Settings";
 import TelegramBot from 'node-telegram-bot-api';
 import * as async from 'async';
-import { handleMessage, handleFiles, deleteMessage } from './telegramMessageHandlers';
+import { handleMessage, handleFiles, deleteMessage } from './telegram/messageHandlers';
 
 // Main class for the Telegram Sync plugin
 export default class TelegramSyncPlugin extends Plugin {

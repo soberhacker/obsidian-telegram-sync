@@ -1,7 +1,7 @@
 import { TFile } from 'obsidian';
-import TelegramSyncPlugin  from './main';
+import TelegramSyncPlugin  from '../main';
 import TelegramBot from 'node-telegram-bot-api';
-import { getFormattedMessage, messageDate2DateString, messageDate2TimeString, sanitizeFileName, getFileObject, createProgressBarKeyboard } from './utils/telegramUtils';
+import { getFormattedMessage, messageDate2DateString, messageDate2TimeString, sanitizeFileName, getFileObject, createProgressBarKeyboard } from './utils';
 
 export async function handleMessage(this: TelegramSyncPlugin, msg: TelegramBot.Message) {
         
