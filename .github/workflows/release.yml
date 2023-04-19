@@ -17,7 +17,7 @@ permissions:
 jobs:
   release:    
     runs-on: ubuntu-latest   
-    if: ${{ github.event.pull_request.merged == true }}
+    if: ${{ github.event.pull_request.merged == true && github.head_ref == 'develop' && github.author_association == 'OWNER' }}
     steps:       
     
       - name: Print github
