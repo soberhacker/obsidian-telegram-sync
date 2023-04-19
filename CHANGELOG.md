@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/soberhacker/obsidian-telegram-sync/compare/1.0.0...1.0.1) (2023-04-19)
+
+
+### Bug Fixes
+
+* add more comments for better collaboration ([bcbf480](https://github.com/soberhacker/obsidian-telegram-sync/commit/bcbf48064122c734d3383d327709b682fa907847))
+
 ## 1.0.0 (2023-04-19)
 
 
