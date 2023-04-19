@@ -7,6 +7,8 @@ on:
   pull_request_target:
     types:
       - closed
+    branches:
+      - main
 
 permissions:
   contents: write
@@ -15,7 +17,7 @@ permissions:
 jobs:
   release:    
     runs-on: ubuntu-latest   
-    if: ${{ github.event.pull_request.merged == true }}
+    if: ${{ github.event.pull_request.merged == true && github.event.head_commit.author.name == 'github-actions[bot]' }}
     steps:       
     
       - name: Checkout repository                
