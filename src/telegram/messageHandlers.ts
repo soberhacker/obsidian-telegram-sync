@@ -137,7 +137,7 @@ export async function deleteMessage(this: TelegramSyncPlugin, msg: TelegramBot.M
 
         // Update the progress bar during the delay
         for (let i = 1; i <= 10; i++) {
-        await new Promise(resolve => setTimeout(resolve, 100)); // 300 ms delay between updates
+        await new Promise(resolve => setTimeout(resolve, 50)); // 50 ms delay between updates
         await this.bot?.editMessageReplyMarkup(
             {
                 inline_keyboard: createProgressBarKeyboard(i).inline_keyboard,
