@@ -31,14 +31,17 @@ jobs:
           skip-labeling: true  
     
       - name: Checkout repository        
+        if: ${{steps.release.outputs.pr}}
         uses: actions/checkout@v3              
 
       - name: Set up Node.js        
+        if: ${{steps.release.outputs.pr}}
         uses: actions/setup-node@v3
         with:
           node-version: "18.x"      
 
-      - name: Update manifest.json and versions.json        
+      - name: Update manifest.json and versions.json     
+        if: ${{steps.release.outputs.pr}}   
         run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
@@ -52,6 +55,7 @@ jobs:
           git push          
 
       - name: Update main.js        
+        if: ${{steps.release.outputs.pr}}
         run: |
           npm run build
 

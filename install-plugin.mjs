@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { name as pluginName } from './package.json';
+import packageJson from './package.json' assert { type: 'json' };
 
 const destinationFolder = process.argv[2];
 
@@ -9,7 +9,7 @@ if (!destinationFolder) {
   process.exit(1);
 }
 
-const pluginFolder = path.join(destinationFolder, '.obsidian', 'plugins', pluginName);
+const pluginFolder = path.join(destinationFolder, '.obsidian', 'plugins', packageJson.name);
 
 if (!fs.existsSync(pluginFolder)) {
   fs.mkdirSync(pluginFolder, { recursive: true });
