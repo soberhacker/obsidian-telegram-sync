@@ -28,6 +28,7 @@ jobs:
 
       - name: Build plugin main.js
         run: |
+          npm ci
           TAG_NAME=$(node -p "require('./package.json').version")
           echo "TAG_NAME=$TAG_NAME" >> $GITHUB_ENV
           npm run build
