@@ -10,8 +10,6 @@ export interface TelegramSyncSettings {
     templateFileLocation: string;
     deleteMessagesFromTelegram: boolean;
     newFilesLocation: string;
-    speechRecognition: boolean;
-    selectedModel: string;
   }
   
   export const DEFAULT_SETTINGS: TelegramSyncSettings = {
@@ -21,8 +19,6 @@ export interface TelegramSyncSettings {
     templateFileLocation: '',
     deleteMessagesFromTelegram: false,
     newFilesLocation: '',
-    speechRecognition: false,
-    selectedModel: '',
   };
 
 export class TelegramSyncSettingTab extends PluginSettingTab {
