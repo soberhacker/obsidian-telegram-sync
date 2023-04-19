@@ -3,7 +3,8 @@ name: Update version of plugin
 on:
   pull_request_target:
     types:
-      - closed
+      - opened
+      - reopened
     branches:
       - main
 
@@ -14,7 +15,7 @@ permissions:
 jobs:
   update-version:
     runs-on: ubuntu-latest
-    if: ${{ github.event.pull_request.merged == true && github.event.head_commit.author.name != 'github-actions[bot]' }}
+    if: ${{ github.event.head_commit.author.name != 'github-actions[bot]' }}
     steps:
 
       - name: Update version in CHANGELOG.md and package.json
