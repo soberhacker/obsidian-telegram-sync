@@ -1,0 +1,52 @@
+name: Release Obsidian plugin
+
+env:
+  PLUGIN_NAME: obsidian-telegram-sync
+
+on:
+  pull_request_target:
+    types:
+      - closed
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release:    
+    runs-on: ubuntu-latest   
+    if: ${{ github.event.pull_request.merged == true && github.event.head_commit.author.name == 'github-actions[bot]' }}
+    steps:       
+    
+      - name: Print github
+        run: |
+          echo '${{ toJson(github) }}'
+                    
+      - name: Checkout repository                
+        uses: actions/checkout@v3              
+
+      - name: Set up Node.js        
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18.x"      
+
+      - name: Build plugin main.js
+        run: |
+          npm ci
+          TAG_NAME=$(node -p "require('./package.json').version")
+          echo "TAG_NAME=$TAG_NAME" >> $GITHUB_ENV
+          npm run build
+
+      - name: Create release
+        uses: softprops/action-gh-release@v1
+        with:
+          files:  |
+            main.js
+            manifest.json
+            styles.css            
+          token: ${{ secrets.GITHUB_TOKEN }}          
+          tag_name: ${{ env.TAG_NAME }}          
+          prerelease: false
+          draft: false
