@@ -1,10 +1,9 @@
 name: Update version of plugin
 
 on:
-  pull_request:
+  pull_request_target:
     types:
-      - opened
-      - reopened
+      - closed
     branches:
       - main
 
@@ -15,7 +14,7 @@ permissions:
 jobs:
   update-version:
     runs-on: ubuntu-latest
-    if: ${{ github.event.head_commit.author.name != 'github-actions[bot]' }}
+    if: ${{ github.event.pull_request.merged == true && github.event.head_commit.author.name != 'github-actions[bot]' }}
     steps:
 
       - name: Update version in CHANGELOG.md and package.json
@@ -29,8 +28,7 @@ jobs:
           include-v-in-tag: false
           pull-request-title-pattern: "chore: release ${component} ${version}"
           pull-request-header: "Autocreated release"
-          skip-labeling: true
-          default-branch: develop      
+          skip-labeling: true          
     
       - name: Checkout repository
         if: ${{steps.update.outputs.pr}}
@@ -48,7 +46,7 @@ jobs:
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git fetch origin
-          git checkout release-please--branches--develop--components--obsidian-telegram-sync
+          git checkout release-please--branches--main--components--obsidian-telegram-sync
           npm ci
           npm run version
           git commit -m "Update manifest.json and versions.json"
