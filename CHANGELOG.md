@@ -1,6 +1,13 @@
 # Changelog
 
 
+## [1.0.1](https://github.com/soberhacker/obsidian-telegram-sync/compare/1.0.0...1.0.1) (2023-04-19)
+
+
+### Bug Fixes
+
+* deleting label speed improvements ([ce926a5](https://github.com/soberhacker/obsidian-telegram-sync/commit/ce926a554b1dfdf506681055fa216e695105f9f1))
+
 ## [1.0.0] (2023-04-19)
 
 
