@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   update-version:
-    if: ${{ github.head_ref == 'develop' && github.author_association == 'OWNER' }}
+    if: ${{ github.head_ref == 'develop' && github.event.author_association == 'OWNER' }}
     runs-on: ubuntu-latest    
     steps:
 
