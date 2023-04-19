@@ -258,8 +258,6 @@ export default class TelegramSyncPlugin extends Plugin {
   }
   
 }
-// TODO: Проверить тщательно работу с файлами
-// особенно запись кэпшинов в общий файл
-// ну и в целом имена файлов тоже можно
-// попробовать разные виды файлов
-// refactoring кода, а то слишком все нахуеверчено, упростить, сделать читабельнее
+// TODO: test transfering files
+// TODO: separate into few files
+// TODO: add more comments

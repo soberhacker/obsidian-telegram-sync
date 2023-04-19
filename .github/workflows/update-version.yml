@@ -1,0 +1,50 @@
+name: Update version of plugin
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update-version:    
+    runs-on: ubuntu-latest   
+    if: ${{ github.event.head_commit.author.name != 'github-actions[bot]' }}        
+    steps:       
+
+      - name: Update version in CHANGELOG.md and package.json}}
+        id: update
+        uses: google-github-actions/release-please-action@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          release-type: node  
+          command: release-pr
+          package-name: obsidian-telegram-sync          
+          include-v-in-tag: false     
+          pull-request-title-pattern: release ${version}   
+          skip-labeling: true  
+    
+      - name: Checkout repository        
+        if: ${{steps.update.outputs.pr}}
+        uses: actions/checkout@v3              
+
+      - name: Set up Node.js        
+        if: ${{steps.update.outputs.pr}}
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18.x"      
+
+      - name: Update manifest.json and versions.json     
+        if: ${{steps.update.outputs.pr}}   
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git fetch origin
+          git checkout release-please--branches--main--components--obsidian-telegram-sync          
+          npm ci          
+          npm run version
+          git commit -m "Update manifest.json and versions.json" 
+          git push          
