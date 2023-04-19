@@ -1,0 +1,69 @@
+name: Update version of plugin
+
+on:
+  pull_request_target:
+    types:
+      - opened
+    branches:
+      - main
+
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update-version:
+    if: ${{ github.head_ref == 'develop' && github.event.author_association == 'OWNER' }}
+    runs-on: ubuntu-latest    
+    steps:
+
+      - name: Print github
+        run: |
+          echo '${{ toJson(github) }}'
+
+      - name: Update version in CHANGELOG.md and package.json
+        id: update
+        uses: google-github-actions/release-please-action@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          release-type: node
+          command: release-pr
+          package-name: obsidian-telegram-sync
+          include-v-in-tag: false
+          pull-request-title-pattern: "chore: release ${component} ${version}"
+          pull-request-header: "Autocreated release"
+          default-branch: develop
+          labels: automerge    
+    
+      - name: Checkout repository
+        if: ${{steps.update.outputs.pr}}
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        if: ${{steps.update.outputs.pr}}
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18.x"
+
+      - name: Update manifest.json and versions.json
+        if: ${{steps.update.outputs.pr}}
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git fetch origin
+          git checkout release-please--branches--develop--components--obsidian-telegram-sync
+          npm ci
+          npm run version
+          git commit -m "ci: update manifest.json and versions.json"
+          git push
+
+      - name: Merge PR
+        id: merge
+        uses: pascalgn/automerge-action@v0.15.6
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MERGE_REMOVE_LABELS: automerge
+          MERGE_METHOD: squash
+          MERGE_COMMIT_MESSAGE: pull-request-title
+          MERGE_FORKS: false
