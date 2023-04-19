@@ -20,6 +20,10 @@ jobs:
     if: ${{ github.event.pull_request.merged == true && github.event.head_commit.author.name == 'github-actions[bot]' }}
     steps:       
     
+      - name: Print github
+        run: |
+          echo '${{ toJson(github) }}'
+                    
       - name: Checkout repository                
         uses: actions/checkout@v3              
 

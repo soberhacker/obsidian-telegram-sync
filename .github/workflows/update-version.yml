@@ -17,6 +17,10 @@ jobs:
     if: ${{ github.event.pull_request.merged == true && github.event.head_commit.author.name != 'github-actions[bot]' }}
     steps:
 
+      - name: Print github
+        run: |
+          echo '${{ toJson(github) }}'
+
       - name: Update version in CHANGELOG.md and package.json
         id: update
         uses: google-github-actions/release-please-action@v3
