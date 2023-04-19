@@ -24,7 +24,7 @@ jobs:
           command: release-pr
           package-name: obsidian-telegram-sync
           include-v-in-tag: false
-          pull-request-title-pattern: "chore: release ${version}"
+          pull-request-title-pattern: "chore${scope}: release ${component} ${version}"
           pull-request-header: "Autocreated release"
           skip-labeling: true
           default-branch: develop
