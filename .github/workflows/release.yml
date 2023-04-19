@@ -4,9 +4,9 @@ env:
   PLUGIN_NAME: obsidian-telegram-sync
 
 on:
-  push:
-    branches:
-      - main
+  pull_request_target:
+    types:
+      - closed
 
 permissions:
   contents: write
@@ -15,7 +15,7 @@ permissions:
 jobs:
   release:    
     runs-on: ubuntu-latest   
-    if: ${{ github.event.head_commit.author.name == 'github-actions[bot]' }}        
+    if: ${{ github.event.pull_request.merged == true }}
     steps:       
     
       - name: Checkout repository                

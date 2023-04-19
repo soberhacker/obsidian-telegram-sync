@@ -98,3 +98,18 @@ export async function getFormattedMessage(msg: TelegramBot.Message): Promise<str
         return null;
     }
   }
+
+  // Create a progress bar keyboard for message deletion
+  export function createProgressBarKeyboard(progress: number) {
+    const progressBar = '▓'.repeat(progress) + '░'.repeat(10 - progress);
+    return {
+        inline_keyboard: [
+            [
+                {
+                    text: progressBar,
+                    callback_data: JSON.stringify({ action: 'update_progress', progress: progress }),
+                },
+            ],
+        ],
+    };
+  }
