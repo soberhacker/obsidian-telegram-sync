@@ -13,8 +13,7 @@ permissions:
 
 jobs:
   update-version:
-    runs-on: ubuntu-latest
-    if: ${{ github.event.pull_request.merged == true && github.event.head_commit.author.name != 'github-actions[bot]' }}
+    runs-on: ubuntu-latest    
     steps:
 
       - name: Print github
