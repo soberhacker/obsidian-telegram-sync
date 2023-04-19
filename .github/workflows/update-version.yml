@@ -29,7 +29,8 @@ jobs:
           include-v-in-tag: false
           pull-request-title-pattern: "chore: release ${component} ${version}"
           pull-request-header: "Autocreated release"
-          skip-labeling: true          
+          skip-labeling: true
+          default-branch: develop      
     
       - name: Checkout repository
         if: ${{steps.update.outputs.pr}}
@@ -47,7 +48,7 @@ jobs:
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git fetch origin
-          git checkout release-please--branches--main--components--obsidian-telegram-sync
+          git checkout release-please--branches--develop--components--obsidian-telegram-sync
           npm ci
           npm run version
           git commit -m "Update manifest.json and versions.json"
