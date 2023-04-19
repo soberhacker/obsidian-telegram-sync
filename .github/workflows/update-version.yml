@@ -3,7 +3,7 @@ name: Update version of plugin
 on:
   push:
     branches:
-      - developer
+      - develop
 
 permissions:
   contents: write
@@ -15,10 +15,11 @@ jobs:
     if: ${{ github.event.head_commit.author.name != 'github-actions[bot]' }}        
     steps:       
 
-      - name: Update version in CHANGELOG.md and package.json}}
+      - name: Update version in CHANGELOG.md and package.json
         id: update
         uses: google-github-actions/release-please-action@v3
         with:
+          default-branch: develop
           token: ${{ secrets.GITHUB_TOKEN }}
           release-type: node  
           command: release-pr
