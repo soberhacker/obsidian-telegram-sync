@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   update-version:
-    if: ${{ github.event.pull_request.merged == true && github.head_ref == 'develop' && github.event.pull_request.author_association == 'OWNER' }}
+    if: ${{ github.head_ref == 'develop' && github.event.pull_request.author_association == 'OWNER' }}
     runs-on: ubuntu-latest    
     steps:
 
