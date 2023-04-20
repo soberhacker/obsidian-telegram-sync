@@ -10,6 +10,7 @@ if you want to view the source, please visit the github repository of this plugi
 `;
 
 const prod = (process.argv[2] === "production");
+const test = (process.argv[2] === "test");
 
 const context = await esbuild.context({
 	banner: {
@@ -40,7 +41,7 @@ const context = await esbuild.context({
 	outfile: "main.js",
 });
 
-if (prod) {
+if (prod || test) {
 	await context.rebuild();
 	process.exit(0);
 } else {
