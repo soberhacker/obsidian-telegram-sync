@@ -1,8 +1,5 @@
 name: Release Obsidian plugin
 
-env:
-  PLUGIN_NAME: obsidian-telegram-sync
-
 on:
   pull_request_target:
     types:
