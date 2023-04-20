@@ -67,4 +67,4 @@ jobs:
           MERGE_METHOD: squash
           MERGE_COMMIT_MESSAGE: pull-request-title
           MERGE_FORKS: false
-          PULL_REQUEST: ${{ github.event.number + 1 }} 
+          PULL_REQUEST: ${{ add(github.event.number, 1) }} 
