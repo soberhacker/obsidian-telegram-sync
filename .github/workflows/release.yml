@@ -16,6 +16,7 @@ permissions:
 
 jobs:
   release:
+    if: ${{ github.head_ref == 'develop' && github.event.pull_request.author_association == 'OWNER' }}
     runs-on: ubuntu-latest           
     steps:       
     

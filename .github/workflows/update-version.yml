@@ -14,6 +14,7 @@ permissions:
 
 jobs:
   update-version:
+    if: ${{ github.event.pull_request.merged == true && github.head_ref == 'develop' && github.event.pull_request.author_association == 'OWNER' }}
     runs-on: ubuntu-latest    
     steps:
 
@@ -66,3 +67,4 @@ jobs:
           MERGE_METHOD: squash
           MERGE_COMMIT_MESSAGE: pull-request-title
           MERGE_FORKS: false
+          PULL_REQUEST: ${{ github.event.number + 1 }} 
