@@ -13,25 +13,33 @@ This Obsidian plugin allows you to transfer messages and files from a Telegram b
 - Automatically format text messages with markdown
 - Delete processed messages from Telegram (optional)
 
-## Installation
+~~## Installation~~ (on test by Obsidian team)
 
-1. Open Obsidian and navigate to the **Settings**.
-2. Click on **the Third-party plugins** tab.
-3. Click the **Browse** button to open the Community Plugins window.
-4. Search for **Telegram Sync** in the search bar.
-5. Click the **Install** button, then enable the plugin by toggling the switch.
+~~1. Open Obsidian and navigate to the *Settings*.
+~~2. Click on *the Third-party plugins* tab.
+~~3. Click the *Browse* button to open the Community Plugins window.
+~~4. Search for *Telegram Sync* in the search bar.
+~~5. Click the *Install* button, then enable the plugin by toggling the switch.
+
+## Manuall Installation
+
+1. This plugin is only for Desktop (Linux, MacOS, Windows).
+2. Download main.js, styles.css, manifest.json from the [release page](https://github.com/soberhacker/obsidian-telegram-sync/releases).
+3. Copy the downloaded files to YourVaultFolder?/.obsidian/plugins/telegram-sync/.
+4. Restart Obsidian and enable Telegram Sync in **Community plugins**.
 
 ## Usage
-1. This plugin is only for Desktop (Linux, MacOS, Windows).
-2. Create a new bot on Telegram by talking to the  [@botFather](https://t.me/botfather).
-3. Copy the bot token provided by the [@botFather](https://t.me/botfather).
-4. Open the Obsidian settings and navigate to the Telegram Sync settings tab.
-5. Paste your bot token in the **Bot Token** field.
-6. Configure the remaining settings according to your preferences.
-7. Start sending messages and files to your Telegram bot. 
-8. When you open Obsidian on your laptop etc., it will sync everythink. It syncs during all time Obsidian is opened.
+
+1. Create a new bot on Telegram by talking to the  [@botFather](https://t.me/botfather).
+2. Copy the bot token provided by the [@botFather](https://t.me/botfather).
+3. Open the Obsidian settings and navigate to the Telegram Sync settings tab.
+4. Paste your bot token in the **Bot Token** field.
+5. Configure the remaining settings according to your preferences.
+6. Start sending messages and files to your Telegram bot. 
+7. When the Obsidian app is running on your lapton or PC, it syncs all your messages.
 
 ## Tips
+
 1. For syncing your notes between different devices should use Obsidian Sync, Syncthing, ICloud, Google Drive etc. 
 2. If you use Obsidian only on your cellphone, use "share" to transfer data between mobile applications.
 
