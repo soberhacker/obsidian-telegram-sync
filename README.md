@@ -13,13 +13,13 @@ This Obsidian plugin allows you to transfer messages and files from a Telegram b
 - Automatically format text messages with markdown
 - Delete processed messages from Telegram (optional)
 
-~~## Installation~~ (on test by Obsidian team)
+## ~~Installation~~ (on test by Obsidian team)
 
-~~1. Open Obsidian and navigate to the **Settings**.~~
-~~2. Click on **the Third-party plugins** tab.~~
-~~3. Click the **Browse** button to open the Community Plugins window.~~
-~~4. Search for **Telegram Sync** in the search bar.~~
-~~5. Click the **Install** button, then enable the plugin by toggling the switch.~~
+~~1. Open Obsidian and navigate to the Settings.~~
+~~2. Click on the Third-party plugins tab.~~
+~~3. Click the Browse button to open the Community Plugins window.~~
+~~4. Search for Telegram Sync* in the search bar.~~
+~~5. Click the Install button, then enable the plugin by toggling the switch.~~
 
 ## Manuall Installation
 
