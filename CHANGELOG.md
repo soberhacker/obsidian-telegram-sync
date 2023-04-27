@@ -1,6 +1,20 @@
 # Changelog
 
 
+## [1.2.0](https://github.com/soberhacker/obsidian-telegram-sync/compare/v1.1.0...1.2.0) (2023-04-27)
+
+
+### Features
+
+* add forwardFrom to template parsing ([8c60d93](https://github.com/soberhacker/obsidian-telegram-sync/commit/8c60d939b5003287d88b954f7830252b20939eb6))
+* Add main features ([1e479ec](https://github.com/soberhacker/obsidian-telegram-sync/commit/1e479ecffb9b4a9ad3414405e887c551cdffc67e))
+
+
+### Bug Fixes
+
+* message deletion improvements ([f58cd87](https://github.com/soberhacker/obsidian-telegram-sync/commit/f58cd870f79112e295c639a6da599d016804c384))
+* message deletion improvements ([03d499b](https://github.com/soberhacker/obsidian-telegram-sync/commit/03d499b700d0dab69c040e900e44610c0061bf84))
+
 ## [1.1.0](https://github.com/soberhacker/obsidian-telegram-sync/compare/1.0.1...1.1.0) (2023-04-27)
 
 
