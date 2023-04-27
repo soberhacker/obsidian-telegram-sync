@@ -75,6 +75,28 @@ export async function getFormattedMessage(msg: TelegramBot.Message): Promise<str
     return text;
   }
 
+  export function getForwardFromLink(msg: TelegramBot.Message): string {
+    let forwardFromLink = '';
+
+    if (msg.forward_from || msg.forward_from_chat) {
+        let username = '';
+        let title = '';      
+
+        if (msg.forward_from) {
+            username = msg.forward_from.username || `user=${msg.forward_from.id.toString()}`;
+            title = msg.forward_from.first_name + (msg.forward_from.last_name ? ' ' + msg.forward_from.last_name : '');            
+        } else if (msg.forward_from_chat) {
+            username = msg.forward_from_chat.username || `chat=${msg.forward_from_chat.id.toString()}`;
+            title = msg.forward_from_chat.title || msg.forward_from_chat.username || '';            
+        }
+
+        forwardFromLink = `[${title}](https://t.me/${username})`;
+    }
+
+    return forwardFromLink;
+  }
+
+
   export function base64ToString(base64: string): string {
     return Buffer.from(base64, 'base64').toString('utf-8');
   }

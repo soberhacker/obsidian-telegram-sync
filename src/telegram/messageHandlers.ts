@@ -1,22 +1,18 @@
 import { TFile } from 'obsidian';
 import TelegramSyncPlugin  from '../main';
 import TelegramBot from 'node-telegram-bot-api';
-import { getFormattedMessage, messageDate2DateString, messageDate2TimeString, sanitizeFileName, getFileObject, createProgressBarKeyboard } from './utils';
+import { getFormattedMessage, messageDate2DateString, messageDate2TimeString, sanitizeFileName, getFileObject, createProgressBarKeyboard, getForwardFromLink } from './utils';
 
 export async function handleMessage(this: TelegramSyncPlugin, msg: TelegramBot.Message) {
         
     let formattedContent = '';
-    const appendAllToTelegramMd = this.settings.appendAllToTelegramMd;
 
-    if (!msg.text || (msg.text == '')) {
-        if (appendAllToTelegramMd) {
-        this.messageQueueToTelegramMd.push({ msg, formattedContent });
-        } else {          
-        await this.handleFiles(msg);
-        await this.deleteMessage(msg);
-        }
+    if (!msg.text || (msg.text == '')) {        
+        await this.handleFiles(msg);        
         return;
     }
+
+
     const markDownText = await getFormattedMessage(msg);
     const rawText = msg.text;
     const location = this.settings.newNotesLocation || '';
@@ -27,7 +23,12 @@ export async function handleMessage(this: TelegramSyncPlugin, msg: TelegramBot.M
     const messageDateString = messageDate2DateString(messageDate);
     const messageTimeString = messageDate2TimeString(messageDate);
 
-    formattedContent = await this.applyTemplate(templateFileLocation, markDownText, messageDateString, messageTimeString);
+    // Check if the message is forwarded and extract the required information
+    const forwardFromLink = getForwardFromLink(msg);
+
+    formattedContent = await this.applyTemplate(templateFileLocation, markDownText, messageDateString, messageTimeString, forwardFromLink);
+
+    const appendAllToTelegramMd = this.settings.appendAllToTelegramMd;
 
     if (appendAllToTelegramMd) {
         this.messageQueueToTelegramMd.push({ msg, formattedContent });
@@ -35,15 +36,14 @@ export async function handleMessage(this: TelegramSyncPlugin, msg: TelegramBot.M
         const title = sanitizeFileName(rawText.slice(0, 20));
         let fileName = `${title} - ${messageDateString}${messageTimeString}.md`;
         let notePath = location ? `${location}/${fileName}` : fileName;        
-        while (this.listOfNotePaths.includes(notePath) || 
-            this.app.vault.getAbstractFileByPath(notePath) instanceof TFile) {          
-        const newMessageTimeString = messageDate2TimeString(messageDate);
-        fileName = `${title} - ${messageDateString}${newMessageTimeString}.md`;
-        notePath = location ? `${location}/${fileName}` : fileName;                    
+        while ( this.listOfNotePaths.includes(notePath) || 
+                this.app.vault.getAbstractFileByPath(notePath) instanceof TFile) {          
+            const newMessageTimeString = messageDate2TimeString(messageDate);
+            fileName = `${title} - ${messageDateString}${newMessageTimeString}.md`;
+            notePath = location ? `${location}/${fileName}` : fileName;                    
         }        
         this.listOfNotePaths.push(notePath);
         await this.app.vault.create(notePath, formattedContent);
-        await this.handleFiles(msg);
         await this.deleteMessage(msg);
     }
 }
@@ -58,7 +58,9 @@ export async function handleFiles(this: TelegramSyncPlugin, msg: TelegramBot.Mes
         
         // Get the file object for the current file type
         const fileObject = getFileObject(msg, fileType);
-        if (fileObject) {
+        if (!fileObject) {
+            continue;
+        }
         const fileObjectToUse = fileObject instanceof Array ? fileObject.pop() : fileObject;
         const fileId = fileObjectToUse.file_id;
         const fileLink = await this.bot?.getFileLink(fileId);
@@ -97,26 +99,27 @@ export async function handleFiles(this: TelegramSyncPlugin, msg: TelegramBot.Mes
         // Handle message captions and append to Telegram.md if necessary
         if (msg.caption && !(msg.caption === '')) {
             const captionMarkdown = `![](${filePath.replace(/\s/g, "%20")})\n${msg.caption}`;
-            const formattedContent = await this.applyTemplate(this.settings.templateFileLocation, captionMarkdown, messageDateString, messageTimeString);
+            const forwardFromLink = getForwardFromLink(msg);
+            const formattedContent = await this.applyTemplate(this.settings.templateFileLocation, captionMarkdown, messageDateString, messageTimeString, forwardFromLink);
             if (this.settings.appendAllToTelegramMd) {
-            this.messageQueueToTelegramMd.push({ msg, formattedContent });
+                this.messageQueueToTelegramMd.push({ msg, formattedContent });
             } else {
-            // Save caption as a separate note
-            const noteLocation = this.settings.newNotesLocation || '';
-            const title = sanitizeFileName(msg.caption.slice(0, 20));
-            let fileCaptionName = `${title} - ${messageDateString}${messageTimeString}.md`;
-            let notePath = noteLocation ? `${noteLocation}/${fileCaptionName}` : fileCaptionName;
+                // Save caption as a separate note
+                const noteLocation = this.settings.newNotesLocation || '';
+                const title = sanitizeFileName(msg.caption.slice(0, 20));
+                let fileCaptionName = `${title} - ${messageDateString}${messageTimeString}.md`;
+                let notePath = noteLocation ? `${noteLocation}/${fileCaptionName}` : fileCaptionName;
 
-            while (this.listOfNotePaths.includes(notePath) ||
-                this.app.vault.getAbstractFileByPath(notePath) instanceof TFile) {
-                const newMessageTimeString = messageDate2TimeString(messageDate);
-                fileCaptionName = `${title} - ${messageDateString}${newMessageTimeString}.md`;
-                notePath = noteLocation ? `${noteLocation}/${fileCaptionName}` : fileCaptionName;
+                while ( this.listOfNotePaths.includes(notePath) ||
+                        this.app.vault.getAbstractFileByPath(notePath) instanceof TFile) {
+                    const newMessageTimeString = messageDate2TimeString(messageDate);
+                    fileCaptionName = `${title} - ${messageDateString}${newMessageTimeString}.md`;
+                    notePath = noteLocation ? `${noteLocation}/${fileCaptionName}` : fileCaptionName;
+                }
+                this.listOfNotePaths.push(notePath);
+                await this.app.vault.create(notePath, formattedContent);
+                await this.deleteMessage(msg);
             }
-            this.listOfNotePaths.push(notePath);
-            await this.app.vault.create(notePath, formattedContent);
-            }
-        }
         }
     }
 }
@@ -153,6 +156,6 @@ export async function deleteMessage(this: TelegramSyncPlugin, msg: TelegramBot.M
         }
     } else {
         // Send a confirmation reply if the message is too old to be deleted
-        await this.bot?.sendMessage(msg.chat.id, "⬅️✅", { reply_to_message_id: msg.message_id });
+        await this.bot?.sendMessage(msg.chat.id, "...✅...", { reply_to_message_id: msg.message_id });
     }
 }

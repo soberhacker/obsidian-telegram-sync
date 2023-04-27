@@ -27,9 +27,8 @@ export default class TelegramSyncPlugin extends Plugin {
     await this.initTelegramBot();
 
     // Create a queue to handle appending messages to the Telegram.md file
-    this.messageQueueToTelegramMd = async.queue(async (task: any, callback: any) => {
-      await this.appendMessageToTelegramMd(task.msg, task.formattedContent);
-      callback();
+    this.messageQueueToTelegramMd = async.queue(async (task: any) => {
+      await this.appendMessageToTelegramMd(task.msg, task.formattedContent);      
     }, 1);
   }
 
@@ -44,26 +43,28 @@ export default class TelegramSyncPlugin extends Plugin {
   }
 
   // Apply a template to a message's content
-  async applyTemplate(templatePath: string, content: string, date: string, time: string): Promise<string> {
+  async applyTemplate(  templatePath: string, 
+                        content: string, 
+                        date: string, 
+                        time: string,
+                        forwardFromLink: string
+                      ): Promise<string> {
+
     let templateFile = this.app.vault.getAbstractFileByPath(templatePath) as TFile;
     if (!templateFile) {
       return content;
     }
+     
     const templateContent = await this.app.vault.read(templateFile);
     return templateContent.replace('{{content}}', content)
       .replace(/{{date:(.*?)}}/g, (_, format) => date.format(format))
-      .replace(/{{time:(.*?)}}/g, (_, format) => time.format(format));
+      .replace(/{{time:(.*?)}}/g, (_, format) => time.format(format))
+      .replace(/{{forwardFrom}}/g, forwardFromLink);
   }
 
   async appendMessageToTelegramMd(msg: TelegramBot.Message, formattedContent: string) {
     // Do not append messages if not connected
     if (!this.connected) return;
-
-    if (formattedContent === '') {
-      await this.handleFiles(msg);
-      await this.deleteMessage(msg);
-      return;
-    }
 
     // Determine the location for the Telegram.md file
     const location = this.settings.newNotesLocation || '';
@@ -73,12 +74,11 @@ export default class TelegramSyncPlugin extends Plugin {
 
     // Create or modify the Telegram.md file
     if (!telegramMdFile) {
-      telegramMdFile = await this.app.vault.create(telegramMdPath, formattedContent);
+      telegramMdFile = await this.app.vault.create(telegramMdPath, `${formattedContent}\n`);
     } else {
       const fileContent = await this.app.vault.read(telegramMdFile);
-      await this.app.vault.modify(telegramMdFile, `${fileContent}***\n${formattedContent}\n`);
-    }
-    await this.handleFiles(msg);
+      await this.app.vault.modify(telegramMdFile, `${fileContent}\n***\n\n${formattedContent}\n`);
+    } 
     await this.deleteMessage(msg);
   }
 
@@ -110,10 +110,10 @@ export default class TelegramSyncPlugin extends Plugin {
     // Create a new bot instance and start polling
     this.bot = new TelegramBot(this.settings.botToken, { polling: true });
 
-    // Set connected flag to true when the bot starts
-    this.bot.on('polling_error', () => {
+    // Check if the bot is connected and set the connected flag accordingly
+    if (this.bot.isPolling()) {
       this.connected = true;
-    });
+    }
 
     this.bot.on('message', async (msg) => {
       await this.handleMessage(msg);
@@ -126,4 +126,3 @@ export default class TelegramSyncPlugin extends Plugin {
     });
   }
 }
-// TODO: test transfering files
