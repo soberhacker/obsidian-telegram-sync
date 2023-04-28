@@ -56,7 +56,10 @@ jobs:
           npm ci
           npm run version
           git commit -m "ci: update manifest.json and versions.json"
+          git tag automerge
           git push
+          git push origin automerge
+
           NEXT_PR=$((${{ github.event.number }} + 1))
           echo "NEXT_PR=$NEXT_PR" >> $GITHUB_ENV          
 
