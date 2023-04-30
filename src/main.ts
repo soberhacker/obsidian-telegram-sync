@@ -7,6 +7,7 @@ import {
 import TelegramBot from 'node-telegram-bot-api';
 import * as async from 'async';
 import { handleMessage, handleFiles, deleteMessage } from './telegram/messageHandlers';
+import { formatDateTime } from './utils/dateUtils';
 
 // Main class for the Telegram Sync plugin
 export default class TelegramSyncPlugin extends Plugin {
@@ -43,24 +44,27 @@ export default class TelegramSyncPlugin extends Plugin {
   }
 
   // Apply a template to a message's content
-  async applyTemplate(  templatePath: string, 
-                        content: string, 
-                        date: string, 
-                        time: string,
-                        forwardFromLink: string
-                      ): Promise<string> {
+  async applyTemplate(  
+    templatePath: string, 
+    content: string, 
+    messageDateTime: Date,     
+    forwardFromLink: string
+  ): Promise<string> {
 
     let templateFile = this.app.vault.getAbstractFileByPath(templatePath) as TFile;
     if (!templateFile) {
-      return content;
+    return content;
     }
-     
+    const dateTimeNow = new Date();    
     const templateContent = await this.app.vault.read(templateFile);
-    return templateContent.replace('{{content}}', content)
-      .replace(/{{date:(.*?)}}/g, (_, format) => date.format(format))
-      .replace(/{{time:(.*?)}}/g, (_, format) => time.format(format))
-      .replace(/{{forwardFrom}}/g, forwardFromLink);
-  }
+    return templateContent
+    .replace('{{content}}', content)
+    .replace(/{{messageDate:(.*?)}}/g, (_, format) => formatDateTime(messageDateTime, format))
+    .replace(/{{messageTime:(.*?)}}/g, (_, format) => formatDateTime(messageDateTime, format))
+    .replace(/{{date:(.*?)}}/g, (_, format) => formatDateTime(dateTimeNow, format))
+    .replace(/{{time:(.*?)}}/g, (_, format) => formatDateTime(dateTimeNow, format))
+    .replace(/{{forwardFrom}}/g, forwardFromLink);
+    }
 
   async appendMessageToTelegramMd(msg: TelegramBot.Message, formattedContent: string) {
     // Do not append messages if not connected

@@ -1,15 +1,5 @@
 import TelegramBot from "node-telegram-bot-api";
 
-export function messageDate2DateString(date: Date) : string {
-    return date.toISOString().split('T')[0].replace(/-/g, '');
-  }
-
-export function messageDate2TimeString(date: Date) : string {
-    date.setMilliseconds((new Date()).getMilliseconds());
-    return date.toISOString().split('T')[1]
-      .replace(/:/g, '').replace('.', '').replace('Z', '').substring(0, 12);
-  }
-
 export function sanitizeFileName(fileName: string): string {
     const invalidCharacters = /[\\/:*?"<>|\n\r]/g;
     const replacementCharacter = '_';

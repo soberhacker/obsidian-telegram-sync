@@ -1,7 +1,8 @@
 import { TFile } from 'obsidian';
 import TelegramSyncPlugin  from '../main';
 import TelegramBot from 'node-telegram-bot-api';
-import { getFormattedMessage, messageDate2DateString, messageDate2TimeString, sanitizeFileName, getFileObject, createProgressBarKeyboard, getForwardFromLink } from './utils';
+import { getFormattedMessage, sanitizeFileName, getFileObject, createProgressBarKeyboard, getForwardFromLink } from './utils';
+import { date2DateString, date2TimeString } from 'src/utils/dateUtils';
 
 export async function handleMessage(this: TelegramSyncPlugin, msg: TelegramBot.Message) {
         
@@ -20,13 +21,13 @@ export async function handleMessage(this: TelegramSyncPlugin, msg: TelegramBot.M
     const templateFileLocation = this.settings.templateFileLocation;
 
     const messageDate = new Date(msg.date * 1000);      
-    const messageDateString = messageDate2DateString(messageDate);
-    const messageTimeString = messageDate2TimeString(messageDate);
+    const messageDateString = date2DateString(messageDate);
+    const messageTimeString = date2TimeString(messageDate);
 
     // Check if the message is forwarded and extract the required information
     const forwardFromLink = getForwardFromLink(msg);
 
-    formattedContent = await this.applyTemplate(templateFileLocation, markDownText, messageDateString, messageTimeString, forwardFromLink);
+    formattedContent = await this.applyTemplate(templateFileLocation, markDownText, messageDate, forwardFromLink);
 
     const appendAllToTelegramMd = this.settings.appendAllToTelegramMd;
 
@@ -38,7 +39,7 @@ export async function handleMessage(this: TelegramSyncPlugin, msg: TelegramBot.M
         let notePath = location ? `${location}/${fileName}` : fileName;        
         while ( this.listOfNotePaths.includes(notePath) || 
                 this.app.vault.getAbstractFileByPath(notePath) instanceof TFile) {          
-            const newMessageTimeString = messageDate2TimeString(messageDate);
+            const newMessageTimeString = date2TimeString(messageDate);
             fileName = `${title} - ${messageDateString}${newMessageTimeString}.md`;
             notePath = location ? `${location}/${fileName}` : fileName;                    
         }        
@@ -75,8 +76,8 @@ export async function handleFiles(this: TelegramSyncPlugin, msg: TelegramBot.Mes
 
         // Format the file name and path
         const messageDate = new Date(msg.date * 1000);
-        const messageDateString = messageDate2DateString(messageDate);
-        const messageTimeString = messageDate2TimeString(messageDate);
+        const messageDateString = date2DateString(messageDate);
+        const messageTimeString = date2TimeString(messageDate);
 
         const fileFullName = `${fileName} - ${messageDateString}${messageTimeString}${fileExtension}`;
         const filePath = `${specificFolder}/${fileFullName}`;
@@ -100,7 +101,7 @@ export async function handleFiles(this: TelegramSyncPlugin, msg: TelegramBot.Mes
         if (msg.caption && !(msg.caption === '')) {
             const captionMarkdown = `![](${filePath.replace(/\s/g, "%20")})\n${msg.caption}`;
             const forwardFromLink = getForwardFromLink(msg);
-            const formattedContent = await this.applyTemplate(this.settings.templateFileLocation, captionMarkdown, messageDateString, messageTimeString, forwardFromLink);
+            const formattedContent = await this.applyTemplate(this.settings.templateFileLocation, captionMarkdown, messageDate, forwardFromLink);
             if (this.settings.appendAllToTelegramMd) {
                 this.messageQueueToTelegramMd.push({ msg, formattedContent });
             } else {
@@ -112,7 +113,7 @@ export async function handleFiles(this: TelegramSyncPlugin, msg: TelegramBot.Mes
 
                 while ( this.listOfNotePaths.includes(notePath) ||
                         this.app.vault.getAbstractFileByPath(notePath) instanceof TFile) {
-                    const newMessageTimeString = messageDate2TimeString(messageDate);
+                    const newMessageTimeString = date2TimeString(messageDate);
                     fileCaptionName = `${title} - ${messageDateString}${newMessageTimeString}.md`;
                     notePath = noteLocation ? `${noteLocation}/${fileCaptionName}` : fileCaptionName;
                 }
