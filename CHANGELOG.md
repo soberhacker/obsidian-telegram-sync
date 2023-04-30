@@ -1,6 +1,13 @@
 # Changelog
 
 
+## [1.1.1](https://github.com/soberhacker/obsidian-telegram-sync/compare/1.1.0...1.1.1) (2023-04-30)
+
+
+### Bug Fixes
+
+* template variables (context -&gt; content) ([9da819b](https://github.com/soberhacker/obsidian-telegram-sync/commit/9da819b85c37fd565926a36f435666b4c92caa4e))
+
 ## [1.1.0](https://github.com/soberhacker/obsidian-telegram-sync/compare/1.0.1...1.1.0) (2023-04-28)
 
 
