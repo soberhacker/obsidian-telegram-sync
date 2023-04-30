@@ -85,7 +85,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 
         new Setting(containerEl)
         .setName('Template File Location')
-        .setDesc('Template to use when creating new notes. Available variables: {{context}}, {{forwardFrom}}, {{date:FORMAT}}, {{time:FORMAT}}.')
+        .setDesc('Template to use when creating new notes. Available variables: {{content}}, {{forwardFrom}}, {{messageDate:YYYYMMDD}}, {{messageTime:HHmmss}}.')
         .addSearch((cb) => {
             new FileSuggest(
                 cb.inputEl,
