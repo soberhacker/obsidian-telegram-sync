@@ -1,4 +1,4 @@
-import { Plugin, TFile } from 'obsidian';
+import { Plugin, TFile, Notice } from 'obsidian';
 import {
   DEFAULT_SETTINGS,
   TelegramSyncSettings,
@@ -19,6 +19,7 @@ export default class TelegramSyncPlugin extends Plugin {
 
   // Load the plugin, settings, and initialize the bot
   async onload() {
+    console.log("Loading " + this.manifest.name + " plugin");
     await this.loadSettings();
 
     // Add a settings tab for this plugin
@@ -29,7 +30,7 @@ export default class TelegramSyncPlugin extends Plugin {
 
     // Create a queue to handle appending messages to the Telegram.md file
     this.messageQueueToTelegramMd = async.queue(async (task: any) => {
-      await this.appendMessageToTelegramMd(task.msg, task.formattedContent);      
+      await this.appendMessageToTelegramMd(task.msg, task.formattedContent);
     }, 1);
   }
 
@@ -44,18 +45,18 @@ export default class TelegramSyncPlugin extends Plugin {
   }
 
   // Apply a template to a message's content
-  async applyTemplate(  
-    templatePath: string, 
-    content: string, 
-    messageDateTime: Date,     
+  async applyTemplate(
+    templatePath: string,
+    content: string,
+    messageDateTime: Date,
     forwardFromLink: string
   ): Promise<string> {
 
     let templateFile = this.app.vault.getAbstractFileByPath(templatePath) as TFile;
     if (!templateFile) {
-    return content;
+      return content;
     }
-    const dateTimeNow = new Date();    
+    const dateTimeNow = new Date();
     const templateContent = await this.app.vault.read(templateFile);
     return templateContent
     .replace('{{content}}', content)
@@ -82,7 +83,7 @@ export default class TelegramSyncPlugin extends Plugin {
     } else {
       const fileContent = await this.app.vault.read(telegramMdFile);
       await this.app.vault.modify(telegramMdFile, `${fileContent}\n***\n\n${formattedContent}\n`);
-    } 
+    }
     await this.deleteMessage(msg);
   }
 
@@ -102,9 +103,13 @@ export default class TelegramSyncPlugin extends Plugin {
 
   // Initialize the Telegram bot and set up message handling
   async initTelegramBot() {
-    if (!this.settings.botToken) return;
+    if (!this.settings.botToken) {
+      this.displayMessage("Telegram bot token is empty. Exit.")
+      return;
+    }
 
     if (this.bot) {
+      this.displayMessage("Telegram bot is already created. Recreating ...")
       this.bot.stopPolling();
       this.bot = null;
       // Add a small delay before starting a new instance
@@ -120,13 +125,23 @@ export default class TelegramSyncPlugin extends Plugin {
     }
 
     this.bot.on('message', async (msg) => {
+      this.displayMessage(`Got a message from Telegram Bot: ${msg.text}`)
       await this.handleMessage(msg);
     });
 
     // Set connected flag to false and log errors when a polling error occurs
     this.bot.on('polling_error', (error: any) => {
       this.connected = false;
-      console.log(error);
+      this.displayMessage(`Error: ${error}`)
     });
+  }
+
+  // Show notification (if enabled in settings) or log message into console.
+  displayMessage(message: string, timeout: number = 5 * 1000): void {
+    if (this.settings.enableNotifications) {
+        new Notice(message, timeout);
+    }
+
+    console.log(`telegram-sync: ${message}`);
   }
 }
