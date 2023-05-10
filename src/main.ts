@@ -29,7 +29,7 @@ export default class TelegramSyncPlugin extends Plugin {
 
     // Create a queue to handle appending messages to the Telegram.md file
     this.messageQueueToTelegramMd = async.queue(async (task: any) => {
-      await this.appendMessageToTelegramMd(task.msg, task.formattedContent);      
+      await this.appendMessageToTelegramMd(task.msg, task.formattedContent);
     }, 1);
   }
 
@@ -44,27 +44,27 @@ export default class TelegramSyncPlugin extends Plugin {
   }
 
   // Apply a template to a message's content
-  async applyTemplate(  
-    templatePath: string, 
-    content: string, 
-    messageDateTime: Date,     
+  async applyTemplate(
+    templatePath: string,
+    content: string,
+    messageDateTime: Date,
     forwardFromLink: string
   ): Promise<string> {
 
     let templateFile = this.app.vault.getAbstractFileByPath(templatePath) as TFile;
     if (!templateFile) {
-    return content;
+      return content;
     }
-    const dateTimeNow = new Date();    
+    const dateTimeNow = new Date();
     const templateContent = await this.app.vault.read(templateFile);
     return templateContent
-    .replace('{{content}}', content)
-    .replace(/{{messageDate:(.*?)}}/g, (_, format) => formatDateTime(messageDateTime, format))
-    .replace(/{{messageTime:(.*?)}}/g, (_, format) => formatDateTime(messageDateTime, format))
-    .replace(/{{date:(.*?)}}/g, (_, format) => formatDateTime(dateTimeNow, format))
-    .replace(/{{time:(.*?)}}/g, (_, format) => formatDateTime(dateTimeNow, format))
-    .replace(/{{forwardFrom}}/g, forwardFromLink);
-    }
+      .replace('{{content}}', content)
+      .replace(/{{messageDate:(.*?)}}/g, (_, format) => formatDateTime(messageDateTime, format))
+      .replace(/{{messageTime:(.*?)}}/g, (_, format) => formatDateTime(messageDateTime, format))
+      .replace(/{{date:(.*?)}}/g, (_, format) => formatDateTime(dateTimeNow, format))
+      .replace(/{{time:(.*?)}}/g, (_, format) => formatDateTime(dateTimeNow, format))
+      .replace(/{{forwardFrom}}/g, forwardFromLink);
+  }
 
   async appendMessageToTelegramMd(msg: TelegramBot.Message, formattedContent: string) {
     // Do not append messages if not connected
@@ -82,7 +82,7 @@ export default class TelegramSyncPlugin extends Plugin {
     } else {
       const fileContent = await this.app.vault.read(telegramMdFile);
       await this.app.vault.modify(telegramMdFile, `${fileContent}\n***\n\n${formattedContent}\n`);
-    } 
+    }
     await this.deleteMessage(msg);
   }
 
