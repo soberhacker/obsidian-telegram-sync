@@ -15,8 +15,6 @@ export async function handleMessage(this: TelegramSyncPlugin, msg: TelegramBot.M
 
     // Check if message has been sended by allowed usernames
     const telegramUserName = msg.from?.username ?? '';
-    // print in a log file the username of the sender
-    console.log(`TelegramSync: Message from ${telegramUserName}`);
     const allowedChatFromUsernames = this.settings.allowedChatFromUsernames;
 
     if (!telegramUserName || !allowedChatFromUsernames.includes(telegramUserName)) {
