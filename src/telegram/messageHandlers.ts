@@ -3,6 +3,8 @@ import TelegramSyncPlugin  from '../main';
 import TelegramBot from 'node-telegram-bot-api';
 import { getFormattedMessage, sanitizeFileName, getFileObject, createProgressBarKeyboard, getForwardFromLink } from './utils';
 import { date2DateString, date2TimeString } from 'src/utils/dateUtils';
+import { sendReaction } from './gram';
+
 
 export async function handleMessage(this: TelegramSyncPlugin, msg: TelegramBot.Message) {
         
@@ -153,9 +155,10 @@ export async function deleteMessage(this: TelegramSyncPlugin, msg: TelegramBot.M
         await this.bot?.deleteMessage(msg.chat.id, msg.message_id);
 
         if (progressBarMessage) {
-        await this.bot?.deleteMessage(msg.chat.id, progressBarMessage.message_id);
+            await this.bot?.deleteMessage(msg.chat.id, progressBarMessage.message_id);
         }
-    } else {
+    } else {        
+        await sendReaction((await this.bot?.getMe())?.username || '', msg);
         // Send a confirmation reply if the message is too old to be deleted
         await this.bot?.sendMessage(msg.chat.id, "...✅...", { reply_to_message_id: msg.message_id });
     }

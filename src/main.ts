@@ -8,6 +8,7 @@ import TelegramBot from 'node-telegram-bot-api';
 import * as async from 'async';
 import { handleMessage, handleFiles, deleteMessage } from './telegram/messageHandlers';
 import { formatDateTime } from './utils/dateUtils';
+import * as gram from './telegram/gram';
 
 // Main class for the Telegram Sync plugin
 export default class TelegramSyncPlugin extends Plugin {
@@ -113,6 +114,9 @@ export default class TelegramSyncPlugin extends Plugin {
 
     // Create a new bot instance and start polling
     this.bot = new TelegramBot(this.settings.botToken, { polling: true });
+    if (this.settings.appId !== '' && this.settings.apiHash !== ''){
+      await gram.init(+this.settings.appId, this.settings.apiHash);
+    }    
 
     // Check if the bot is connected and set the connected flag accordingly
     if (this.bot.isPolling()) {

@@ -1,7 +1,9 @@
 import TelegramSyncPlugin from "src/main";
-import { PluginSettingTab, Setting } from "obsidian";
+import { PluginSettingTab, Setting, arrayBufferToBase64 } from "obsidian";
 import { FileSuggest } from "./suggesters/FileSuggester";
 import { FolderSuggest } from "./suggesters/FolderSuggester";
+
+import * as gram from 'src/telegram/gram';
 
 export interface TelegramSyncSettings {
     botToken: string;
@@ -10,6 +12,9 @@ export interface TelegramSyncSettings {
     templateFileLocation: string;
     deleteMessagesFromTelegram: boolean;
     newFilesLocation: string;
+    appId: string;
+    apiHash: string;       
+    telegramPassword: string; 
   }
   
   export const DEFAULT_SETTINGS: TelegramSyncSettings = {
@@ -19,6 +24,9 @@ export interface TelegramSyncSettings {
     templateFileLocation: '',
     deleteMessagesFromTelegram: false,
     newFilesLocation: '',
+    appId: '',
+    apiHash: '',
+    telegramPassword: '',
   };
 
 export class TelegramSyncSettingTab extends PluginSettingTab {
@@ -117,30 +125,92 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
         .addToggle((toggle) => {
             toggle.setValue(this.plugin.settings.deleteMessagesFromTelegram);
             toggle.onChange(async (value) => {
-            this.plugin.settings.deleteMessagesFromTelegram = value;
-            await this.plugin.saveSettings();
+              this.plugin.settings.deleteMessagesFromTelegram = value;
+              await this.plugin.saveSettings();
             });
         });
         
         containerEl.createEl("hr");
 
+        const advancedSettingsDiv = containerEl.createEl("div", {
+          cls: "telegramSyncSettingsAdvancedSection",
+        });
+        advancedSettingsDiv.createEl("p").appendText("This section is for advanced users. You should skip it, if you want stable plugin work");
+
+        new Setting(advancedSettingsDiv)
+        .setName('api_id')
+        .setDesc("Enter api_id") 
+        .addText((text) =>
+            text
+            .setPlaceholder('example: 61234')
+            .setValue(this.plugin.settings.appId)
+            .onChange(async (value: string) => {
+                this.plugin.settings.appId = value;
+                await this.plugin.saveSettings();
+                // this.plugin.initTelegramBot(); // TODO init GR buttons
+            }),
+        );
+
+        new Setting(advancedSettingsDiv)
+        .setName('api_hash')
+        .setDesc("Enter api_hasn") 
+        .addText((text) =>
+            text
+            .setPlaceholder('example: asdda623sdk4')
+            .setValue(this.plugin.settings.apiHash)
+            .onChange(async (value: string) => {
+                this.plugin.settings.apiHash = value;
+                await this.plugin.saveSettings();
+                // this.plugin.initQrButton(); // TODO init GR buttons
+            }),
+        );
+
+        new Setting(advancedSettingsDiv)
+        .setName('Telegram Password')
+        .setDesc("Enter your password from Telegram. Will not be stored and will be removed after succeeding log in.") 
+        .addText((text) =>
+            text
+            .setPlaceholder('*********')
+            .setValue(this.plugin.settings.telegramPassword)            
+            .onChange(async (value: string) => {
+                this.plugin.settings.telegramPassword = value;
+            }),
+        );
+
+
+        
+        new Setting(advancedSettingsDiv)
+        .setName('Log In By Qr Code')
+        .setDesc('Scan this Qr Code by official Telegram app on your smartphone. You have 30 sec to do this.')
+        .addButton((button) => {
+          button.setButtonText('GENERATE QR CODE');
+          button.setDisabled(this.plugin.settings.appId == '' || this.plugin.settings.apiHash == '');
+          button.onClick(async () => {            
+              const qrCodeContainer: HTMLDivElement  = advancedSettingsDiv.createDiv({ cls: "qr-code-container" });              
+              await gram.init(+this.plugin.settings.appId, this.plugin.settings.apiHash, this.plugin.settings.telegramPassword, qrCodeContainer);              
+            }
+          );
+        });
+
+        containerEl.createEl("hr");
+
         const donationDiv = containerEl.createEl("div", {
-            cls: "telegramSyncSettingsDonationSection",
-          });
+          cls: "telegramSyncSettingsDonationSection",
+        });        
       
-          const donationText = createEl("p");
-          donationText.appendText(
-            "If you like this Plugin and are considering donating to support continued development, use the buttons below!"
-          );
-      
-          donationDiv.appendChild(donationText);
-          donationDiv.appendChild(
-            paypalButton("https://www.paypal.com/donate/?hosted_button_id=VYSCUZX8MYGCU")
-          );
-          donationDiv.appendChild(
-            buyMeACoffeeButton("https://www.buymeacoffee.com/soberhacker")
-          );
-          donationDiv.appendChild(kofiButton("https://ko-fi.com/soberhacker"));
+        const donationText = createEl("p");
+        donationText.appendText(
+          "If you like this Plugin and are considering donating to support continued development, use the buttons below!"
+        );
+    
+        donationDiv.appendChild(donationText);
+        donationDiv.appendChild(
+          paypalButton("https://www.paypal.com/donate/?hosted_button_id=VYSCUZX8MYGCU")
+        );
+        donationDiv.appendChild(
+          buyMeACoffeeButton("https://www.buymeacoffee.com/soberhacker")
+        );
+        donationDiv.appendChild(kofiButton("https://ko-fi.com/soberhacker"));
         
     }
 }

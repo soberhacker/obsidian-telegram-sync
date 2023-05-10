@@ -21,6 +21,7 @@
 		"@types/async": "^3.2.18",
 		"@types/node": "^16.11.6",
 		"@types/node-telegram-bot-api": "^0.61.6",
+		"@types/qrcode": "^1.5.0",
 		"@typescript-eslint/eslint-plugin": "5.29.0",
 		"@typescript-eslint/parser": "5.29.0",
 		"builtin-modules": "3.3.0",
@@ -33,6 +34,8 @@
 	"dependencies": {
 		"@popperjs/core": "^2.11.7",
 		"async": "^3.2.4",
-		"node-telegram-bot-api": "^0.61.0"
+		"node-telegram-bot-api": "^0.61.0",
+		"qrcode": "^1.5.3",
+		"telegram": "^2.16.4"
 	}
 }
