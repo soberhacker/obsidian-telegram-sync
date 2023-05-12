@@ -10,7 +10,6 @@ export interface TelegramSyncSettings {
     templateFileLocation: string;
     deleteMessagesFromTelegram: boolean;
     newFilesLocation: string;
-    enableNotifications: boolean;
   }
 
   export const DEFAULT_SETTINGS: TelegramSyncSettings = {
@@ -20,7 +19,6 @@ export interface TelegramSyncSettings {
     templateFileLocation: '',
     deleteMessagesFromTelegram: false,
     newFilesLocation: '',
-    enableNotifications: false,
   };
 
 export class TelegramSyncSettingTab extends PluginSettingTab {
@@ -120,17 +118,6 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
             toggle.setValue(this.plugin.settings.deleteMessagesFromTelegram);
             toggle.onChange(async (value) => {
               this.plugin.settings.deleteMessagesFromTelegram = value;
-              await this.plugin.saveSettings();
-            });
-        });
-
-        new Setting(containerEl)
-        .setName('Enable notifications')
-        .setDesc('Enable notifications for sync operations (as well as errors).')
-        .addToggle((toggle) => {
-            toggle.setValue(this.plugin.settings.enableNotifications);
-            toggle.onChange(async (value) => {
-              this.plugin.settings.enableNotifications = value;
               await this.plugin.saveSettings();
             });
         });

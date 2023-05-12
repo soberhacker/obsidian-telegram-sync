@@ -125,7 +125,7 @@ export default class TelegramSyncPlugin extends Plugin {
     }
 
     this.bot.on('message', async (msg) => {
-      this.displayMessage(`Got a message from Telegram Bot: ${msg.text}`)
+      console.log(`Got a message from Telegram Bot: ${msg.text}`)
       await this.handleMessage(msg);
     });
 
@@ -138,9 +138,7 @@ export default class TelegramSyncPlugin extends Plugin {
 
   // Show notification (if enabled in settings) or log message into console.
   displayMessage(message: string, timeout: number = 5 * 1000): void {
-    if (this.settings.enableNotifications) {
-        new Notice(message, timeout);
-    }
+    new Notice(message, timeout);
 
     console.log(`telegram-sync: ${message}`);
   }
