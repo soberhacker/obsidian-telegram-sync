@@ -12,24 +12,29 @@ import { formatDateTime } from './utils/dateUtils';
 // Main class for the Telegram Sync plugin
 export default class TelegramSyncPlugin extends Plugin {
   settings: TelegramSyncSettings;
-  private connected: boolean = false;
+  private connected = false;
   bot: TelegramBot | null = null;
   messageQueueToTelegramMd: async.QueueObject<any>;
   listOfNotePaths: string[] = [];
 
   // Load the plugin, settings, and initialize the bot
   async onload() {
+    console.log('Loading Telegram Sync plugin...');
     await this.loadSettings();
 
     // Add a settings tab for this plugin
     this.addSettingTab(new TelegramSyncSettingTab(this));
+
+    this.register(() => {
+      this.stopTelegramBot();
+    });
 
     // Initialize the Telegram bot
     await this.initTelegramBot();
 
     // Create a queue to handle appending messages to the Telegram.md file
     this.messageQueueToTelegramMd = async.queue(async (task: any) => {
-      await this.appendMessageToTelegramMd(task.msg, task.formattedContent);      
+      await this.appendMessageToTelegramMd(task.msg, task.formattedContent);
     }, 1);
   }
 
@@ -44,27 +49,27 @@ export default class TelegramSyncPlugin extends Plugin {
   }
 
   // Apply a template to a message's content
-  async applyTemplate(  
-    templatePath: string, 
-    content: string, 
-    messageDateTime: Date,     
+  async applyTemplate(
+    templatePath: string,
+    content: string,
+    messageDateTime: Date,
     forwardFromLink: string
   ): Promise<string> {
 
-    let templateFile = this.app.vault.getAbstractFileByPath(templatePath) as TFile;
+    const templateFile = this.app.vault.getAbstractFileByPath(templatePath) as TFile;
     if (!templateFile) {
-    return content;
+      return content;
     }
-    const dateTimeNow = new Date();    
+    const dateTimeNow = new Date();
     const templateContent = await this.app.vault.read(templateFile);
     return templateContent
-    .replace('{{content}}', content)
-    .replace(/{{messageDate:(.*?)}}/g, (_, format) => formatDateTime(messageDateTime, format))
-    .replace(/{{messageTime:(.*?)}}/g, (_, format) => formatDateTime(messageDateTime, format))
-    .replace(/{{date:(.*?)}}/g, (_, format) => formatDateTime(dateTimeNow, format))
-    .replace(/{{time:(.*?)}}/g, (_, format) => formatDateTime(dateTimeNow, format))
-    .replace(/{{forwardFrom}}/g, forwardFromLink);
-    }
+      .replace('{{content}}', content)
+      .replace(/{{messageDate:(.*?)}}/g, (_, format) => formatDateTime(messageDateTime, format))
+      .replace(/{{messageTime:(.*?)}}/g, (_, format) => formatDateTime(messageDateTime, format))
+      .replace(/{{date:(.*?)}}/g, (_, format) => formatDateTime(dateTimeNow, format))
+      .replace(/{{time:(.*?)}}/g, (_, format) => formatDateTime(dateTimeNow, format))
+      .replace(/{{forwardFrom}}/g, forwardFromLink);
+  }
 
   async appendMessageToTelegramMd(msg: TelegramBot.Message, formattedContent: string) {
     // Do not append messages if not connected
@@ -82,7 +87,7 @@ export default class TelegramSyncPlugin extends Plugin {
     } else {
       const fileContent = await this.app.vault.read(telegramMdFile);
       await this.app.vault.modify(telegramMdFile, `${fileContent}\n***\n\n${formattedContent}\n`);
-    } 
+    }
     await this.deleteMessage(msg);
   }
 
@@ -103,14 +108,6 @@ export default class TelegramSyncPlugin extends Plugin {
   // Initialize the Telegram bot and set up message handling
   async initTelegramBot() {
     if (!this.settings.botToken) return;
-
-    if (this.bot) {
-      this.bot.stopPolling();
-      this.bot = null;
-      // Add a small delay before starting a new instance
-      await new Promise(resolve => setTimeout(resolve, 1000));
-    }
-
     // Create a new bot instance and start polling
     this.bot = new TelegramBot(this.settings.botToken, { polling: true });
 
@@ -124,9 +121,16 @@ export default class TelegramSyncPlugin extends Plugin {
     });
 
     // Set connected flag to false and log errors when a polling error occurs
-    this.bot.on('polling_error', (error: any) => {
-      this.connected = false;
+    this.bot.on('polling_error', (error: unknown) => {
       console.log(error);
     });
+  }
+
+  // Stop the bot polling
+  private stopTelegramBot(): void {
+    if (this.bot) {
+      this.bot.stopPolling();
+      this.bot = null;
+    }
   }
 }
