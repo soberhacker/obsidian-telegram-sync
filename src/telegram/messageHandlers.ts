@@ -18,6 +18,7 @@ export async function handleMessage(this: TelegramSyncPlugin, msg: TelegramBot.M
     const allowedChatFromUsernames = this.settings.allowedChatFromUsernames;
 
     if (!telegramUserName || !allowedChatFromUsernames.includes(telegramUserName)) {
+        this.bot?.sendMessage(msg.chat.id, "Access denied. Only users into allowed users can use this bot", { reply_to_message_id: msg.message_id });
         return;
     }
 

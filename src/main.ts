@@ -126,7 +126,7 @@ export default class TelegramSyncPlugin extends Plugin {
     // Set connected flag to false and log errors when a polling error occurs
     this.bot.on('polling_error', (error: any) => {
       this.connected = false;
-      console.log(error);
+      console.log('Telegram Sync: Error polling Telegram', error);
     });
   }
 }

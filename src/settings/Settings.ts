@@ -102,17 +102,29 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
       });
 
     new Setting(containerEl)
-      .setName('Allowed Chat From Usernames')
-      .setDesc('Only messages from these usernames will be processed.')
-      .addTextArea((text) =>
-        text
+      .setName('(Required) Allowed Chat From Usernames')
+      .setDesc('Only messages from these usernames will be processed ')
+      .addTextArea((text) => {
+        const textArea = text
           .setPlaceholder('example: soberHacker,soberHackerBot')
           .setValue(this.plugin.settings.allowedChatFromUsernames.join(','))
           .onChange(async (value: string) => {
+            if (!value.trim()) {
+              textArea.inputEl.style.borderColor = 'red';
+              textArea.inputEl.style.borderWidth = '2px';
+              textArea.inputEl.style.borderStyle = 'solid';
+              return;
+            }
             this.plugin.settings.allowedChatFromUsernames = value.split(',');
             await this.plugin.saveSettings();
-          }),
-      );
+          });
+      });
+    // add link to Telegram documentation
+    const telegramLink = document.createElement("a");
+    telegramLink.href = "https://telegram.org/faq?setln=en#q-what-are-usernames-how-do-i-get-one";
+    telegramLink.text = "How do I get a username?";
+    containerEl.appendChild(telegramLink);
+
 
     new Setting(containerEl)
       .setName('Append all to Telegram.md')
