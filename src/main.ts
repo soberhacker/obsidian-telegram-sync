@@ -14,7 +14,8 @@ import * as gram from './telegram/gram';
 export default class TelegramSyncPlugin extends Plugin {
   settings: TelegramSyncSettings;
   private connected: boolean = false;
-  bot: TelegramBot | null = null;
+  bot?: TelegramBot;
+  botName?: string;
   messageQueueToTelegramMd: async.QueueObject<any>;
   listOfNotePaths: string[] = [];
 
@@ -107,15 +108,23 @@ export default class TelegramSyncPlugin extends Plugin {
 
     if (this.bot) {
       this.bot.stopPolling();
-      this.bot = null;
+      this.bot = undefined;
       // Add a small delay before starting a new instance
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
 
     // Create a new bot instance and start polling
     this.bot = new TelegramBot(this.settings.botToken, { polling: true });
+
+    if (!this.bot) {
+      console.log('Unknown error during connection to Telegram.');
+      return;
+    }
+
+    this.botName = (await this.bot.getMe()).username;
+
     if (this.settings.appId !== '' && this.settings.apiHash !== ''){
-      await gram.init(+this.settings.appId, this.settings.apiHash);
+      await gram.init(+this.settings.appId, this.settings.apiHash, this.botName);
     }    
 
     // Check if the bot is connected and set the connected flag accordingly

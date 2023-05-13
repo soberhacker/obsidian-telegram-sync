@@ -187,7 +187,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
           button.setDisabled(this.plugin.settings.appId == '' || this.plugin.settings.apiHash == '');
           button.onClick(async () => {            
               const qrCodeContainer: HTMLDivElement  = advancedSettingsDiv.createDiv({ cls: "qr-code-container" });              
-              await gram.init(+this.plugin.settings.appId, this.plugin.settings.apiHash, this.plugin.settings.telegramPassword, qrCodeContainer);              
+              await gram.init(+this.plugin.settings.appId, this.plugin.settings.apiHash, this.plugin.botName, this.plugin.settings.telegramPassword, qrCodeContainer);              
             }
           );
         });

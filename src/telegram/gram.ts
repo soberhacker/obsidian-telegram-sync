@@ -2,16 +2,15 @@ import { Api, TelegramClient } from "telegram";
 import { StoreSession } from "telegram/sessions";
 import QRCode from "qrcode";
 import { PromisedWebSockets } from "telegram/extensions/PromisedWebSockets";
-import bigInt from "big-integer";
-import BigInteger from "big-integer";
 import TelegramBot from "node-telegram-bot-api";
 
 
 let client: TelegramClient;
 let _api_id: number;
 let _api_hash: string;
+let inputPeerUser: Api.InputPeerUser;
 
-export async function init(api_id: number, api_hash: string, password?: string, container?: HTMLDivElement) {  
+export async function init(api_id: number, api_hash: string, botName?: string, password?: string, container?: HTMLDivElement) {  
   if (!client || client.apiId !== api_id || client.apiHash !== api_hash ) {
     const session = new StoreSession("obsidian_telegram_sync_session");   
     _api_id = api_id;
@@ -43,26 +42,27 @@ export async function init(api_id: number, api_hash: string, password?: string, 
       }
     })    
   }      
+
+  if (await client.checkAuthorization()) {
+    const searchResult = await client.invoke(
+      new Api.contacts.ResolveUsername( {
+      username: botName,
+    }));
+  
+    const botUser: any = searchResult.users[0];
+    inputPeerUser = new Api.InputPeerUser({ userId: botUser.id, accessHash: botUser.accessHash});
+  }
 }
 
-export async function sendReaction(userName: string, botMsg: TelegramBot.Message) {  
-  // Get the peer id of the user you want to send a reaction to
-  const searchResult = await client.invoke(
-    new Api.contacts.ResolveUsername( {
-    username: userName,
-  }));
-
-  // Send a like reaction to the last message of the user
-  const user: any = searchResult.users[0];
-  const peer = new Api.InputPeerUser({ userId: user.id, accessHash: user.accessHash});
+export async function sendReaction(botMsg: TelegramBot.Message) {  
   
-  const messages = await client.getMessages(peer);
+  const messages = await client.getMessages(inputPeerUser);
   
   const clientMsg = messages.find((m) => m.text == botMsg.text);
 
   await client.invoke(
     new Api.messages.SendReaction({
-      peer: peer,
+      peer: inputPeerUser,
       msgId: clientMsg?.id,
       reaction: [new Api.ReactionEmoji({emoticon: '👍' })]
     }));

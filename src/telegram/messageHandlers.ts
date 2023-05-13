@@ -158,7 +158,7 @@ export async function deleteMessage(this: TelegramSyncPlugin, msg: TelegramBot.M
             await this.bot?.deleteMessage(msg.chat.id, progressBarMessage.message_id);
         }
     } else {        
-        await sendReaction((await this.bot?.getMe())?.username || '', msg);
+        await sendReaction(msg);
         // Send a confirmation reply if the message is too old to be deleted
         await this.bot?.sendMessage(msg.chat.id, "...✅...", { reply_to_message_id: msg.message_id });
     }
