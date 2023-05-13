@@ -12,7 +12,7 @@ import { formatDateTime } from './utils/dateUtils';
 // Main class for the Telegram Sync plugin
 export default class TelegramSyncPlugin extends Plugin {
   settings: TelegramSyncSettings;
-  private connected: boolean = false;
+  private connected = false;
   bot: TelegramBot | null = null;
   messageQueueToTelegramMd: async.QueueObject<any>;
   listOfNotePaths: string[] = [];
@@ -24,6 +24,10 @@ export default class TelegramSyncPlugin extends Plugin {
 
     // Add a settings tab for this plugin
     this.addSettingTab(new TelegramSyncSettingTab(this));
+
+    this.register(() => {
+      this.stopTelegramBot();
+    });
 
     // Initialize the Telegram bot
     await this.initTelegramBot();
@@ -52,7 +56,7 @@ export default class TelegramSyncPlugin extends Plugin {
     forwardFromLink: string
   ): Promise<string> {
 
-    let templateFile = this.app.vault.getAbstractFileByPath(templatePath) as TFile;
+    const templateFile = this.app.vault.getAbstractFileByPath(templatePath) as TFile;
     if (!templateFile) {
       return content;
     }
@@ -103,18 +107,12 @@ export default class TelegramSyncPlugin extends Plugin {
 
   // Initialize the Telegram bot and set up message handling
   async initTelegramBot() {
+
     if (!this.settings.botToken) {
       this.displayMessage("Telegram bot token is empty. Exit.")
       return;
     }
 
-    if (this.bot) {
-      this.displayMessage("Telegram bot is already created. Recreating ...")
-      this.bot.stopPolling();
-      this.bot = null;
-      // Add a small delay before starting a new instance
-      await new Promise(resolve => setTimeout(resolve, 1000));
-    }
 
     // Create a new bot instance and start polling
     this.bot = new TelegramBot(this.settings.botToken, { polling: true });
@@ -130,10 +128,17 @@ export default class TelegramSyncPlugin extends Plugin {
     });
 
     // Set connected flag to false and log errors when a polling error occurs
-    this.bot.on('polling_error', (error: any) => {
-      this.connected = false;
+    this.bot.on('polling_error', (error: unknown) => {
       this.displayMessage(`Error: ${error}`)
     });
+  }
+
+  // Stop the bot polling
+  private stopTelegramBot(): void {
+    if (this.bot) {
+      this.bot.stopPolling();
+      this.bot = null;
+    }
   }
 
   // Show notification (if enabled in settings) or log message into console.
