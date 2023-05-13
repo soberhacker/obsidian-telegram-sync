@@ -8,22 +8,22 @@ export function sanitizeFileName(fileName: string): string {
 
 export async function getFormattedMessage(msg: TelegramBot.Message): Promise<string> {
     let text = msg.text || '';
-  
+
     if (msg.entities) {
       let offset = 0;
       for (const entity of msg.entities) {
         const entityStart = entity.offset + offset;
         let entityEnd = entityStart + entity.length;
-  
+
         let entityText = text.slice(entityStart, entityEnd);
-        
+
         if (entityText.endsWith('\n')) {
           entityEnd = entityEnd - 1;
         }
         const beforeEntity = text.slice(0, entityStart);
         entityText = text.slice(entityStart, entityEnd);
-        const afterEntity = text.slice(entityEnd);          
-  
+        const afterEntity = text.slice(entityEnd);
+
         switch (entity.type) {
           case 'bold':
             entityText = `**${entityText}**`;
@@ -51,17 +51,17 @@ export async function getFormattedMessage(msg: TelegramBot.Message): Promise<str
             break;
           case 'text_link':
             if (entity.url) {
-              entityText = `[${entityText}](${entity.url})`;  
-              offset += 4 + entity.url.length;          
+              entityText = `[${entityText}](${entity.url})`;
+              offset += 4 + entity.url.length;
             }
             break;
-          default:            
+          default:
             break;
         }
-        text = beforeEntity + entityText + afterEntity;        
+        text = beforeEntity + entityText + afterEntity;
       }
     }
-  
+
     return text;
   }
 
@@ -70,14 +70,14 @@ export async function getFormattedMessage(msg: TelegramBot.Message): Promise<str
 
     if (msg.forward_from || msg.forward_from_chat) {
         let username = '';
-        let title = '';      
+        let title = '';
 
         if (msg.forward_from) {
             username = msg.forward_from.username || `user=${msg.forward_from.id.toString()}`;
-            title = msg.forward_from.first_name + (msg.forward_from.last_name ? ' ' + msg.forward_from.last_name : '');            
+            title = msg.forward_from.first_name + (msg.forward_from.last_name ? ' ' + msg.forward_from.last_name : '');
         } else if (msg.forward_from_chat) {
             username = msg.forward_from_chat.username || `chat=${msg.forward_from_chat.id.toString()}`;
-            title = msg.forward_from_chat.title || msg.forward_from_chat.username || '';            
+            title = msg.forward_from_chat.title || msg.forward_from_chat.username || '';
         }
 
         forwardFromLink = `[${title}](https://t.me/${username})`;
@@ -90,7 +90,7 @@ export async function getFormattedMessage(msg: TelegramBot.Message): Promise<str
   export function base64ToString(base64: string): string {
     return Buffer.from(base64, 'base64').toString('utf-8');
   }
-  
+
 
   export function getFileObject(msg: TelegramBot.Message, fileType: string): any {
     switch (fileType) {

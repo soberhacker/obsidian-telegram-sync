@@ -1,4 +1,4 @@
-import { Plugin, TFile } from 'obsidian';
+import { Plugin, TFile, Notice } from 'obsidian';
 import {
   DEFAULT_SETTINGS,
   TelegramSyncSettings,
@@ -19,7 +19,7 @@ export default class TelegramSyncPlugin extends Plugin {
 
   // Load the plugin, settings, and initialize the bot
   async onload() {
-    console.log('Loading Telegram Sync plugin...');
+    console.log("Loading " + this.manifest.name + " plugin");
     await this.loadSettings();
 
     // Add a settings tab for this plugin
@@ -107,7 +107,13 @@ export default class TelegramSyncPlugin extends Plugin {
 
   // Initialize the Telegram bot and set up message handling
   async initTelegramBot() {
-    if (!this.settings.botToken) return;
+
+    if (!this.settings.botToken) {
+      this.displayMessage("Telegram bot token is empty. Exit.")
+      return;
+    }
+
+
     // Create a new bot instance and start polling
     this.bot = new TelegramBot(this.settings.botToken, { polling: true });
 
@@ -117,12 +123,13 @@ export default class TelegramSyncPlugin extends Plugin {
     }
 
     this.bot.on('message', async (msg) => {
+      console.log(`Got a message from Telegram Bot: ${msg.text}`)
       await this.handleMessage(msg);
     });
 
     // Set connected flag to false and log errors when a polling error occurs
     this.bot.on('polling_error', (error: unknown) => {
-      console.log(error);
+      this.displayMessage(`Error: ${error}`)
     });
   }
 
@@ -132,5 +139,12 @@ export default class TelegramSyncPlugin extends Plugin {
       this.bot.stopPolling();
       this.bot = null;
     }
+  }
+
+  // Show notification (if enabled in settings) or log message into console.
+  displayMessage(message: string, timeout: number = 5 * 1000): void {
+    new Notice(message, timeout);
+
+    console.log(`telegram-sync: ${message}`);
   }
 }

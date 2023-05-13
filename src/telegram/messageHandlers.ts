@@ -1,26 +1,36 @@
 import { TFile } from 'obsidian';
-import TelegramSyncPlugin  from '../main';
+import TelegramSyncPlugin from '../main';
 import TelegramBot from 'node-telegram-bot-api';
 import { getFormattedMessage, sanitizeFileName, getFileObject, createProgressBarKeyboard, getForwardFromLink } from './utils';
 import { date2DateString, date2TimeString } from 'src/utils/dateUtils';
+import { createFolder } from 'src/utils/fsUtils';
 
 export async function handleMessage(this: TelegramSyncPlugin, msg: TelegramBot.Message) {
-        
+
     let formattedContent = '';
 
-    if (!msg.text || (msg.text == '')) {        
-        await this.handleFiles(msg);        
+    if (!msg.text || (msg.text == '')) {
+        await this.handleFiles(msg);
         return;
     }
 
+    // Check if message has been sended by allowed usernames
+    const telegramUserName = msg.from?.username ?? '';
+    const allowedChatFromUsernames = this.settings.allowedChatFromUsernames;
+
+    if (!telegramUserName || !allowedChatFromUsernames.includes(telegramUserName)) {
+        this.bot?.sendMessage(msg.chat.id, "Access denied. Only users into allowed users can use this bot", { reply_to_message_id: msg.message_id });
+        return;
+    }
 
     const markDownText = await getFormattedMessage(msg);
     const rawText = msg.text;
     const location = this.settings.newNotesLocation || '';
+    createFolder(this.app.vault, location);
 
     const templateFileLocation = this.settings.templateFileLocation;
 
-    const messageDate = new Date(msg.date * 1000);      
+    const messageDate = new Date(msg.date * 1000);
     const messageDateString = date2DateString(messageDate);
     const messageTimeString = date2TimeString(messageDate);
 
@@ -36,13 +46,13 @@ export async function handleMessage(this: TelegramSyncPlugin, msg: TelegramBot.M
     } else {
         const title = sanitizeFileName(rawText.slice(0, 20));
         let fileName = `${title} - ${messageDateString}${messageTimeString}.md`;
-        let notePath = location ? `${location}/${fileName}` : fileName;        
-        while ( this.listOfNotePaths.includes(notePath) || 
-                this.app.vault.getAbstractFileByPath(notePath) instanceof TFile) {          
+        let notePath = location ? `${location}/${fileName}` : fileName;
+        while (this.listOfNotePaths.includes(notePath) ||
+            this.app.vault.getAbstractFileByPath(notePath) instanceof TFile) {
             const newMessageTimeString = date2TimeString(messageDate);
             fileName = `${title} - ${messageDateString}${newMessageTimeString}.md`;
-            notePath = location ? `${location}/${fileName}` : fileName;                    
-        }        
+            notePath = location ? `${location}/${fileName}` : fileName;
+        }
         this.listOfNotePaths.push(notePath);
         await this.app.vault.create(notePath, formattedContent);
         await this.deleteMessage(msg);
@@ -53,10 +63,11 @@ export async function handleMessage(this: TelegramSyncPlugin, msg: TelegramBot.M
 export async function handleFiles(this: TelegramSyncPlugin, msg: TelegramBot.Message) {
     const fileTypes = ['photo', 'video', 'voice', 'document', 'audio', 'video_note'];
     const basePath = this.settings.newFilesLocation || this.settings.newNotesLocation || '';
+    createFolder(this.app.vault, basePath);
 
     // Iterate through each file type
     for (const fileType of fileTypes) {
-        
+
         // Get the file object for the current file type
         const fileObject = getFileObject(msg, fileType);
         if (!fileObject) {
@@ -64,8 +75,7 @@ export async function handleFiles(this: TelegramSyncPlugin, msg: TelegramBot.Mes
         }
         const fileObjectToUse = fileObject instanceof Array ? fileObject.pop() : fileObject;
         const fileId = fileObjectToUse.file_id;
-        const fileLink = await this.bot?.getFileLink(fileId);
-        const telegramFileName = fileLink?.split('/').pop();
+        const fileLink = await this.bot?.getFileLink(fileId); const telegramFileName = fileLink?.split('/').pop();
         const path = require('path');
         const fileExtension = path.extname(telegramFileName);
         const fileName = path.basename(telegramFileName, fileExtension);
@@ -111,8 +121,8 @@ export async function handleFiles(this: TelegramSyncPlugin, msg: TelegramBot.Mes
                 let fileCaptionName = `${title} - ${messageDateString}${messageTimeString}.md`;
                 let notePath = noteLocation ? `${noteLocation}/${fileCaptionName}` : fileCaptionName;
 
-                while ( this.listOfNotePaths.includes(notePath) ||
-                        this.app.vault.getAbstractFileByPath(notePath) instanceof TFile) {
+                while (this.listOfNotePaths.includes(notePath) ||
+                    this.app.vault.getAbstractFileByPath(notePath) instanceof TFile) {
                     const newMessageTimeString = date2TimeString(messageDate);
                     fileCaptionName = `${title} - ${messageDateString}${newMessageTimeString}.md`;
                     notePath = noteLocation ? `${noteLocation}/${fileCaptionName}` : fileCaptionName;
@@ -135,25 +145,25 @@ export async function deleteMessage(this: TelegramSyncPlugin, msg: TelegramBot.M
     if (this.settings.deleteMessagesFromTelegram && hoursDifference <= 48) {
         // Send the initial progress bar
         const progressBarMessage = await this.bot?.sendMessage(msg.chat.id, '.', {
-        reply_to_message_id: msg.message_id,
-        reply_markup: { inline_keyboard: createProgressBarKeyboard(0).inline_keyboard },
+            reply_to_message_id: msg.message_id,
+            reply_markup: { inline_keyboard: createProgressBarKeyboard(0).inline_keyboard },
         });
 
         // Update the progress bar during the delay
         for (let i = 1; i <= 10; i++) {
-        await new Promise(resolve => setTimeout(resolve, 50)); // 50 ms delay between updates
-        await this.bot?.editMessageReplyMarkup(
-            {
-                inline_keyboard: createProgressBarKeyboard(i).inline_keyboard,
-            },
-            { chat_id: msg.chat.id, message_id: progressBarMessage?.message_id },
-        );
+            await new Promise(resolve => setTimeout(resolve, 50)); // 50 ms delay between updates
+            await this.bot?.editMessageReplyMarkup(
+                {
+                    inline_keyboard: createProgressBarKeyboard(i).inline_keyboard,
+                },
+                { chat_id: msg.chat.id, message_id: progressBarMessage?.message_id },
+            );
         }
 
         await this.bot?.deleteMessage(msg.chat.id, msg.message_id);
 
         if (progressBarMessage) {
-        await this.bot?.deleteMessage(msg.chat.id, progressBarMessage.message_id);
+            await this.bot?.deleteMessage(msg.chat.id, progressBarMessage.message_id);
         }
     } else {
         // Send a confirmation reply if the message is too old to be deleted
