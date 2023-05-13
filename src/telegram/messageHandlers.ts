@@ -3,6 +3,7 @@ import TelegramSyncPlugin from '../main';
 import TelegramBot from 'node-telegram-bot-api';
 import { getFormattedMessage, sanitizeFileName, getFileObject, createProgressBarKeyboard, getForwardFromLink } from './utils';
 import { date2DateString, date2TimeString } from 'src/utils/dateUtils';
+import { createFolder } from 'src/utils/fsUtils';
 
 export async function handleMessage(this: TelegramSyncPlugin, msg: TelegramBot.Message) {
 
@@ -25,6 +26,7 @@ export async function handleMessage(this: TelegramSyncPlugin, msg: TelegramBot.M
     const markDownText = await getFormattedMessage(msg);
     const rawText = msg.text;
     const location = this.settings.newNotesLocation || '';
+    createFolder(this.app.vault, location);
 
     const templateFileLocation = this.settings.templateFileLocation;
 
@@ -61,6 +63,7 @@ export async function handleMessage(this: TelegramSyncPlugin, msg: TelegramBot.M
 export async function handleFiles(this: TelegramSyncPlugin, msg: TelegramBot.Message) {
     const fileTypes = ['photo', 'video', 'voice', 'document', 'audio', 'video_note'];
     const basePath = this.settings.newFilesLocation || this.settings.newNotesLocation || '';
+    createFolder(this.app.vault, basePath);
 
     // Iterate through each file type
     for (const fileType of fileTypes) {
