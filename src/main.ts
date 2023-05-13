@@ -59,13 +59,13 @@ export default class TelegramSyncPlugin extends Plugin {
     const dateTimeNow = new Date();
     const templateContent = await this.app.vault.read(templateFile);
     return templateContent
-    .replace('{{content}}', content)
-    .replace(/{{messageDate:(.*?)}}/g, (_, format) => formatDateTime(messageDateTime, format))
-    .replace(/{{messageTime:(.*?)}}/g, (_, format) => formatDateTime(messageDateTime, format))
-    .replace(/{{date:(.*?)}}/g, (_, format) => formatDateTime(dateTimeNow, format))
-    .replace(/{{time:(.*?)}}/g, (_, format) => formatDateTime(dateTimeNow, format))
-    .replace(/{{forwardFrom}}/g, forwardFromLink);
-    }
+      .replace('{{content}}', content)
+      .replace(/{{messageDate:(.*?)}}/g, (_, format) => formatDateTime(messageDateTime, format))
+      .replace(/{{messageTime:(.*?)}}/g, (_, format) => formatDateTime(messageDateTime, format))
+      .replace(/{{date:(.*?)}}/g, (_, format) => formatDateTime(dateTimeNow, format))
+      .replace(/{{time:(.*?)}}/g, (_, format) => formatDateTime(dateTimeNow, format))
+      .replace(/{{forwardFrom}}/g, forwardFromLink);
+  }
 
   async appendMessageToTelegramMd(msg: TelegramBot.Message, formattedContent: string) {
     // Do not append messages if not connected
