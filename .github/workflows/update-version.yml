@@ -49,8 +49,8 @@ jobs:
       - name: Update manifest.json and versions.json
         id: update_manifest
         run: |
-          git config --global core.autocrlf false
-          git config --global core.eol lf
+          git config core.autocrlf false
+          git config core.eol lf
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git fetch origin
