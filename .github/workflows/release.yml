@@ -32,8 +32,8 @@ jobs:
       - name: Build plugin main.js
         id: build_plugin
         run: |
-           git config --global core.autocrlf false
-           git config --global core.eol lf
+           git config core.autocrlf false
+           git config core.eol lf
            npm ci
            TAG_NAME=$(node -p "require('./package.json').version")
            echo "TAG_NAME=$TAG_NAME"
