@@ -47,6 +47,7 @@ jobs:
           node-version: "18.x"
 
       - name: Update manifest.json and versions.json
+        if: ${{steps.update.outputs.pr}}
         id: update_manifest
         run: |
           git config core.autocrlf false
@@ -66,6 +67,7 @@ jobs:
           echo "::set-output name=NEXT_PR::$NEXT_PR"
 
       - name: Merge PR
+        if: ${{steps.update.outputs.pr}}
         id: merge
         uses: pascalgn/automerge-action@v0.15.6
         env:
