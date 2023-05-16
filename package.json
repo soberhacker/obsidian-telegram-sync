@@ -1,38 +1,45 @@
 {
-	"name": "obsidian-telegram-sync",
-	"version": "1.1.1",
-	"description": "Transfer messages and files from Telegram bot to Obsidian.",
-	"main": "main.js",
-	"scripts": {
-		"dev": "node esbuild.config.mjs",
-		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
-		"version": "node version-bump.mjs && git add manifest.json versions.json",
-		"test": "node esbuild.config.mjs test && node install-plugin.mjs"
-	},
-	"keywords": [
-		"Telegram",
-		"Syncing",
-		"Messages",
-		"Transfer Files"
-	],
-	"author": "soberHacker",
-	"license": "GNU Affero General Public License v3.0",
-	"devDependencies": {
-		"@types/async": "^3.2.18",
-		"@types/node": "^16.11.6",
-		"@types/node-telegram-bot-api": "^0.61.6",
-		"@typescript-eslint/eslint-plugin": "5.29.0",
-		"@typescript-eslint/parser": "5.29.0",
-		"builtin-modules": "3.3.0",
-		"esbuild": "0.17.3",
-		"obsidian": "latest",
-		"release-please": "^15.10.3",
-		"tslib": "2.4.0",
-		"typescript": "4.7.4"
-	},
-	"dependencies": {
-		"@popperjs/core": "^2.11.7",
-		"async": "^3.2.4",
-		"node-telegram-bot-api": "^0.61.0"
-	}
+    "name": "obsidian-telegram-sync",
+    "version": "1.2.0",
+    "description": "Transfer messages and files from Telegram bot to Obsidian.",
+    "main": "main.js",
+    "scripts": {
+        "dev": "node esbuild.config.mjs",
+        "lint": "eslint src/**/*.ts",
+        "lint-fix": "eslint --fix src/**/*.ts",
+        "build": "npm run lint && tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
+        "version": "node version-bump.mjs && git add manifest.json versions.json",
+        "test": "node esbuild.config.mjs test && node install-plugin.mjs"
+    },
+    "keywords": [
+        "Telegram",
+        "Syncing",
+        "Messages",
+        "Transfer Files"
+    ],
+    "author": "soberHacker",
+    "license": "GNU Affero General Public License v3.0",
+    "devDependencies": {
+        "@types/async": "^3.2.18",
+        "@types/node": "^16.11.6",
+        "@types/node-telegram-bot-api": "^0.61.6",
+        "@typescript-eslint/eslint-plugin": "5.29.0",
+        "@typescript-eslint/parser": "5.29.0",
+        "builtin-modules": "3.3.0",
+        "esbuild": "0.17.3",
+        "eslint": "^8.40.0",
+        "eslint-config-prettier": "^8.8.0",
+        "eslint-plugin-prettier": "^4.2.1",
+        "obsidian": "latest",
+        "prettier": "^2.8.8",
+        "release-please": "^15.10.3",
+        "tslib": "2.4.0",
+        "typescript": "4.7.4"
+    },
+    "dependencies": {
+        "@popperjs/core": "^2.11.7",
+        "async": "^3.2.4",
+        "node-machine-id": "^1.1.12",
+        "node-telegram-bot-api": "^0.61.0"
+    }
 }
