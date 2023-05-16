@@ -30,20 +30,24 @@ jobs:
           node-version: "18.x"      
 
       - name: Build plugin main.js
+        id: build_plugin
         run: |
-          npm ci
-          TAG_NAME=$(node -p "require('./package.json').version")
-          echo "TAG_NAME=$TAG_NAME" >> $GITHUB_ENV
-          npm run build
+           git config --global core.autocrlf false
+           git config --global core.eol lf
+           npm ci
+           TAG_NAME=$(node -p "require('./package.json').version")
+           echo "TAG_NAME=$TAG_NAME"
+           echo "::set-output name=TAG_NAME::$TAG_NAME"
+           npm run build
 
       - name: Create release
         uses: softprops/action-gh-release@v1
         with:
-          files:  |
+          files: |
             main.js
             manifest.json
             styles.css            
           token: ${{ secrets.GITHUB_TOKEN }}          
-          tag_name: ${{ env.TAG_NAME }}          
+          tag_name: ${{ steps.build_plugin.outputs.TAG_NAME }}          
           prerelease: false
           draft: false
