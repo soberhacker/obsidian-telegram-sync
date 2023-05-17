@@ -11,7 +11,6 @@ import {
 import { date2DateString, date2TimeString } from "src/utils/dateUtils";
 import { createFolderIfNotExist } from "src/utils/fsUtils";
 import path from "path";
-import { displayAndLogError } from "src/utils/logUtils";
 
 export async function handleMessage(this: TelegramSyncPlugin, msg: TelegramBot.Message) {
 	let formattedContent = "";
@@ -136,7 +135,7 @@ export async function handleFiles(this: TelegramSyncPlugin, msg: TelegramBot.Mes
 	if (msg.caption && !(msg.caption === "")) {
 		const captionMarkdown = !error
 			? `![](${filePath?.replace(/\s/g, "%20")})\n${msg.caption}`
-			: `![❌ error while handling file](${error})\n${msg.caption}`;
+			: `[❌ error while handling file](${error})\n${msg.caption}`;
 		const forwardFromLink = getForwardFromLink(msg);
 		const formattedContent = await this.applyTemplate(
 			this.settings.templateFileLocation,
@@ -145,7 +144,7 @@ export async function handleFiles(this: TelegramSyncPlugin, msg: TelegramBot.Mes
 			forwardFromLink
 		);
 		if (this.settings.appendAllToTelegramMd) {
-			this.messageQueueToTelegramMd.push({ msg, formattedContent });
+			this.messageQueueToTelegramMd.push({ msg, formattedContent, error });
 			return;
 		} else {
 			// Save caption as a separate note
@@ -174,7 +173,7 @@ export async function handleFiles(this: TelegramSyncPlugin, msg: TelegramBot.Mes
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function finalizeMessageProcessing(this: TelegramSyncPlugin, msg: TelegramBot.Message, error?: any) {
 	if (error) {
-		displayAndLogError(error, msg);
+		await this.displayAndLogError(error, msg);
 		return;
 	}
 

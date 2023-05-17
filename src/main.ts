@@ -5,7 +5,8 @@ import * as async from "async";
 import { handleMessage, handleFiles, finalizeMessageProcessing } from "./telegram/messageHandlers";
 import { formatDateTime } from "./utils/dateUtils";
 import { machineIdSync } from "node-machine-id";
-import { displayAndLog, displayAndLogError } from "./utils/logUtils";
+import { displayAndLog } from "./utils/logUtils";
+import { displayAndLogError } from "./telegram/utils";
 
 // Main class for the Telegram Sync plugin
 export default class TelegramSyncPlugin extends Plugin {
@@ -29,14 +30,16 @@ export default class TelegramSyncPlugin extends Plugin {
 			await this.stopTelegramBot();
 		});
 
-		// Initialize the Telegram bot
-		await this.initTelegramBot();
-
 		// Create a queue to handle appending messages to the Telegram.md file
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		this.messageQueueToTelegramMd = async.queue(async (task: any) => {
-			await this.appendMessageToTelegramMd(task.msg, task.formattedContent);
+			await this.appendMessageToTelegramMd(task.msg, task.formattedContent, task.error);
 		}, 1);
+
+		// Initialize the Telegram bot when Obsidian layout is fully loaded
+		this.app.workspace.onLayoutReady(async () => {
+			await this.initTelegramBot();
+		});
 	}
 
 	// Load settings from the plugin's data
@@ -71,7 +74,8 @@ export default class TelegramSyncPlugin extends Plugin {
 			.replace(/{{forwardFrom}}/g, forwardFromLink);
 	}
 
-	async appendMessageToTelegramMd(msg: TelegramBot.Message, formattedContent: string) {
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	async appendMessageToTelegramMd(msg: TelegramBot.Message, formattedContent: string, error?: any) {
 		// Do not append messages if not connected
 		if (!this.connected) return;
 
@@ -88,7 +92,7 @@ export default class TelegramSyncPlugin extends Plugin {
 			const fileContent = await this.app.vault.read(telegramMdFile);
 			await this.app.vault.modify(telegramMdFile, `${fileContent}\n***\n\n${formattedContent}\n`);
 		}
-		await this.finalizeMessageProcessing(msg);
+		await this.finalizeMessageProcessing(msg, error);
 	}
 
 	async handleMessage(msg: TelegramBot.Message) {
@@ -103,7 +107,17 @@ export default class TelegramSyncPlugin extends Plugin {
 	// Delete a message or send a confirmation reply based on settings and message age
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	async finalizeMessageProcessing(msg: TelegramBot.Message, error?: any) {
-		await finalizeMessageProcessing.call(this, msg);
+		await finalizeMessageProcessing.call(this, msg, error);
+	}
+
+	// Show error to console, telegram, display
+	async displayAndLogError(
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		error: any,
+		msg?: TelegramBot.Message,
+		timeout = 5 * 1000
+	) {
+		await displayAndLogError.call(this, error, msg, timeout);
 	}
 
 	// Initialize the Telegram bot and set up message handling
@@ -134,7 +148,7 @@ export default class TelegramSyncPlugin extends Plugin {
 			try {
 				await this.handleMessage(msg);
 			} catch (error) {
-				displayAndLogError(error, msg);
+				await this.displayAndLogError(error, msg);
 			}
 		});
 
@@ -175,7 +189,7 @@ export default class TelegramSyncPlugin extends Plugin {
 					10000
 				);
 			} else {
-				displayAndLogError(error);
+				await this.displayAndLogError(error);
 			}
 		}
 	}
@@ -194,6 +208,11 @@ export default class TelegramSyncPlugin extends Plugin {
 }
 // TODO:
 // 1. file name conflict (#" symbols) in obsidian links
+// https://t.me/obsidian_z/65802/76273
 // 2. Заметил досадный баг. Если обсидиан не открыт, в момент перенаправления сообщения через бота, то параметры шаблона не применяются к записи после открытия обсидиана. Запись импортируется без каких либо параметров.
+// https://t.me/obsidian_z/65802/76441
 // 3. https://github.com/soberhacker/obsidian-telegram-sync/issues/77
 // 4. Big files caption creating messages
+// 5. Потестил новый релиз. Проявляется ошибка "Error: Folder already exists", если отрыть приложение на десктопе, предварительно отправив сообщение в бота, в то время, когда Obsidian на десктопе не был запущен.
+// 6. Да в тех случаях, когда отсутствует ошибка, описанная выше, шаблон при открытии обсидиан на десктопе и загрузке "отложенного" сообщения из бота теперь применяется. НО. поймал пару кейсов, в которых почему то не отработал параметр {{forwardFrom}}, в то время как стальные переменные ({{messageDate:DD.MM.YYYY}} и {{messageTime:HH:mm:ss}}) были заполнены.
+// https://t.me/obsidian_z/65802/76879
