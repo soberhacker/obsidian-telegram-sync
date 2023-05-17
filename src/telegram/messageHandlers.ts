@@ -53,6 +53,7 @@ export async function handleMessage(this: TelegramSyncPlugin, msg: TelegramBot.M
 
 	if (appendAllToTelegramMd) {
 		this.messageQueueToTelegramMd.push({ msg, formattedContent });
+		return;
 	} else {
 		const title = sanitizeFileName(rawText.slice(0, 20));
 		let fileName = `${title} - ${messageDateString}${messageTimeString}.md`;

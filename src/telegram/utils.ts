@@ -48,8 +48,8 @@ export async function getFormattedMessage(msg: TelegramBot.Message): Promise<str
 					offset += 2;
 					break;
 				case "pre":
-					entityText = "```" + entityText + "```";
-					offset += 6;
+					entityText = "```\n" + entityText + "\n```";
+					offset += 8;
 					break;
 				case "text_link":
 					if (entity.url) {
@@ -70,7 +70,7 @@ export async function getFormattedMessage(msg: TelegramBot.Message): Promise<str
 export function getForwardFromLink(msg: TelegramBot.Message): string {
 	let forwardFromLink = "";
 
-	if (msg.forward_from || msg.forward_from_chat) {
+	if (msg.forward_from || msg.forward_from_chat || msg.forward_sender_name) {
 		let username = "";
 		let title = "";
 
@@ -80,9 +80,10 @@ export function getForwardFromLink(msg: TelegramBot.Message): string {
 		} else if (msg.forward_from_chat) {
 			username = msg.forward_from_chat.username || `chat=${msg.forward_from_chat.id.toString()}`;
 			title = msg.forward_from_chat.title || msg.forward_from_chat.username || "";
+		} else if (msg.forward_sender_name) {
+			forwardFromLink = `[${msg.forward_sender_name}](the account was hidden by the user)`;
 		}
-
-		forwardFromLink = `[${title}](https://t.me/${username})`;
+		forwardFromLink = forwardFromLink || `[${title}](https://t.me/${username})`;
 	}
 
 	return forwardFromLink;
