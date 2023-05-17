@@ -2,7 +2,7 @@ import TelegramSyncPlugin from "src/main";
 import { PluginSettingTab, Setting } from "obsidian";
 import { FileSuggest } from "./suggesters/FileSuggester";
 import { FolderSuggest } from "./suggesters/FolderSuggester";
-import { displayMessage } from "src/utils/logUtils";
+import { displayAndLog } from "src/utils/logUtils";
 
 export interface TelegramSyncSettings {
 	botToken: string;
@@ -162,7 +162,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 					inputDeviceId = deviceIdSetting.controlEl.firstElementChild;
 					inputDeviceId.value = this.plugin.currentDeviceId;
 				} catch (error) {
-					displayMessage(`Try to copy and paste device id manually. Error: ${error}`);
+					displayAndLog(`Try to copy and paste device id manually. Error: ${error}`);
 				}
 				if (inputDeviceId && inputDeviceId.value) {
 					this.setMainDeviceIdSetting(this.plugin.currentDeviceId);
