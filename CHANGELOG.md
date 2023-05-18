@@ -1,6 +1,18 @@
 # Changelog
 
 
+## [1.4.0](https://github.com/soberhacker/obsidian-telegram-sync/compare/1.3.0...1.4.0) (2023-05-18)
+
+
+### Features
+
+* add forward from link for own channels ([9018411](https://github.com/soberhacker/obsidian-telegram-sync/commit/9018411d997f4be07c0ec2f01c50ded3d38fb438))
+
+
+### Bug Fixes
+
+* false attempt to create a directory structure ([f2a23ad](https://github.com/soberhacker/obsidian-telegram-sync/commit/f2a23adf613d6c37fa31949104c68738be3fcc37))
+
 ## [1.3.0](https://github.com/soberhacker/obsidian-telegram-sync/compare/1.2.0...1.3.0) (2023-05-18)
 
 
