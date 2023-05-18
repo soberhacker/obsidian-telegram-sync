@@ -119,11 +119,9 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 					});
 			});
 
-		new Setting(containerEl)
+		const templateFileLocationSetting = new Setting(containerEl)
 			.setName("Template File Location")
-			.setDesc(
-				"Template to use when creating new notes. Available variables: {{content}}, {{forwardFrom}}, {{messageDate:YYYYMMDD}}, {{messageTime:HHmmss}}"
-			)
+			.setDesc("Template to use when creating new notes")
 			.addSearch((cb) => {
 				new FileSuggest(cb.inputEl, this.plugin);
 				cb.setPlaceholder("example: folder/zettelkasten.md")
@@ -133,6 +131,12 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 						this.plugin.saveSettings();
 					});
 			});
+
+		// add template available variables
+		const availableTemplateVariables = document.createElement("div");
+		availableTemplateVariables.textContent =
+			"Available variables: {{content}}, {{forwardFrom}}, {{messageDate:YYYYMMDD}}, {{messageTime:HHmmss}}";
+		templateFileLocationSetting.descEl.appendChild(availableTemplateVariables);
 
 		const deviceIdSetting = new Setting(containerEl)
 			.setName("Main Device Id")

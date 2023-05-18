@@ -133,10 +133,10 @@ export async function handleFiles(this: TelegramSyncPlugin, msg: TelegramBot.Mes
 	}
 
 	// Handle message captions and append to Telegram.md if necessary
-	if (msg.caption && !(msg.caption === "")) {
+	if ((msg.caption && !(msg.caption === "")) || this.settings.appendAllToTelegramMd) {
 		const captionMarkdown = !error
-			? `![](${filePath?.replace(/\s/g, "%20")})\n${msg.caption}`
-			: `[❌ error while handling file](${error})\n${msg.caption}`;
+			? `![](${filePath?.replace(/\s/g, "%20")})\n${msg.caption || ""}`
+			: `[❌ error while handling file](${error})\n${msg.caption || ""}`;
 		const forwardFromLink = getForwardFromLink(msg);
 		const formattedContent = await this.applyTemplate(
 			this.settings.templateFileLocation,
@@ -147,9 +147,10 @@ export async function handleFiles(this: TelegramSyncPlugin, msg: TelegramBot.Mes
 		if (this.settings.appendAllToTelegramMd) {
 			this.messageQueueToTelegramMd.push({ msg, formattedContent, error });
 			return;
-		} else {
+		} else if (msg.caption) {
 			// Save caption as a separate note
 			const noteLocation = this.settings.newNotesLocation || "";
+			await createFolderIfNotExist(this.app.vault, noteLocation);
 			const title = sanitizeFileName(msg.caption.slice(0, 20));
 			let fileCaptionName = `${title} - ${messageDateString}${messageTimeString}.md`;
 			let notePath = noteLocation ? `${noteLocation}/${fileCaptionName}` : fileCaptionName;

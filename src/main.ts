@@ -7,6 +7,7 @@ import { formatDateTime } from "./utils/dateUtils";
 import { machineIdSync } from "node-machine-id";
 import { displayAndLog } from "./utils/logUtils";
 import { displayAndLogError } from "./telegram/utils";
+import { createFolderIfNotExist } from "./utils/fsUtils";
 
 // Main class for the Telegram Sync plugin
 export default class TelegramSyncPlugin extends Plugin {
@@ -81,6 +82,7 @@ export default class TelegramSyncPlugin extends Plugin {
 
 		// Determine the location for the Telegram.md file
 		const location = this.settings.newNotesLocation || "";
+		createFolderIfNotExist(this.app.vault, location);
 
 		const telegramMdPath = location ? `${location}/Telegram.md` : "Telegram.md";
 		let telegramMdFile = this.app.vault.getAbstractFileByPath(telegramMdPath) as TFile;
@@ -206,13 +208,3 @@ export default class TelegramSyncPlugin extends Plugin {
 		}
 	}
 }
-// TODO:
-// 1. file name conflict (#" symbols) in obsidian links
-// https://t.me/obsidian_z/65802/76273
-// 2. Заметил досадный баг. Если обсидиан не открыт, в момент перенаправления сообщения через бота, то параметры шаблона не применяются к записи после открытия обсидиана. Запись импортируется без каких либо параметров.
-// https://t.me/obsidian_z/65802/76441
-// 3. https://github.com/soberhacker/obsidian-telegram-sync/issues/77
-// 4. Big files caption creating messages
-// 5. Потестил новый релиз. Проявляется ошибка "Error: Folder already exists", если отрыть приложение на десктопе, предварительно отправив сообщение в бота, в то время, когда Obsidian на десктопе не был запущен.
-// 6. Да в тех случаях, когда отсутствует ошибка, описанная выше, шаблон при открытии обсидиан на десктопе и загрузке "отложенного" сообщения из бота теперь применяется. НО. поймал пару кейсов, в которых почему то не отработал параметр {{forwardFrom}}, в то время как стальные переменные ({{messageDate:DD.MM.YYYY}} и {{messageTime:HH:mm:ss}}) были заполнены.
-// https://t.me/obsidian_z/65802/76879
