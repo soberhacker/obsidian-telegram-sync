@@ -51,3 +51,9 @@ jobs:
           tag_name: ${{ steps.build_plugin.outputs.TAG_NAME }}          
           prerelease: false
           draft: false
+
+      - name: Merge main into develop
+        run: |
+          git checkout develop
+          git merge origin/main
+          git push origin develop
