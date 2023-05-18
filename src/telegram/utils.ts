@@ -75,13 +75,19 @@ export function getForwardFromLink(msg: TelegramBot.Message): string {
 		let title = "";
 
 		if (msg.forward_from) {
-			username = msg.forward_from.username || `user=${msg.forward_from.id.toString()}`;
+			username = msg.forward_from.username || "no_username_" + msg.forward_from.id.toString().slice(4);
 			title = msg.forward_from.first_name + (msg.forward_from.last_name ? " " + msg.forward_from.last_name : "");
 		} else if (msg.forward_from_chat) {
-			username = msg.forward_from_chat.username || `chat=${msg.forward_from_chat.id.toString()}`;
-			title = msg.forward_from_chat.title || msg.forward_from_chat.username || "";
+			username =
+				msg.forward_from_chat.username ||
+				`c/${msg.forward_from_chat.id.toString().slice(4)}/${msg.forward_from_message_id || "999999999"}`;
+			title =
+				msg.forward_from_chat.title + (msg.forward_signature ? `(${msg.forward_signature})` : "") ||
+				msg.forward_from_chat.username ||
+				"";
 		} else if (msg.forward_sender_name) {
-			forwardFromLink = `[${msg.forward_sender_name}](the account was hidden by the user)`;
+			username = "hidden_account_" + msg.forward_date;
+			title = msg.forward_sender_name;
 		}
 		forwardFromLink = forwardFromLink || `[${title}](https://t.me/${username})`;
 	}
