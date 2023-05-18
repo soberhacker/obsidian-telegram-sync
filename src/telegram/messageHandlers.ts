@@ -27,7 +27,7 @@ export async function handleMessage(this: TelegramSyncPlugin, msg: TelegramBot.M
 	if (!telegramUserName || !allowedChatFromUsernames.includes(telegramUserName)) {
 		this.bot?.sendMessage(
 			msg.chat.id,
-			`Access denied. Add your username ${telegramUserName} in "Allowed Chat From Usernames" list.`,
+			`Access denied. Add your username ${telegramUserName} in the plugin setting "Allowed Chat From Usernames".`,
 			{ reply_to_message_id: msg.message_id }
 		);
 		return;
@@ -53,6 +53,7 @@ export async function handleMessage(this: TelegramSyncPlugin, msg: TelegramBot.M
 
 	if (appendAllToTelegramMd) {
 		this.messageQueueToTelegramMd.push({ msg, formattedContent });
+		return;
 	} else {
 		const title = sanitizeFileName(rawText.slice(0, 20));
 		let fileName = `${title} - ${messageDateString}${messageTimeString}.md`;
@@ -67,7 +68,7 @@ export async function handleMessage(this: TelegramSyncPlugin, msg: TelegramBot.M
 		}
 		this.listOfNotePaths.push(notePath);
 		await this.app.vault.create(notePath, formattedContent);
-		await this.deleteMessage(msg);
+		await this.finalizeMessageProcessing(msg);
 	}
 }
 
@@ -76,92 +77,108 @@ export async function handleFiles(this: TelegramSyncPlugin, msg: TelegramBot.Mes
 	const fileTypes = ["photo", "video", "voice", "document", "audio", "video_note"];
 	const basePath = this.settings.newFilesLocation || this.settings.newNotesLocation || "";
 	await createFolderIfNotExist(this.app.vault, basePath);
+	let filePath: string | undefined;
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	let error: any;
 
-	// Iterate through each file type
-	for (const fileType of fileTypes) {
-		// Get the file object for the current file type
-		const fileObject = getFileObject(msg, fileType);
-		if (!fileObject) {
-			continue;
-		}
-		const fileObjectToUse = fileObject instanceof Array ? fileObject.pop() : fileObject;
-		const fileId = fileObjectToUse.file_id;
-		const fileLink = await this.bot?.getFileLink(fileId);
-		const telegramFileName = fileLink?.split("/").pop() || "";
-		const fileExtension = path.extname(telegramFileName);
-		const fileName = path.basename(telegramFileName, fileExtension);
+	const messageDate = new Date(msg.date * 1000);
+	const messageDateString = date2DateString(messageDate);
+	const messageTimeString = date2TimeString(messageDate);
 
-		// Create a specific folder for each file type
-		const specificFolder = `${basePath}/${fileType}s`;
-		await createFolderIfNotExist(this.app.vault, specificFolder);
-
-		// Format the file name and path
-		const messageDate = new Date(msg.date * 1000);
-		const messageDateString = date2DateString(messageDate);
-		const messageTimeString = date2TimeString(messageDate);
-
-		const fileFullName = `${fileName} - ${messageDateString}${messageTimeString}${fileExtension}`;
-		const filePath = `${specificFolder}/${fileFullName}`;
-
-		// Download the file and write it to the vault
-		const fileStream = this.bot?.getFileStream(fileId);
-		const fileChunks: Uint8Array[] = [];
-
-		if (!fileStream) {
-			return;
-		}
-
-		for await (const chunk of fileStream) {
-			fileChunks.push(new Uint8Array(chunk));
-		}
-
-		const fileByteArray = new Uint8Array(
-			fileChunks.reduce<number[]>((acc, val) => {
-				acc.push(...val);
-				return acc;
-			}, [])
-		);
-		await this.app.vault.createBinary(filePath, fileByteArray);
-
-		// Handle message captions and append to Telegram.md if necessary
-		if (msg.caption && !(msg.caption === "")) {
-			const captionMarkdown = `![](${filePath.replace(/\s/g, "%20")})\n${msg.caption}`;
-			const forwardFromLink = getForwardFromLink(msg);
-			const formattedContent = await this.applyTemplate(
-				this.settings.templateFileLocation,
-				captionMarkdown,
-				messageDate,
-				forwardFromLink
-			);
-			if (this.settings.appendAllToTelegramMd) {
-				this.messageQueueToTelegramMd.push({ msg, formattedContent });
-				break;
-			} else {
-				// Save caption as a separate note
-				const noteLocation = this.settings.newNotesLocation || "";
-				const title = sanitizeFileName(msg.caption.slice(0, 20));
-				let fileCaptionName = `${title} - ${messageDateString}${messageTimeString}.md`;
-				let notePath = noteLocation ? `${noteLocation}/${fileCaptionName}` : fileCaptionName;
-
-				while (
-					this.listOfNotePaths.includes(notePath) ||
-					this.app.vault.getAbstractFileByPath(notePath) instanceof TFile
-				) {
-					const newMessageTimeString = date2TimeString(messageDate);
-					fileCaptionName = `${title} - ${messageDateString}${newMessageTimeString}.md`;
-					notePath = noteLocation ? `${noteLocation}/${fileCaptionName}` : fileCaptionName;
-				}
-				this.listOfNotePaths.push(notePath);
-				await this.app.vault.create(notePath, formattedContent);
+	try {
+		// Iterate through each file type
+		for (const fileType of fileTypes) {
+			// Get the file object for the current file type
+			const fileObject = getFileObject(msg, fileType);
+			if (!fileObject) {
+				continue;
 			}
+			const fileObjectToUse = fileObject instanceof Array ? fileObject.pop() : fileObject;
+			const fileId = fileObjectToUse.file_id;
+			const fileLink = await this.bot?.getFileLink(fileId);
+			const telegramFileName = fileLink?.split("/").pop() || "";
+			const fileExtension = path.extname(telegramFileName);
+			const fileName = path.basename(telegramFileName, fileExtension);
+
+			// Create a specific folder for each file type
+			const specificFolder = `${basePath}/${fileType}s`;
+			await createFolderIfNotExist(this.app.vault, specificFolder);
+			// Format the file name and path
+			const fileFullName = `${fileName} - ${messageDateString}${messageTimeString}${fileExtension}`;
+			filePath = `${specificFolder}/${fileFullName}`;
+
+			// Download the file and write it to the vault
+			const fileStream = this.bot?.getFileStream(fileId);
+			const fileChunks: Uint8Array[] = [];
+
+			if (!fileStream) {
+				return;
+			}
+
+			for await (const chunk of fileStream) {
+				fileChunks.push(new Uint8Array(chunk));
+			}
+
+			const fileByteArray = new Uint8Array(
+				fileChunks.reduce<number[]>((acc, val) => {
+					acc.push(...val);
+					return acc;
+				}, [])
+			);
+			await this.app.vault.createBinary(filePath, fileByteArray);
+			break;
 		}
-		await this.deleteMessage(msg);
-		break;
+	} catch (e) {
+		error = e;
 	}
+
+	// Handle message captions and append to Telegram.md if necessary
+	if ((msg.caption && !(msg.caption === "")) || this.settings.appendAllToTelegramMd) {
+		const captionMarkdown = !error
+			? `![](${filePath?.replace(/\s/g, "%20")})\n${msg.caption || ""}`
+			: `[❌ error while handling file](${error})\n${msg.caption || ""}`;
+		const forwardFromLink = getForwardFromLink(msg);
+		const formattedContent = await this.applyTemplate(
+			this.settings.templateFileLocation,
+			captionMarkdown,
+			messageDate,
+			forwardFromLink
+		);
+		if (this.settings.appendAllToTelegramMd) {
+			this.messageQueueToTelegramMd.push({ msg, formattedContent, error });
+			return;
+		} else if (msg.caption) {
+			// Save caption as a separate note
+			const noteLocation = this.settings.newNotesLocation || "";
+			await createFolderIfNotExist(this.app.vault, noteLocation);
+			const title = sanitizeFileName(msg.caption.slice(0, 20));
+			let fileCaptionName = `${title} - ${messageDateString}${messageTimeString}.md`;
+			let notePath = noteLocation ? `${noteLocation}/${fileCaptionName}` : fileCaptionName;
+
+			while (
+				this.listOfNotePaths.includes(notePath) ||
+				this.app.vault.getAbstractFileByPath(notePath) instanceof TFile
+			) {
+				const newMessageTimeString = date2TimeString(messageDate);
+				fileCaptionName = `${title} - ${messageDateString}${newMessageTimeString}.md`;
+				notePath = noteLocation ? `${noteLocation}/${fileCaptionName}` : fileCaptionName;
+			}
+			this.listOfNotePaths.push(notePath);
+			await this.app.vault.create(notePath, formattedContent);
+		}
+	}
+
+	await this.finalizeMessageProcessing(msg, error);
 }
 
 // Delete a message or send a confirmation reply based on settings and message age
-export async function deleteMessage(this: TelegramSyncPlugin, msg: TelegramBot.Message) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function finalizeMessageProcessing(this: TelegramSyncPlugin, msg: TelegramBot.Message, error?: any) {
+	if (error) {
+		await this.displayAndLogError(error, msg);
+		return;
+	}
+
 	const currentTime = new Date();
 	const messageTime = new Date(msg.date * 1000);
 	const timeDifference = currentTime.getTime() - messageTime.getTime();

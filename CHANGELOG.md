@@ -1,14 +1,27 @@
 # Changelog
 
 
+## [1.3.0](https://github.com/soberhacker/obsidian-telegram-sync/compare/1.2.0...1.3.0) (2023-05-18)
+
+
+### Features
+
+* adding file content to Telegram.md ([dcba08f](https://github.com/soberhacker/obsidian-telegram-sync/commit/dcba08fc5d7c73c98f7f7a62f24f6de783776f59))
+* add forward sender name for hidden accounts
+
+
+
+### Bug Fixes
+
+* caption handling after handling files error
+* Unpredictable reacting while loading obsidian
+
 ## [1.2.0](https://github.com/soberhacker/obsidian-telegram-sync/compare/1.1.1...1.2.0) (2023-05-16)
 
 
 ### Features
 
 * add displaying errors ([06edf30](https://github.com/soberhacker/obsidian-telegram-sync/commit/06edf30b84eb73c668ac43a5e2c13fd3acf6ea79))
-* add forwardFrom to template parsing ([8c60d93](https://github.com/soberhacker/obsidian-telegram-sync/commit/8c60d939b5003287d88b954f7830252b20939eb6))
-* Add main features ([1e479ec](https://github.com/soberhacker/obsidian-telegram-sync/commit/1e479ecffb9b4a9ad3414405e887c551cdffc67e))
 * filter telegram username ([87bb95a](https://github.com/soberhacker/obsidian-telegram-sync/commit/87bb95ab97c9ac447623f6450d2fb7111ed23fc0))
 
 

@@ -2,10 +2,12 @@ import { Plugin, TFile } from "obsidian";
 import { DEFAULT_SETTINGS, TelegramSyncSettings, TelegramSyncSettingTab } from "./settings/Settings";
 import TelegramBot from "node-telegram-bot-api";
 import * as async from "async";
-import { handleMessage, handleFiles, deleteMessage } from "./telegram/messageHandlers";
+import { handleMessage, handleFiles, finalizeMessageProcessing } from "./telegram/messageHandlers";
 import { formatDateTime } from "./utils/dateUtils";
 import { machineIdSync } from "node-machine-id";
-import { displayMessage } from "./utils/logUtils";
+import { displayAndLog } from "./utils/logUtils";
+import { displayAndLogError } from "./telegram/utils";
+import { createFolderIfNotExist } from "./utils/fsUtils";
 
 // Main class for the Telegram Sync plugin
 export default class TelegramSyncPlugin extends Plugin {
@@ -29,14 +31,16 @@ export default class TelegramSyncPlugin extends Plugin {
 			await this.stopTelegramBot();
 		});
 
-		// Initialize the Telegram bot
-		await this.initTelegramBot();
-
 		// Create a queue to handle appending messages to the Telegram.md file
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		this.messageQueueToTelegramMd = async.queue(async (task: any) => {
-			await this.appendMessageToTelegramMd(task.msg, task.formattedContent);
+			await this.appendMessageToTelegramMd(task.msg, task.formattedContent, task.error);
 		}, 1);
+
+		// Initialize the Telegram bot when Obsidian layout is fully loaded
+		this.app.workspace.onLayoutReady(async () => {
+			await this.initTelegramBot();
+		});
 	}
 
 	// Load settings from the plugin's data
@@ -71,12 +75,14 @@ export default class TelegramSyncPlugin extends Plugin {
 			.replace(/{{forwardFrom}}/g, forwardFromLink);
 	}
 
-	async appendMessageToTelegramMd(msg: TelegramBot.Message, formattedContent: string) {
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	async appendMessageToTelegramMd(msg: TelegramBot.Message, formattedContent: string, error?: any) {
 		// Do not append messages if not connected
 		if (!this.connected) return;
 
 		// Determine the location for the Telegram.md file
 		const location = this.settings.newNotesLocation || "";
+		createFolderIfNotExist(this.app.vault, location);
 
 		const telegramMdPath = location ? `${location}/Telegram.md` : "Telegram.md";
 		let telegramMdFile = this.app.vault.getAbstractFileByPath(telegramMdPath) as TFile;
@@ -88,7 +94,7 @@ export default class TelegramSyncPlugin extends Plugin {
 			const fileContent = await this.app.vault.read(telegramMdFile);
 			await this.app.vault.modify(telegramMdFile, `${fileContent}\n***\n\n${formattedContent}\n`);
 		}
-		await this.deleteMessage(msg);
+		await this.finalizeMessageProcessing(msg, error);
 	}
 
 	async handleMessage(msg: TelegramBot.Message) {
@@ -101,8 +107,19 @@ export default class TelegramSyncPlugin extends Plugin {
 	}
 
 	// Delete a message or send a confirmation reply based on settings and message age
-	async deleteMessage(msg: TelegramBot.Message) {
-		await deleteMessage.call(this, msg);
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	async finalizeMessageProcessing(msg: TelegramBot.Message, error?: any) {
+		await finalizeMessageProcessing.call(this, msg, error);
+	}
+
+	// Show error to console, telegram, display
+	async displayAndLogError(
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		error: any,
+		msg?: TelegramBot.Message,
+		timeout = 5 * 1000
+	) {
+		await displayAndLogError.call(this, error, msg, timeout);
 	}
 
 	// Initialize the Telegram bot and set up message handling
@@ -114,7 +131,7 @@ export default class TelegramSyncPlugin extends Plugin {
 		}
 
 		if (!this.settings.botToken) {
-			displayMessage("Telegram bot token is empty. Exit.");
+			displayAndLog("Telegram bot token is empty. Exit.");
 			return;
 		}
 
@@ -128,14 +145,12 @@ export default class TelegramSyncPlugin extends Plugin {
 
 		this.bot.on("message", async (msg) => {
 			this.lastPollingErrors = [];
-			console.log(`Got a message from Telegram Bot: ${msg.text || "binary"}`);
+			displayAndLog(`Got a message from Telegram Bot: ${msg.text || "binary"}`, 0);
+
 			try {
 				await this.handleMessage(msg);
 			} catch (error) {
-				displayMessage(`Error: ${error}`);
-				await this.bot?.sendMessage(msg.chat.id, `...❌...\n\n${error}`, {
-					reply_to_message_id: msg.message_id,
-				});
+				await this.displayAndLogError(error, msg);
 			}
 		});
 
@@ -171,12 +186,12 @@ export default class TelegramSyncPlugin extends Plugin {
 		if (this.lastPollingErrors.length == 0 || !this.lastPollingErrors.includes(pollingError)) {
 			this.lastPollingErrors.push(pollingError);
 			if (pollingError == "twoBotInstances") {
-				displayMessage(
+				displayAndLog(
 					'Two Telegram Sync Bots are detected. Set "Main Device Id" in the settings, if only one is needed.',
 					10000
 				);
 			} else {
-				displayMessage(`Error: ${error}`);
+				await this.displayAndLogError(error);
 			}
 		}
 	}
