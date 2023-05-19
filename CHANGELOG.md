@@ -1,6 +1,32 @@
 # Changelog
 
 
+## [1.5.0](https://github.com/soberhacker/obsidian-telegram-sync/compare/v1.4.0...1.5.0) (2023-05-19)
+
+
+### Features
+
+* add displaying errors ([06edf30](https://github.com/soberhacker/obsidian-telegram-sync/commit/06edf30b84eb73c668ac43a5e2c13fd3acf6ea79))
+* add forward from link for own channels ([9018411](https://github.com/soberhacker/obsidian-telegram-sync/commit/9018411d997f4be07c0ec2f01c50ded3d38fb438))
+* add forward sender name for hidden accounts ([6904069](https://github.com/soberhacker/obsidian-telegram-sync/commit/6904069187acb6a8cd58e046eea2eb2a80250494))
+* add forwardFrom to template parsing ([8c60d93](https://github.com/soberhacker/obsidian-telegram-sync/commit/8c60d939b5003287d88b954f7830252b20939eb6))
+* Add main features ([1e479ec](https://github.com/soberhacker/obsidian-telegram-sync/commit/1e479ecffb9b4a9ad3414405e887c551cdffc67e))
+* adding file content to Telegram.md ([dcba08f](https://github.com/soberhacker/obsidian-telegram-sync/commit/dcba08fc5d7c73c98f7f7a62f24f6de783776f59))
+* filter telegram username ([87bb95a](https://github.com/soberhacker/obsidian-telegram-sync/commit/87bb95ab97c9ac447623f6450d2fb7111ed23fc0))
+
+
+### Bug Fixes
+
+* caption handling after handling files error ([d0ed63b](https://github.com/soberhacker/obsidian-telegram-sync/commit/d0ed63bef37650763f09fefe23d2a3d2f187492f))
+* false attempt to create a directory structure ([f2a23ad](https://github.com/soberhacker/obsidian-telegram-sync/commit/f2a23adf613d6c37fa31949104c68738be3fcc37))
+* Improve bot shutdown behavior when plugin is disabled and enabled again ([#81](https://github.com/soberhacker/obsidian-telegram-sync/issues/81)) ([b112a98](https://github.com/soberhacker/obsidian-telegram-sync/commit/b112a98a5b9fa8e690082f5d6d30f013b939b96e))
+* it is guaranteed that settings.new(Notes|Files)Location exist ([be00e21](https://github.com/soberhacker/obsidian-telegram-sync/commit/be00e218ffe43a0f0d4c8dba88ffb93b96792988))
+* message deletion improvements ([f58cd87](https://github.com/soberhacker/obsidian-telegram-sync/commit/f58cd870f79112e295c639a6da599d016804c384))
+* message deletion improvements ([03d499b](https://github.com/soberhacker/obsidian-telegram-sync/commit/03d499b700d0dab69c040e900e44610c0061bf84))
+* template variables (context -&gt; content) ([9da819b](https://github.com/soberhacker/obsidian-telegram-sync/commit/9da819b85c37fd565926a36f435666b4c92caa4e))
+* two bots instances conflict ([19f6bed](https://github.com/soberhacker/obsidian-telegram-sync/commit/19f6bedb5f1d966bc2f190d49fbd88ebeff193e4))
+* unpredictable reacting while loading obsidian ([b95a25b](https://github.com/soberhacker/obsidian-telegram-sync/commit/b95a25b263f53cbf9549c45a91474ae249c7b9d9))
+
 ## [1.4.0](https://github.com/soberhacker/obsidian-telegram-sync/compare/1.3.0...1.4.0) (2023-05-19)
 
 
