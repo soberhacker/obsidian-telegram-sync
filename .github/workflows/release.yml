@@ -18,8 +18,7 @@ jobs:
     steps:       
     
       - name: Print github
-        run: |
-          echo '${{ toJson(github) }}'
+        run: echo '${{ toJson(github) }}'
                     
       - name: Checkout repository                
         uses: actions/checkout@v3              
@@ -32,13 +31,13 @@ jobs:
       - name: Build plugin main.js
         id: build_plugin
         run: |
-           git config core.autocrlf false
-           git config core.eol lf
-           npm ci
-           TAG_NAME=$(node -p "require('./package.json').version")
-           echo "TAG_NAME=$TAG_NAME"
-           echo "::set-output name=TAG_NAME::$TAG_NAME"
-           npm run build
+          git config core.autocrlf false
+          git config core.eol lf
+          npm ci
+          npm run build
+          
+          TAG_NAME=$(node -p "require('./package.json').version")
+          echo "TAG_NAME=$TAG_NAME" >> $GITHUB_ENV
 
       - name: Create release
         uses: softprops/action-gh-release@v1
@@ -48,12 +47,12 @@ jobs:
             manifest.json
             styles.css            
           token: ${{ secrets.GITHUB_TOKEN }}          
-          tag_name: ${{ steps.build_plugin.outputs.TAG_NAME }}          
+          tag_name: ${{ env.TAG_NAME }}          
           prerelease: false
           draft: false
 
       - name: Merge main into develop
         run: |
           git checkout develop
-          git merge origin/main
+          git rebase origin/main
           git push origin develop
