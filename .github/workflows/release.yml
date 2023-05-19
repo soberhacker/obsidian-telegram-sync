@@ -51,8 +51,10 @@ jobs:
           prerelease: false
           draft: false
 
-      - name: Merge main into develop
+      - name: Rebase develop <- main
         run: |
+          git fetch origin
           git checkout develop
+          git pull
           git rebase origin/main
-          git push origin develop
+          git push
