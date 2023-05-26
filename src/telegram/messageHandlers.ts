@@ -1,17 +1,15 @@
-import { TFile } from "obsidian";
+import { TFile, normalizePath } from "obsidian";
 import TelegramSyncPlugin from "../main";
 import TelegramBot from "node-telegram-bot-api";
-import {
-	getFormattedMessage,
-	sanitizeFileName,
-	getFileObject,
-	createProgressBarKeyboard,
-	getForwardFromLink,
-} from "./utils";
+import { sanitizeFileName, getFileObject } from "./utils";
 import { date2DateString, date2TimeString } from "src/utils/dateUtils";
 import { createFolderIfNotExist } from "src/utils/fsUtils";
+import { bugFixes, newFeatures, pluginVersion, possibleRoadMap } from "../../release-notes.mjs";
+import { buyMeACoffeeLink, cryptoDonationLink, kofiLink, paypalLink } from "../settings/donation.js";
+import { SendMessageOptions } from "node-telegram-bot-api";
 import path from "path";
 
+// handle all messages from Telegram
 export async function handleMessage(this: TelegramSyncPlugin, msg: TelegramBot.Message) {
 	let formattedContent = "";
 
@@ -33,7 +31,6 @@ export async function handleMessage(this: TelegramSyncPlugin, msg: TelegramBot.M
 		return;
 	}
 
-	const markDownText = await getFormattedMessage(msg);
 	const rawText = msg.text;
 	const location = this.settings.newNotesLocation || "";
 	await createFolderIfNotExist(this.app.vault, location);
@@ -44,10 +41,7 @@ export async function handleMessage(this: TelegramSyncPlugin, msg: TelegramBot.M
 	const messageDateString = date2DateString(messageDate);
 	const messageTimeString = date2TimeString(messageDate);
 
-	// Check if the message is forwarded and extract the required information
-	const forwardFromLink = getForwardFromLink(msg);
-
-	formattedContent = await this.applyTemplate(templateFileLocation, markDownText, messageDate, forwardFromLink);
+	formattedContent = await this.applyTemplate(templateFileLocation, msg);
 
 	const appendAllToTelegramMd = this.settings.appendAllToTelegramMd;
 
@@ -57,14 +51,14 @@ export async function handleMessage(this: TelegramSyncPlugin, msg: TelegramBot.M
 	} else {
 		const title = sanitizeFileName(rawText.slice(0, 20));
 		let fileName = `${title} - ${messageDateString}${messageTimeString}.md`;
-		let notePath = location ? `${location}/${fileName}` : fileName;
+		let notePath = normalizePath(location ? `${location}/${fileName}` : fileName);
 		while (
 			this.listOfNotePaths.includes(notePath) ||
 			this.app.vault.getAbstractFileByPath(notePath) instanceof TFile
 		) {
 			const newMessageTimeString = date2TimeString(messageDate);
 			fileName = `${title} - ${messageDateString}${newMessageTimeString}.md`;
-			notePath = location ? `${location}/${fileName}` : fileName;
+			notePath = normalizePath(location ? `${location}/${fileName}` : fileName);
 		}
 		this.listOfNotePaths.push(notePath);
 		await this.app.vault.create(notePath, formattedContent);
@@ -134,16 +128,11 @@ export async function handleFiles(this: TelegramSyncPlugin, msg: TelegramBot.Mes
 
 	// Handle message captions and append to Telegram.md if necessary
 	if ((msg.caption && !(msg.caption === "")) || this.settings.appendAllToTelegramMd) {
-		const captionMarkdown = !error
+		const captionMd = !error
 			? `![](${filePath?.replace(/\s/g, "%20")})\n${msg.caption || ""}`
 			: `[❌ error while handling file](${error})\n${msg.caption || ""}`;
-		const forwardFromLink = getForwardFromLink(msg);
-		const formattedContent = await this.applyTemplate(
-			this.settings.templateFileLocation,
-			captionMarkdown,
-			messageDate,
-			forwardFromLink
-		);
+
+		const formattedContent = await this.applyTemplate(this.settings.templateFileLocation, msg, captionMd);
 		if (this.settings.appendAllToTelegramMd) {
 			this.messageQueueToTelegramMd.push({ msg, formattedContent, error });
 			return;
@@ -153,7 +142,7 @@ export async function handleFiles(this: TelegramSyncPlugin, msg: TelegramBot.Mes
 			await createFolderIfNotExist(this.app.vault, noteLocation);
 			const title = sanitizeFileName(msg.caption.slice(0, 20));
 			let fileCaptionName = `${title} - ${messageDateString}${messageTimeString}.md`;
-			let notePath = noteLocation ? `${noteLocation}/${fileCaptionName}` : fileCaptionName;
+			let notePath = normalizePath(noteLocation ? `${noteLocation}/${fileCaptionName}` : fileCaptionName);
 
 			while (
 				this.listOfNotePaths.includes(notePath) ||
@@ -161,7 +150,7 @@ export async function handleFiles(this: TelegramSyncPlugin, msg: TelegramBot.Mes
 			) {
 				const newMessageTimeString = date2TimeString(messageDate);
 				fileCaptionName = `${title} - ${messageDateString}${newMessageTimeString}.md`;
-				notePath = noteLocation ? `${noteLocation}/${fileCaptionName}` : fileCaptionName;
+				notePath = normalizePath(noteLocation ? `${noteLocation}/${fileCaptionName}` : fileCaptionName);
 			}
 			this.listOfNotePaths.push(notePath);
 			await this.app.vault.create(notePath, formattedContent);
@@ -171,44 +160,35 @@ export async function handleFiles(this: TelegramSyncPlugin, msg: TelegramBot.Mes
 	await this.finalizeMessageProcessing(msg, error);
 }
 
-// Delete a message or send a confirmation reply based on settings and message age
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function finalizeMessageProcessing(this: TelegramSyncPlugin, msg: TelegramBot.Message, error?: any) {
-	if (error) {
-		await this.displayAndLogError(error, msg);
-		return;
-	}
+// show changes about new release
+export async function ifNewRelaseThenShowChanges(this: TelegramSyncPlugin, msg: TelegramBot.Message) {
+	if (this.settings.pluginVersion && this.settings.pluginVersion !== pluginVersion) {
+		const announcing = `<b>Telegram Sync ${pluginVersion}</b>\n\n`;
+		const newFeatures_ = `<u>New Features</u>${newFeatures}\n`;
+		const bugsFixes_ = `<u>Bug Fixes</u>${bugFixes}\n`;
+		const possibleRoadMap_ = `<u>Possible Road Map</u>${possibleRoadMap}\n`;
+		const donation =
+			"<b>If you like this plugin and are considering donating to support continued development, use the buttons below!</b>";
+		const releaseNotes = announcing + newFeatures_ + bugsFixes_ + possibleRoadMap_ + donation;
 
-	const currentTime = new Date();
-	const messageTime = new Date(msg.date * 1000);
-	const timeDifference = currentTime.getTime() - messageTime.getTime();
-	const hoursDifference = timeDifference / (1000 * 60 * 60);
+		const options: SendMessageOptions = {
+			parse_mode: "HTML",
+			reply_markup: {
+				inline_keyboard: [
+					[
+						{ text: "🚀  Ð⟠na₮e crypto", url: cryptoDonationLink },
+						{ text: "📖  Buy me a book", url: buyMeACoffeeLink },
+					],
+					[
+						{ text: "☕  Ko-fi Donation", url: kofiLink },
+						{ text: "💳  PayPal Donation", url: paypalLink },
+					],
+				],
+			},
+		};
 
-	if (this.settings.deleteMessagesFromTelegram && hoursDifference <= 48) {
-		// Send the initial progress bar
-		const progressBarMessage = await this.bot?.sendMessage(msg.chat.id, ".", {
-			reply_to_message_id: msg.message_id,
-			reply_markup: { inline_keyboard: createProgressBarKeyboard(0).inline_keyboard },
-		});
-
-		// Update the progress bar during the delay
-		for (let i = 1; i <= 10; i++) {
-			await new Promise((resolve) => setTimeout(resolve, 50)); // 50 ms delay between updates
-			await this.bot?.editMessageReplyMarkup(
-				{
-					inline_keyboard: createProgressBarKeyboard(i).inline_keyboard,
-				},
-				{ chat_id: msg.chat.id, message_id: progressBarMessage?.message_id }
-			);
-		}
-
-		await this.bot?.deleteMessage(msg.chat.id, msg.message_id);
-
-		if (progressBarMessage) {
-			await this.bot?.deleteMessage(msg.chat.id, progressBarMessage.message_id);
-		}
-	} else {
-		// Send a confirmation reply if the message is too old to be deleted
-		await this.bot?.sendMessage(msg.chat.id, "...✅...", { reply_to_message_id: msg.message_id });
+		await this.bot?.sendMessage(msg.chat.id, releaseNotes, options);
+		this.settings.pluginVersion = pluginVersion;
+		this.saveSettings();
 	}
 }

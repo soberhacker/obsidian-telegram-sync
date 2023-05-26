@@ -6,10 +6,11 @@
     "scripts": {
         "dev": "node esbuild.config.mjs",
         "lint": "eslint src/**/*.ts",
-        "lint-fix": "eslint --fix src/**/*.ts",
-        "build": "npm run lint && tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
+        "lint-fix": "eslint --fix src/**/*.ts",        
         "version": "node version-bump.mjs && git add manifest.json versions.json",
-        "test": "node esbuild.config.mjs test && node install-plugin.mjs"
+        "test": "node esbuild.config.mjs test && node install-plugin.mjs",
+		"checks": "npm run lint && node release-notes.mjs check", 
+		"build": "tsc -noEmit -skipLibCheck && npm run checks && node esbuild.config.mjs production"
     },
     "keywords": [
         "Telegram",

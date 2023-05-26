@@ -49,8 +49,11 @@ If you have any issues or feature requests, please open an issue on the [GitHub]
 
 If you like this plugin and are considering donating to support continued development, use the buttons below!
 
-[![Buy me a banana](https://img.buymeacoffee.com/button-api/?text=Buy%20me%20a%20banana&emoji=🍌&slug=soberhacker&button_colour=5F5F5F&font_colour=ffffff&font_family=Cookie&outline_colour=000000&coffee_colour=FFDD00)](https://www.buymeacoffee.com/soberhacker)
+[![Crypto Ð⟠na₮i⟠n](https://img.buymeacoffee.com/button-api/?text=Crypto%20Donation&emoji=🚀&slug=soberhacker&button_colour=5b5757&font_colour=ffffff&font_family=Lato&outline_colour=ffffff&coffee_colour=FFDD00)](https://oxapay.com/donate/5855474)
+
+[![Buy me a book](https://img.buymeacoffee.com/button-api/?text=Buy%20me%20a%20book&emoji=📖&slug=soberhacker&button_colour=FFDD00&font_colour=000000&font_family=Cookie&outline_colour=000000&coffee_colour=ffffff)](https://www.buymeacoffee.com/soberhacker)
 
 [![Ko-fi Donation](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/soberhacker)
 
-[![PayPal Donation](https://www.paypalobjects.com/webstatic/en_US/i/buttons/PP_logo_h_100x26.png)](https://www.paypal.com/donate/?hosted_button_id=VYSCUZX8MYGCU)
+[![PayPal](https://www.paypalobjects.com/webstatic/en_US/i/buttons/PP_logo_h_100x26.png)](https://www.paypal.com/donate/?hosted_button_id=VYSCUZX8MYGCU)
+
