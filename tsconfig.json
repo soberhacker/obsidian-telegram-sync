@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+	  "outDir": "./dist",
       "baseUrl": ".",
       "allowSyntheticDefaultImports": true,
       "inlineSourceMap": true,
@@ -20,7 +21,5 @@
       ],
       "skipLibCheck": true
   },
-  "include": [
-      "**/*.ts"
-  ]
+  "include": [ "**/*.ts"  ]
 }

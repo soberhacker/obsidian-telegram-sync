@@ -1,6 +1,14 @@
 # Changelog
 
 
+## [1.5.0](https://github.com/soberhacker/obsidian-telegram-sync/compare/1.4.0...1.5.0) (2023-05-27)
+
+
+### Features
+
+* add announcing latest release features ([06187ac](https://github.com/soberhacker/obsidian-telegram-sync/commit/06187ac8934a0d6df122f0285ac50618d4fa0bce))
+* add new template variables ([c503797](https://github.com/soberhacker/obsidian-telegram-sync/commit/c503797e7141409a8cdbeb95f9d0d64e21819147))
+
 ## [1.4.0](https://github.com/soberhacker/obsidian-telegram-sync/compare/1.3.0...1.4.0) (2023-05-19)
 
 

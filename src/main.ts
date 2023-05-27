@@ -1,13 +1,12 @@
-import { Plugin, TFile } from "obsidian";
+import { Plugin } from "obsidian";
 import { DEFAULT_SETTINGS, TelegramSyncSettings, TelegramSyncSettingTab } from "./settings/Settings";
 import TelegramBot from "node-telegram-bot-api";
 import * as async from "async";
-import { handleMessage, handleFiles, finalizeMessageProcessing } from "./telegram/messageHandlers";
-import { formatDateTime } from "./utils/dateUtils";
+import { handleMessage, handleFiles, ifNewRelaseThenShowChanges } from "./telegram/messageHandlers";
 import { machineIdSync } from "node-machine-id";
 import { displayAndLog } from "./utils/logUtils";
 import { displayAndLogError } from "./telegram/utils";
-import { createFolderIfNotExist } from "./utils/fsUtils";
+import { appendMessageToTelegramMd, applyTemplate, finalizeMessageProcessing } from "./telegram/messageProcessors";
 
 // Main class for the Telegram Sync plugin
 export default class TelegramSyncPlugin extends Plugin {
@@ -34,7 +33,7 @@ export default class TelegramSyncPlugin extends Plugin {
 		// Create a queue to handle appending messages to the Telegram.md file
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		this.messageQueueToTelegramMd = async.queue(async (task: any) => {
-			await this.appendMessageToTelegramMd(task.msg, task.formattedContent, task.error);
+			await appendMessageToTelegramMd.call(this, task.msg, task.formattedContent, task.error);
 		}, 1);
 
 		// Initialize the Telegram bot when Obsidian layout is fully loaded
@@ -51,54 +50,6 @@ export default class TelegramSyncPlugin extends Plugin {
 	// Save settings to the plugin's data
 	async saveSettings() {
 		await this.saveData(this.settings);
-	}
-
-	// Apply a template to a message's content
-	async applyTemplate(
-		templatePath: string,
-		content: string,
-		messageDateTime: Date,
-		forwardFromLink: string
-	): Promise<string> {
-		const templateFile = this.app.vault.getAbstractFileByPath(templatePath) as TFile;
-		if (!templateFile) {
-			return content;
-		}
-		const dateTimeNow = new Date();
-		const templateContent = await this.app.vault.read(templateFile);
-		return templateContent
-			.replace("{{content}}", content)
-			.replace(/{{messageDate:(.*?)}}/g, (_, format) => formatDateTime(messageDateTime, format))
-			.replace(/{{messageTime:(.*?)}}/g, (_, format) => formatDateTime(messageDateTime, format))
-			.replace(/{{date:(.*?)}}/g, (_, format) => formatDateTime(dateTimeNow, format))
-			.replace(/{{time:(.*?)}}/g, (_, format) => formatDateTime(dateTimeNow, format))
-			.replace(/{{forwardFrom}}/g, forwardFromLink);
-	}
-
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	async appendMessageToTelegramMd(msg: TelegramBot.Message, formattedContent: string, error?: any) {
-		// Do not append messages if not connected
-		if (!this.connected) return;
-
-		// Determine the location for the Telegram.md file
-		const location = this.settings.newNotesLocation || "";
-		createFolderIfNotExist(this.app.vault, location);
-
-		const telegramMdPath = location ? `${location}/Telegram.md` : "Telegram.md";
-		let telegramMdFile = this.app.vault.getAbstractFileByPath(telegramMdPath) as TFile;
-
-		// Create or modify the Telegram.md file
-		if (!telegramMdFile) {
-			telegramMdFile = await this.app.vault.create(telegramMdPath, `${formattedContent}\n`);
-		} else {
-			const fileContent = await this.app.vault.read(telegramMdFile);
-			await this.app.vault.modify(telegramMdFile, `${fileContent}\n***\n\n${formattedContent}\n`);
-		}
-		await this.finalizeMessageProcessing(msg, error);
-	}
-
-	async handleMessage(msg: TelegramBot.Message) {
-		await handleMessage.call(this, msg);
 	}
 
 	// Handle files received in messages
@@ -120,6 +71,10 @@ export default class TelegramSyncPlugin extends Plugin {
 		timeout = 5 * 1000
 	) {
 		await displayAndLogError.call(this, error, msg, timeout);
+	}
+
+	async applyTemplate(templatePath: string, msg: TelegramBot.Message, content?: string): Promise<string> {
+		return applyTemplate.call(this, templatePath, msg, content);
 	}
 
 	// Initialize the Telegram bot and set up message handling
@@ -148,7 +103,8 @@ export default class TelegramSyncPlugin extends Plugin {
 			displayAndLog(`Got a message from Telegram Bot: ${msg.text || "binary"}`, 0);
 
 			try {
-				await this.handleMessage(msg);
+				await handleMessage.call(this, msg);
+				await ifNewRelaseThenShowChanges.call(this, msg);
 			} catch (error) {
 				await this.displayAndLogError(error, msg);
 			}

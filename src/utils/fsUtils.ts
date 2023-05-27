@@ -1,11 +1,11 @@
-import { TFile, TFolder, Vault } from "obsidian";
+import { TFile, TFolder, Vault, normalizePath } from "obsidian";
 
 // Create a folderpath if it does not exist
 export async function createFolderIfNotExist(vault: Vault, folderpath: string) {
 	if (!vault || !folderpath) {
 		return;
 	}
-	const folder = vault.getAbstractFileByPath(folderpath);
+	const folder = vault.getAbstractFileByPath(normalizePath(folderpath));
 
 	if (folder && folder instanceof TFolder) {
 		return;
