@@ -50,11 +50,3 @@ jobs:
           tag_name: ${{ env.TAG_NAME }}          
           prerelease: false
           draft: false
-
-      - name: Rebase develop <- main
-        run: |
-          git fetch origin
-          git checkout develop
-          git pull
-          git rebase origin/main
-          git push
