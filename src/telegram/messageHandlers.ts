@@ -162,8 +162,13 @@ export async function handleFiles(this: TelegramSyncPlugin, msg: TelegramBot.Mes
 
 // show changes about new release
 export async function ifNewRelaseThenShowChanges(this: TelegramSyncPlugin, msg: TelegramBot.Message) {
-	if (this.settings.pluginVersion && this.settings.pluginVersion !== pluginVersion) {
-		const announcing = `<b>Telegram Sync ${pluginVersion}</b>\n\n`;
+	if (
+		(!this.settings.pluginVersion && pluginVersion == "1.5.0") ||
+		(this.settings.pluginVersion && this.settings.pluginVersion !== pluginVersion)
+	) {
+		this.settings.pluginVersion = pluginVersion;
+		this.saveSettings();
+		const announcing = `<b>Telegrm Sync ${pluginVersion}</b>\n\n`;
 		const newFeatures_ = `<u>New Features</u>${newFeatures}\n`;
 		const bugsFixes_ = `<u>Bug Fixes</u>${bugFixes}\n`;
 		const possibleRoadMap_ = `<u>Possible Road Map</u>${possibleRoadMap}\n`;
@@ -188,6 +193,7 @@ export async function ifNewRelaseThenShowChanges(this: TelegramSyncPlugin, msg: 
 		};
 
 		await this.bot?.sendMessage(msg.chat.id, releaseNotes, options);
+	} else if (!this.settings.pluginVersion) {
 		this.settings.pluginVersion = pluginVersion;
 		this.saveSettings();
 	}

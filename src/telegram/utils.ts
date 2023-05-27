@@ -70,7 +70,7 @@ export async function getFormattedMessage(msg: TelegramBot.Message): Promise<str
 export function getForwardFromLink(msg: TelegramBot.Message): string {
 	let forwardFromLink = "";
 
-	if (msg.forward_from || msg.forward_from_chat || msg.forward_sender_name) {
+	if (msg.forward_from || msg.forward_from_chat || msg.forward_sender_name || msg.from) {
 		let username = "";
 		let title = "";
 
@@ -88,11 +88,28 @@ export function getForwardFromLink(msg: TelegramBot.Message): string {
 		} else if (msg.forward_sender_name) {
 			username = "hidden_account_" + msg.forward_date;
 			title = msg.forward_sender_name;
+		} else if (msg.from) {
+			username = msg.from.username || "no_username_" + msg.from.id.toString().slice(4);
+			title = msg.from.first_name + (msg.from.last_name ? " " + msg.from.last_name : "");
 		}
 		forwardFromLink = forwardFromLink || `[${title}](https://t.me/${username})`;
 	}
 
 	return forwardFromLink;
+}
+
+export function getUserLink(msg: TelegramBot.Message): string {
+	let userLink = "";
+
+	if (msg.from) {
+		let username = "";
+		let title = "";
+		username = msg.from.username || "no_username_" + msg.from.id.toString().slice(4);
+		title = msg.from.first_name + (msg.from.last_name ? " " + msg.from.last_name : "");
+		userLink = `[${title}](https://t.me/${username})`;
+	}
+
+	return userLink;
 }
 
 export function base64ToString(base64: string): string {

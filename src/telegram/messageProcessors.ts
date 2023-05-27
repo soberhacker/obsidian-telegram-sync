@@ -1,9 +1,10 @@
 import TelegramBot from "node-telegram-bot-api";
 import TelegramSyncPlugin from "../main.js";
-import { createProgressBarKeyboard, getFormattedMessage, getForwardFromLink } from "./utils";
+import { createProgressBarKeyboard, getFormattedMessage, getForwardFromLink, getUserLink } from "./utils";
 import { createFolderIfNotExist } from "src/utils/fsUtils.js";
 import { TFile, normalizePath } from "obsidian";
 import { formatDateTime } from "../utils/dateUtils";
+import { displayAndLog } from "src/utils/logUtils.js";
 
 // Delete a message or send a confirmation reply based on settings and message age
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -88,6 +89,7 @@ export async function applyTemplate(
 	}
 
 	const messageDateTime = new Date(msg.date * 1000);
+	const creationDateTime = msg.forward_date ? new Date(msg.forward_date * 1000) : messageDateTime;
 	// Check if the message is forwarded and extract the required information
 	const forwardFromLink = getForwardFromLink(msg);
 
@@ -99,5 +101,48 @@ export async function applyTemplate(
 		.replace(/{{messageTime:(.*?)}}/g, (_, format) => formatDateTime(messageDateTime, format))
 		.replace(/{{date:(.*?)}}/g, (_, format) => formatDateTime(dateTimeNow, format))
 		.replace(/{{time:(.*?)}}/g, (_, format) => formatDateTime(dateTimeNow, format))
-		.replace(/{{forwardFrom}}/g, forwardFromLink);
+		.replace(/{{forwardFrom}}/g, forwardFromLink)
+		.replace(/{{userId}}/g, msg.from?.id.toString() || msg.message_id.toString()) // id of the user who sent the message
+		.replace(/{{user}}/g, getUserLink(msg)) // link to the user who sent the message
+		.replace(/{{content:(.*?)}}/g, (_, length: string) => {
+			let subContent = "";
+			if (length.toLowerCase() == "firstline") {
+				subContent = contentMd.split("\n")[0];
+			} else if (Number.isInteger(parseFloat(length))) {
+				subContent = contentMd.substring(0, Number(length));
+			} else {
+				displayAndLog(`Template variable {{content:${length}}} isn't supported!`, 15 * 1000);
+			}
+			return subContent;
+		}) // message text of specified length
+		.replace(/{{creationDate:(.*?)}}/g, (_, format) => formatDateTime(creationDateTime, format)) // date, when the message was created
+		.replace(/{{creationTime:(.*?)}}/g, (_, format) => formatDateTime(creationDateTime, format)); // time, when the message was created
 }
+
+// example of msg object
+// {
+//     "message_id": 508,
+//     "from": {
+//         "id": 1112226370,
+//         "is_bot": false,
+//         "first_name": "soberHacker",
+//         "username": "soberhacker",
+//         "language_code": "en"
+//     },
+//     "chat": {
+//         "id": 1112226370,
+//         "first_name": "soberHacker",
+//         "username": "soberhacker",
+//         "type": "private"
+//     },
+//     "date": 1685138029,
+//     "forward_from": {
+//         "id": 1112226370,
+//         "is_bot": false,
+//         "first_name": "soberHacker",
+//         "username": "soberhacker",
+//         "language_code": "en"
+//     },
+//     "forward_date": 1684944034,
+//     "text": "Text"
+// }

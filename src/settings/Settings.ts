@@ -124,7 +124,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 
 		const templateFileLocationSetting = new Setting(containerEl)
 			.setName("Template file location")
-			.setDesc("Template to use when creating new notes")
+			.setDesc("Template to use when creating new notes.")
 			.addSearch((cb) => {
 				new FileSuggest(cb.inputEl, this.plugin);
 				cb.setPlaceholder("example: folder/zettelkasten.md")
@@ -137,8 +137,11 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 
 		// add template available variables
 		const availableTemplateVariables = document.createElement("div");
-		availableTemplateVariables.textContent =
-			"Available variables: {{content}}, {{forwardFrom}}, {{messageDate:YYYYMMDD}}, {{messageTime:HHmmss}}";
+		availableTemplateVariables.textContent = "To get list of available variables click on -> ";
+		availableTemplateVariables.createEl("a", {
+			href: "https://github.com/soberhacker/obsidian-telegram-sync/blob/main/docs/Template%20Variables%20List.md",
+			text: "Template Variables List",
+		});
 		templateFileLocationSetting.descEl.appendChild(availableTemplateVariables);
 
 		const deviceIdSetting = new Setting(containerEl)
@@ -204,20 +207,23 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 
 		containerEl.createEl("hr");
 
-		const donationDiv = containerEl.createEl("div", {
-			cls: "telegramSyncSettingsDonationSection",
-		});
+		const donationDiv = containerEl.createEl("div");
+		donationDiv.addClass("telegramSyncSettingsDonationSection");
 
 		const donationText = createEl("p");
 		donationText.appendText(
 			"If you like this Plugin and are considering donating to support continued development, use the buttons below!"
 		);
-
 		donationDiv.appendChild(donationText);
+
+		cryptoDonationButton.style.marginRight = "20px";
 		donationDiv.appendChild(cryptoDonationButton);
-		donationDiv.appendChild(paypalButton);
+		buyMeACoffeeButton.style.marginRight = "20px";
 		donationDiv.appendChild(buyMeACoffeeButton);
+		donationDiv.appendChild(createEl("p"));
+		kofiButton.style.marginRight = "20px";
 		donationDiv.appendChild(kofiButton);
+		donationDiv.appendChild(paypalButton);
 	}
 
 	async setMainDeviceIdSetting(value: string) {
