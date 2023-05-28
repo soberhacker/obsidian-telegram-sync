@@ -1,5 +1,5 @@
 // notifying user about latest release
-export const pluginVersion = "1.5.0";
+export const pluginVersion = "1.5.1";
 export const newFeatures = `
 - add new template variables
     {{userId}} - id of the user who sent the message
@@ -24,8 +24,10 @@ export const possibleRoadMap = `
 const check = process.argv[2] === "check";
 
 if (check) {
+	const pluginVersionCode = pluginVersion.replace(/!/g, "");
 	const packageVersion = process.env.npm_package_version;
-	if (packageVersion !== pluginVersion) {
+
+	if (packageVersion !== pluginVersionCode) {
 		console.error("Failed! Release notes are outdated!");
 		process.exit(1);
 	}
