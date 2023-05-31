@@ -102,6 +102,12 @@ export default class TelegramSyncPlugin extends Plugin {
 			this.lastPollingErrors = [];
 			displayAndLog(`Got a message from Telegram Bot: ${msg.text || "binary"}`, 0);
 
+			// Skip processing if the message is a "/start" command
+			// https://github.com/soberhacker/obsidian-telegram-sync/issues/109
+			if (msg.text === "/start") {
+				return;
+			}
+
 			try {
 				await handleMessage.call(this, msg);
 				await ifNewRelaseThenShowChanges.call(this, msg);
