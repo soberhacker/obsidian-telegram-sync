@@ -6,5 +6,5 @@ export function displayAndLog(message: string, timeout = 5 * 1000) {
 	if (timeout !== 0) {
 		new Notice(beautyMessage, timeout);
 	}
-	console.log(this.manifest?.name || "Telegram Sync" + ": " + beautyMessage);
+	console.log("Telegram Sync" + ": " + beautyMessage);
 }
