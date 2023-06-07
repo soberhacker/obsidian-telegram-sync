@@ -1,24 +1,27 @@
-// notifying user about latest release
-export const pluginVersion = "1.5.1";
+// if "!"" in version code then notify user about latest release
+export const pluginVersion = "1.6.0!";
+// change session name when changes in plugin require new client authorization
+export const sessionName = "telegram_sync_160";
 export const newFeatures = `
-- add new template variables
-    {{userId}} - id of the user who sent the message
-    {{user}} - link to the user who sent the message
-    {{content:XX}} - message text of specified length	
-    {{creationDate:YYYYMMDD}} - date, when the message was created
-    {{creationTime:HHmmss}} - time, when the message was created
-- add <a href='https://github.com/soberhacker/obsidian-telegram-sync/blob/main/docs/Template%20Variables%20List.md'>template variables guide</a>
+- add support of downloading files > 20 MB (was quite a tough nut to crack 🤯)
+- add skipping command "/start" for keeping empty bots in chat list
+- add public <a href='https://t.me/ObsidianTelegramSync'>Telegram chat</a> for communication
 `;
 // - no bugs, no fixes (create issues on <a href='https://github.com/soberhacker/obsidian-telegram-sync/issues'>github</a>)
 export const bugFixes = `
-- improve {{forwardFrom}} - link to the initial creator (never empty) of the message (user / channel) 
+- EISDIR: illegal operation on a directory, read (<a href='https://github.com/soberhacker/obsidian-telegram-sync/issues/108'>issue 108</a>)
+- 400 Bad Request: file is too big (<a href='https://github.com/soberhacker/obsidian-telegram-sync/issues/79'>issue 79</a>)
 `;
 export const possibleRoadMap = `
 - add new template variables
     {{chat}} - link to the chat (bot / group / channel)
     {{topic}} - topic name
-- add support of transfering big files (> 20 MB)
-- add voice recognition for Telegram Premium subscribers
+- send notes (as files) and files from Obsidian to one chat with bot
+- don't mark messages as processed and don't delete them (sending of errors will remain)
+- change replying to liking👍 when marking a message as processed (needs scanning qr code and entering Telegram password)
+- voice recognition for Telegram Premium subscribers (needs scanning qr code and entering Telegram password)
+
+You can "like" one of the possible feature <a href='https://t.me/ObsidianTelegramSync/5'>in Telegram chat</a> to increase its chances of being implemented.
 `;
 
 const check = process.argv[2] === "check";

@@ -22,6 +22,7 @@
     "license": "GNU Affero General Public License v3.0",
     "devDependencies": {
         "@types/async": "^3.2.18",
+        "@types/mime-types": "^2.1.1",
         "@types/node": "^16.11.6",
         "@types/node-telegram-bot-api": "^0.61.6",
         "@typescript-eslint/eslint-plugin": "5.29.0",
@@ -40,7 +41,9 @@
     "dependencies": {
         "@popperjs/core": "^2.11.7",
         "async": "^3.2.4",
+        "mime-types": "^2.1.35",
         "node-machine-id": "^1.1.12",
-        "node-telegram-bot-api": "^0.61.0"
+        "node-telegram-bot-api": "^0.61.0",
+        "telegram": "^2.16.4"
     }
 }

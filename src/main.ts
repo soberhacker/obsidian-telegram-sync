@@ -2,17 +2,19 @@ import { Plugin } from "obsidian";
 import { DEFAULT_SETTINGS, TelegramSyncSettings, TelegramSyncSettingTab } from "./settings/Settings";
 import TelegramBot from "node-telegram-bot-api";
 import * as async from "async";
-import { handleMessage, handleFiles, ifNewRelaseThenShowChanges } from "./telegram/messageHandlers";
+import { handleMessage, ifNewRelaseThenShowChanges } from "./telegram/messageHandlers";
 import { machineIdSync } from "node-machine-id";
 import { displayAndLog } from "./utils/logUtils";
 import { displayAndLogError } from "./telegram/utils";
-import { appendMessageToTelegramMd, applyTemplate, finalizeMessageProcessing } from "./telegram/messageProcessors";
+import { appendMessageToTelegramMd } from "./telegram/messageProcessors";
+import * as GramJs from "./telegram/GramJs/client";
 
 // Main class for the Telegram Sync plugin
 export default class TelegramSyncPlugin extends Plugin {
 	settings: TelegramSyncSettings;
-	connected = false;
+	botConnected = false;
 	bot?: TelegramBot;
+	botName?: string;
 	messageQueueToTelegramMd: async.QueueObject<unknown>;
 	listOfNotePaths: string[] = [];
 	currentDeviceId = machineIdSync(true);
@@ -26,19 +28,23 @@ export default class TelegramSyncPlugin extends Plugin {
 		// Add a settings tab for this plugin
 		this.addSettingTab(new TelegramSyncSettingTab(this));
 
-		this.register(async () => {
-			await this.stopTelegramBot();
-		});
-
 		// Create a queue to handle appending messages to the Telegram.md file
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		this.messageQueueToTelegramMd = async.queue(async (task: any) => {
-			await appendMessageToTelegramMd.call(this, task.msg, task.formattedContent, task.error);
+			await appendMessageToTelegramMd(this, task.msg, task.formattedContent, task.error);
 		}, 1);
 
 		// Initialize the Telegram bot when Obsidian layout is fully loaded
 		this.app.workspace.onLayoutReady(async () => {
 			await this.initTelegramBot();
+			if (this.botConnected) {
+				await this.initTelegramClient();
+			}
+		});
+
+		this.register(async () => {
+			await this.stopTelegramBot();
+			await GramJs.stopClient();
 		});
 	}
 
@@ -50,31 +56,6 @@ export default class TelegramSyncPlugin extends Plugin {
 	// Save settings to the plugin's data
 	async saveSettings() {
 		await this.saveData(this.settings);
-	}
-
-	// Handle files received in messages
-	async handleFiles(msg: TelegramBot.Message) {
-		await handleFiles.call(this, msg);
-	}
-
-	// Delete a message or send a confirmation reply based on settings and message age
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	async finalizeMessageProcessing(msg: TelegramBot.Message, error?: any) {
-		await finalizeMessageProcessing.call(this, msg, error);
-	}
-
-	// Show error to console, telegram, display
-	async displayAndLogError(
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		error: any,
-		msg?: TelegramBot.Message,
-		timeout = 5 * 1000
-	) {
-		await displayAndLogError.call(this, error, msg, timeout);
-	}
-
-	async applyTemplate(templatePath: string, msg: TelegramBot.Message, content?: string): Promise<string> {
-		return applyTemplate.call(this, templatePath, msg, content);
 	}
 
 	// Initialize the Telegram bot and set up message handling
@@ -95,7 +76,8 @@ export default class TelegramSyncPlugin extends Plugin {
 
 		// Check if the bot is connected and set the connected flag accordingly
 		if (this.bot.isPolling()) {
-			this.connected = true;
+			this.botConnected = true;
+			this.botName = (await this.bot.getMe()).username;
 		}
 
 		this.bot.on("message", async (msg) => {
@@ -109,10 +91,10 @@ export default class TelegramSyncPlugin extends Plugin {
 			}
 
 			try {
-				await handleMessage.call(this, msg);
-				await ifNewRelaseThenShowChanges.call(this, msg);
+				await handleMessage(this, msg);
+				await ifNewRelaseThenShowChanges(this, msg);
 			} catch (error) {
-				await this.displayAndLogError(error, msg);
+				await displayAndLogError(this, error, msg);
 			}
 		});
 
@@ -120,6 +102,17 @@ export default class TelegramSyncPlugin extends Plugin {
 		this.bot.on("polling_error", async (error: unknown) => {
 			this.handlePollingError(error);
 		});
+	}
+
+	async initTelegramClient() {
+		try {
+			if (this.settings.appId !== "" && this.settings.apiHash !== "") {
+				await GramJs.initClient(+this.settings.appId, this.settings.apiHash, this.currentDeviceId);
+				await GramJs.signInBot(this.settings.botToken);
+			}
+		} catch (e) {
+			await displayAndLogError(this, e, undefined, 60000);
+		}
 	}
 
 	async handlePollingError(error: unknown) {
@@ -153,7 +146,7 @@ export default class TelegramSyncPlugin extends Plugin {
 					10000
 				);
 			} else {
-				await this.displayAndLogError(error);
+				await displayAndLogError(this, error);
 			}
 		}
 	}
@@ -165,7 +158,7 @@ export default class TelegramSyncPlugin extends Plugin {
 				await this.bot.stopPolling();
 				this.bot = undefined;
 			} finally {
-				this.connected = false;
+				this.botConnected = false;
 			}
 		}
 	}
