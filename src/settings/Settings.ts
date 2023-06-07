@@ -30,8 +30,8 @@ export const DEFAULT_SETTINGS: TelegramSyncSettings = {
 	allowedChatFromUsernames: [""],
 	mainDeviceId: "",
 	pluginVersion: "",
-	appId: "17349",
-	apiHash: "344583e45741c457fe1862106095a5eb",
+	appId: "17349", // public, ok to be here
+	apiHash: "344583e45741c457fe1862106095a5eb", // public, ok to be here
 	//telegramPassword: "",
 };
 
