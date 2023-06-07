@@ -2,6 +2,8 @@ import TelegramBot from "node-telegram-bot-api";
 import TelegramSyncPlugin from "src/main";
 import { displayAndLog } from "src/utils/logUtils";
 
+export const fileTypes = ["photo", "video", "voice", "document", "audio", "video_note"];
+
 export function sanitizeFileName(fileName: string): string {
 	const invalidCharacters = /[\\/:*?"<>|\n\r]/g;
 	const replacementCharacter = "_";
@@ -117,43 +119,20 @@ export function base64ToString(base64: string): string {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function getFileObject(msg: TelegramBot.Message, fileType: string): any {
-	switch (fileType) {
-		case "photo":
-			return msg.photo;
-		case "video":
-			return msg.video;
-		case "voice":
-			return msg.voice;
-		case "document":
-			return msg.document;
-		case "audio":
-			return msg.audio;
-		case "video_note":
-			return msg.video_note;
-		default:
-			return undefined;
+export function getFileObject(msg: TelegramBot.Message): { fileType?: string; fileObject?: any } {
+	for (const fileType of fileTypes) {
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		if ((msg as any)[fileType]) {
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			return { fileType: fileType, fileObject: (msg as any)[fileType] };
+		}
 	}
-}
-
-// Create a progress bar keyboard for message deletion
-export function createProgressBarKeyboard(progress: number) {
-	const progressBar = "▓".repeat(progress) + "░".repeat(10 - progress);
-	return {
-		inline_keyboard: [
-			[
-				{
-					text: progressBar,
-					callback_data: JSON.stringify({ action: "update_progress", progress: progress }),
-				},
-			],
-		],
-	};
+	return {};
 }
 
 // Show error to console, telegram, display
 export async function displayAndLogError(
-	this: TelegramSyncPlugin,
+	plugin: TelegramSyncPlugin,
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	error: any,
 	msg?: TelegramBot.Message,
@@ -162,7 +141,7 @@ export async function displayAndLogError(
 	const beautyError = `Error: ${error}`.replace(/^Error:\s*/, "");
 	displayAndLog(beautyError, timeout);
 	if (msg) {
-		await this.bot?.sendMessage(msg.chat.id, `...❌...\n\n${beautyError}`, {
+		await plugin.bot?.sendMessage(msg.chat.id, `...❌...\n\n${beautyError}`, {
 			reply_to_message_id: msg.message_id,
 		});
 	}

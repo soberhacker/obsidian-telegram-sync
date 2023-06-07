@@ -15,6 +15,9 @@ export interface TelegramSyncSettings {
 	allowedChatFromUsernames: string[];
 	mainDeviceId: string;
 	pluginVersion: string;
+	appId: string;
+	apiHash: string;
+	//telegramPassword: string;
 }
 
 export const DEFAULT_SETTINGS: TelegramSyncSettings = {
@@ -27,6 +30,9 @@ export const DEFAULT_SETTINGS: TelegramSyncSettings = {
 	allowedChatFromUsernames: [""],
 	mainDeviceId: "",
 	pluginVersion: "",
+	appId: "17349", // public, ok to be here
+	apiHash: "344583e45741c457fe1862106095a5eb", // public, ok to be here
+	//telegramPassword: "",
 };
 
 export class TelegramSyncSettingTab extends PluginSettingTab {
@@ -35,17 +41,36 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 	}
 
 	display(): void {
-		const { containerEl } = this;
+		this.containerEl.empty();
+		this.addSettingsHeader();
+		this.addBotToken();
+		this.addAllowedChatFromUsernamesSetting();
+		this.addDeviceId();
+		this.containerEl.createEl("h2", { text: "Locations" });
+		this.addNewNotesLocation();
+		this.addNewFilesLocation();
+		this.addTemplateFileLocation();
+		this.containerEl.createEl("h2", { text: "Behavior settings" });
+		this.addAppendAllToTelegramMd();
+		this.addDeleteMessagesFromTelegram();
+		// Uncomment only if error API_ID_PUBLISHED_FLOOD
+		//this.containerEl.createEl("h2", { text: "Client Authorization" });
+		//this.addClientAuthorizationDescription();
+		//this.addApiId();
+		//this.addAppHash();
+		this.addDonation();
+	}
 
-		containerEl.empty();
-
-		containerEl.createEl("h1", { text: "Telegram Sync" });
-		containerEl.createEl("p", { text: "Created by " }).createEl("a", {
+	addSettingsHeader() {
+		this.containerEl.createEl("h1", { text: "Telegram Sync" });
+		this.containerEl.createEl("p", { text: "Created by " }).createEl("a", {
 			text: "soberHacker🍃🧘💻",
 			href: "https://github.com/soberhacker",
 		});
+	}
 
-		const botFatherSetting = new Setting(containerEl)
+	addBotToken() {
+		const botFatherSetting = new Setting(this.containerEl)
 			.setName("Bot token (required)")
 			.setDesc("Enter your Telegram bot token.")
 			.addText((text) =>
@@ -67,8 +92,10 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 			text: "@botFather",
 		});
 		botFatherSetting.descEl.appendChild(botFatherLink);
+	}
 
-		const allowedChatFromUsernamesSetting = new Setting(containerEl)
+	addAllowedChatFromUsernamesSetting() {
+		const allowedChatFromUsernamesSetting = new Setting(this.containerEl)
 			.setName("Allowed chat from usernames (required)")
 			.setDesc("Only messages from these usernames will be processed. At least your username must be entered.")
 			.addTextArea((text) => {
@@ -86,7 +113,6 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					});
 			});
-
 		// add link to Telegram FAQ about getting username
 		const howDoIGetUsername = document.createElement("div");
 		howDoIGetUsername.textContent = "To get help click on -> ";
@@ -95,56 +121,10 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 			text: "Telegram FAQ",
 		});
 		allowedChatFromUsernamesSetting.descEl.appendChild(howDoIGetUsername);
+	}
 
-		new Setting(containerEl)
-			.setName("New notes location")
-			.setDesc("Folder where the new notes will be created")
-			.addSearch((cb) => {
-				new FolderSuggest(cb.inputEl);
-				cb.setPlaceholder("example: folder1/folder2")
-					.setValue(this.plugin.settings.newNotesLocation)
-					.onChange((newFolder) => {
-						this.plugin.settings.newNotesLocation = normalizePath(newFolder);
-						this.plugin.saveSettings();
-					});
-			});
-
-		new Setting(containerEl)
-			.setName("New files location")
-			.setDesc("Folder where the new files will be created")
-			.addSearch((cb) => {
-				new FolderSuggest(cb.inputEl);
-				cb.setPlaceholder("example: folder1/folder2")
-					.setValue(this.plugin.settings.newFilesLocation)
-					.onChange((newFolder) => {
-						this.plugin.settings.newFilesLocation = normalizePath(newFolder);
-						this.plugin.saveSettings();
-					});
-			});
-
-		const templateFileLocationSetting = new Setting(containerEl)
-			.setName("Template file location")
-			.setDesc("Template to use when creating new notes.")
-			.addSearch((cb) => {
-				new FileSuggest(cb.inputEl, this.plugin);
-				cb.setPlaceholder("example: folder/zettelkasten.md")
-					.setValue(this.plugin.settings.templateFileLocation)
-					.onChange((templateFile) => {
-						this.plugin.settings.templateFileLocation = normalizePath(templateFile);
-						this.plugin.saveSettings();
-					});
-			});
-
-		// add template available variables
-		const availableTemplateVariables = document.createElement("div");
-		availableTemplateVariables.textContent = "To get list of available variables click on -> ";
-		availableTemplateVariables.createEl("a", {
-			href: "https://github.com/soberhacker/obsidian-telegram-sync/blob/main/docs/Template%20Variables%20List.md",
-			text: "Template Variables List",
-		});
-		templateFileLocationSetting.descEl.appendChild(availableTemplateVariables);
-
-		const deviceIdSetting = new Setting(containerEl)
+	addDeviceId() {
+		const deviceIdSetting = new Setting(this.containerEl)
 			.setName("Main device id")
 			.setDesc(
 				"Specify the device to be used for sync when running Obsidian simultaneously on multiple desktops. If not specified, the priority will shift unpredictably."
@@ -179,8 +159,65 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 				}
 			});
 		deviceIdSetting.descEl.appendChild(deviceIdLink);
+	}
 
-		new Setting(containerEl)
+	addNewNotesLocation() {
+		new Setting(this.containerEl)
+			.setName("New notes location")
+			.setDesc("Folder where the new notes will be created")
+			.addSearch((cb) => {
+				new FolderSuggest(cb.inputEl);
+				cb.setPlaceholder("example: folder1/folder2")
+					.setValue(this.plugin.settings.newNotesLocation)
+					.onChange((newFolder) => {
+						this.plugin.settings.newNotesLocation = newFolder ? normalizePath(newFolder) : newFolder;
+						this.plugin.saveSettings();
+					});
+			});
+	}
+
+	addNewFilesLocation() {
+		new Setting(this.containerEl)
+			.setName("New files location")
+			.setDesc("Folder where the new files will be created")
+			.addSearch((cb) => {
+				new FolderSuggest(cb.inputEl);
+				cb.setPlaceholder("example: folder1/folder2")
+					.setValue(this.plugin.settings.newFilesLocation)
+					.onChange((newFolder) => {
+						this.plugin.settings.newFilesLocation = newFolder ? normalizePath(newFolder) : newFolder;
+						this.plugin.saveSettings();
+					});
+			});
+	}
+
+	addTemplateFileLocation() {
+		const templateFileLocationSetting = new Setting(this.containerEl)
+			.setName("Template file location")
+			.setDesc("Template to use when creating new notes.")
+			.addSearch((cb) => {
+				new FileSuggest(cb.inputEl, this.plugin);
+				cb.setPlaceholder("example: folder/zettelkasten.md")
+					.setValue(this.plugin.settings.templateFileLocation)
+					.onChange((templateFile) => {
+						this.plugin.settings.templateFileLocation = templateFile
+							? normalizePath(templateFile)
+							: templateFile;
+						this.plugin.saveSettings();
+					});
+			});
+		// add template available variables
+		const availableTemplateVariables = document.createElement("div");
+		availableTemplateVariables.textContent = "To get list of available variables click on -> ";
+		availableTemplateVariables.createEl("a", {
+			href: "https://github.com/soberhacker/obsidian-telegram-sync/blob/main/docs/Template%20Variables%20List.md",
+			text: "Template Variables List",
+		});
+		templateFileLocationSetting.descEl.appendChild(availableTemplateVariables);
+	}
+
+	addAppendAllToTelegramMd() {
+		new Setting(this.containerEl)
 			.setName("Append all to Telegram.md")
 			.setDesc(
 				"All messages will be appended into a single file, Telegram.md. If disabled, a separate file will be created for each message"
@@ -191,8 +228,10 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				})
 			);
+	}
 
-		new Setting(containerEl)
+	addDeleteMessagesFromTelegram() {
+		new Setting(this.containerEl)
 			.setName("Delete messages from Telegram")
 			.setDesc(
 				"The Telegram messages will be deleted after processing them. If disabled, the Telegram messages will be marked as processed"
@@ -204,10 +243,86 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				});
 			});
+	}
 
-		containerEl.createEl("hr");
+	// addClientAuthorizationDescription() {
+	// 	const clientAuthorizationDescription = new Setting(this.containerEl).setDesc(
+	// 		"Entering api_id and api_hash is required for downloading files over 20MB."
+	// 	);
+	// 	clientAuthorizationDescription.descEl.createDiv({ text: "To get manual click on -> " }).createEl("a", {
+	// 		href: "https://core.telegram.org/api/obtaining_api_id",
+	// 		text: "Obtaining api_id",
+	// 	});
+	// }
 
-		const donationDiv = containerEl.createEl("div");
+	// addApiId() {
+	// 	new Setting(this.containerEl)
+	// 		.setName("api_id")
+	// 		.setDesc("Enter Telegram Client api_id")
+	// 		.addText((text) =>
+	// 			text
+	// 				.setPlaceholder("example: 61234")
+	// 				.setValue(this.plugin.settings.appId)
+	// 				.onChange(async (value: string) => {
+	// 					this.plugin.settings.appId = value;
+	// 					await this.plugin.saveSettings();
+	// 					this.plugin.initTelegramClient();
+	// 				})
+	// 		);
+	// }
+
+	// addAppHash() {
+	// 	new Setting(this.containerEl)
+	// 		.setName("api_hash")
+	// 		.setDesc("Enter Telegram Client api_hash")
+	// 		.addText((text) =>
+	// 			text
+	// 				.setPlaceholder("example: asdda623sdk4")
+	// 				.setValue(this.plugin.settings.apiHash)
+	// 				.onChange(async (value: string) => {
+	// 					this.plugin.settings.apiHash = value;
+	// 					await this.plugin.saveSettings();
+	// 					this.plugin.initTelegramClient();
+	// 				})
+	// 		);
+	// }
+
+	// new Setting(secretSettingsDiv)
+	// 	.setName("Telegram Password")
+	// 	.setDesc(
+	// 		"Enter your password from Telegram. Will not be stored and will be removed after succeeding log in."
+	// 	)
+	// 	.addText((text) =>
+	// 		text
+	// 			.setPlaceholder("*********")
+	// 			.setValue(this.plugin.settings.telegramPassword)
+	// 			.onChange(async (value: string) => {
+	// 				this.plugin.settings.telegramPassword = value;
+	// 			})
+	// 	);
+
+	// new Setting(secretSettingsDiv)
+	// 	.setName("Log In By Qr Code")
+	// 	.setDesc("Scan this Qr Code by official Telegram app on your smartphone. You have 30 sec to do this.")
+	// 	.addButton((button) => {
+	// 		button.setButtonText("GENERATE QR CODE");
+	// 		button.setDisabled(this.plugin.settings.appId == "" || this.plugin.settings.apiHash == "");
+	// 		button.onClick(async () => {
+	// 			const qrCodeContainer: HTMLDivElement = secretSettingsDiv.createDiv({ cls: "qr-code-container" });
+	// 			await gram.initUser(
+	// 				+this.plugin.settings.appId,
+	// 				this.plugin.settings.apiHash,
+	// 				this.plugin.botName,
+	// 				this.plugin.settings.telegramPassword,
+	// 				qrCodeContainer
+	// 			);
+	// 		});
+	// 	});
+
+	addDonation() {
+		this.containerEl.createEl("hr");
+
+		const donationDiv = this.containerEl.createEl("div");
 		donationDiv.addClass("telegramSyncSettingsDonationSection");
 
 		const donationText = createEl("p");
