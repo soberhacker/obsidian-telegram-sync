@@ -7,7 +7,6 @@ on:
     branches:
       - main
 
-
 permissions:
   contents: write
   pull-requests: write
@@ -23,13 +22,15 @@ jobs:
 
       - name: Checkout repository
         uses: actions/checkout@v3
-  
+        with:
+          fetch-depth: 0
+
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: "18.x"
 
-      - name: Update version in CHANGELOG.md and package.json
+      - name: Update version in CHANGELOG.md, package.json, manifest.json
         id: release
         uses: google-github-actions/release-please-action@v3
         with:
@@ -38,10 +39,12 @@ jobs:
           command: release-pr
           package-name: obsidian-telegram-sync
           include-v-in-tag: false
-          pull-request-title-pattern: "chore: update version of package to ${version}"
-          pull-request-header: "Update version in CHANGELOG.md and package.json"
+          pull-request-title-pattern: "chore: update version of plugin to ${version}"
+          pull-request-header: "Update version of plugin"
           default-branch: develop
-          labels: automerge    
+          labels: automerge
+          extra-files: |
+            manifest.json
 
       - name: Print release outputs
         run: echo '${{ toJson(steps.release.outputs) }}'
@@ -60,18 +63,3 @@ jobs:
           MERGE_COMMIT_MESSAGE: pull-request-title
           MERGE_FORKS: false
           PULL_REQUEST: ${{ env.RELEASE_PR }}
-
-      - name: Update manifest.json and versions.json
-        if: ${{steps.release.outputs.pr}}
-        run: |
-          git config core.autocrlf false
-          git config core.eol lf
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git fetch origin
-          git checkout develop
-          npm ci
-          npm run version
-          TAG_NAME=$(node -p "require('./package.json').version")
-          git commit -m "chore: update version of plugin to $TAG_NAME"
-          git push origin develop
