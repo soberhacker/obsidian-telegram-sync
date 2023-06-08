@@ -1,6 +1,19 @@
 # Changelog
 
 
+## [1.6.0](https://github.com/soberhacker/obsidian-telegram-sync/compare/1.5.0...1.6.0) (2023-06-08)
+
+
+### Features
+
+* add support of downloading files &gt; 20 MB ([57ec22f](https://github.com/soberhacker/obsidian-telegram-sync/commit/57ec22fd1690c52684fc5ff279057f1b8fea4768))
+* skip processing if the message is a "/start" ([dc72a36](https://github.com/soberhacker/obsidian-telegram-sync/commit/dc72a3643e38546d008dba75c5e0c24f9d005fc3))
+
+
+### Bug Fixes
+
+* undefined this in displayAndLog ([16ad05f](https://github.com/soberhacker/obsidian-telegram-sync/commit/16ad05f148ef6780b7dff4ce119e90651e475d8b))
+
 ## [1.5.0](https://github.com/soberhacker/obsidian-telegram-sync/compare/1.4.0...1.5.0) (2023-05-27)
 
 
