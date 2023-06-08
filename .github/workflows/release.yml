@@ -50,3 +50,10 @@ jobs:
           tag_name: ${{ env.TAG_NAME }}          
           prerelease: false
           draft: false
+
+      - name: merge main -> develop
+        run: |
+          git fetch origin main:main
+          git checkout develop
+          git merge main
+          git push origin develop

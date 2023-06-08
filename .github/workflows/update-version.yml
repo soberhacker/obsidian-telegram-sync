@@ -41,7 +41,11 @@ jobs:
           pull-request-title-pattern: "chore: update version of package to ${version}"
           pull-request-header: "Update version in CHANGELOG.md and package.json"
           default-branch: develop
-          labels: automerge    
+          labels: automerge
+          extra-files: |
+            - path: manifest.json
+              type: json
+              jsonpath: "$.version"
 
       - name: Print release outputs
         run: echo '${{ toJson(steps.release.outputs) }}'
@@ -72,6 +76,9 @@ jobs:
           git checkout develop
           npm ci
           npm run version
-          TAG_NAME=$(node -p "require('./package.json').version")
-          git commit -m "chore: update version of plugin to $TAG_NAME"
-          git push origin develop
+          # check if there are any changes
+          if ! git diff --quiet; then 
+            TAG_NAME=$(node -p "require('./package.json').version")
+            git commit -m "chore: update versions.json to $TAG_NAME"
+            git push origin develop
+          fi
