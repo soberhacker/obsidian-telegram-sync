@@ -3,7 +3,7 @@ export const pluginVersion = "1.6.0!";
 // change session name when changes in plugin require new client authorization
 export const sessionName = "telegram_sync_160";
 export const newFeatures = `
-- add support of downloading files > 20 MB (was quite a tough nut to crack 🤯)
+- add support of downloading files > 20 MB (quite a tough nut to crack 🤯)
 - add skipping command "/start" for keeping empty bots in chat list
 - add public <a href='https://t.me/ObsidianTelegramSync'>Telegram chat</a> for communication
 `;
