@@ -5,7 +5,7 @@ import * as async from "async";
 import { handleMessage, ifNewRelaseThenShowChanges } from "./telegram/messageHandlers";
 import { machineIdSync } from "node-machine-id";
 import { displayAndLog } from "./utils/logUtils";
-import { displayAndLogError } from "./telegram/utils";
+import { displayAndLogError } from "./utils/logUtils";
 import { appendMessageToTelegramMd } from "./telegram/messageProcessors";
 import * as GramJs from "./telegram/GramJs/client";
 
@@ -67,7 +67,7 @@ export default class TelegramSyncPlugin extends Plugin {
 		}
 
 		if (!this.settings.botToken) {
-			displayAndLog("Telegram bot token is empty. Exit.");
+			displayAndLog(this, "Telegram bot token is empty. Exit.");
 			return;
 		}
 
@@ -82,7 +82,7 @@ export default class TelegramSyncPlugin extends Plugin {
 
 		this.bot.on("message", async (msg) => {
 			this.lastPollingErrors = [];
-			displayAndLog(`Got a message from Telegram Bot: ${msg.text || "binary"}`, 0);
+			displayAndLog(this, `Got a message from Telegram Bot: ${msg.text || "binary"}`, 0);
 
 			// Skip processing if the message is a "/start" command
 			// https://github.com/soberhacker/obsidian-telegram-sync/issues/109
@@ -142,6 +142,7 @@ export default class TelegramSyncPlugin extends Plugin {
 			this.lastPollingErrors.push(pollingError);
 			if (pollingError == "twoBotInstances") {
 				displayAndLog(
+					this,
 					'Two Telegram Sync Bots are detected. Set "Main Device Id" in the settings, if only one is needed.',
 					10000
 				);
