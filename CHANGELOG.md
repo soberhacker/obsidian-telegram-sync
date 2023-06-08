@@ -1,6 +1,21 @@
 # Changelog
 
 
+## [1.5.0](https://github.com/soberhacker/obsidian-telegram-sync/compare/1.4.0...1.5.0) (2023-06-08)
+
+
+### Features
+
+* add announcing latest release features ([06187ac](https://github.com/soberhacker/obsidian-telegram-sync/commit/06187ac8934a0d6df122f0285ac50618d4fa0bce))
+* add new template variables ([c503797](https://github.com/soberhacker/obsidian-telegram-sync/commit/c503797e7141409a8cdbeb95f9d0d64e21819147))
+* add support of downloading files &gt; 20 MB ([57ec22f](https://github.com/soberhacker/obsidian-telegram-sync/commit/57ec22fd1690c52684fc5ff279057f1b8fea4768))
+* skip processing if the message is a "/start" ([dc72a36](https://github.com/soberhacker/obsidian-telegram-sync/commit/dc72a3643e38546d008dba75c5e0c24f9d005fc3))
+
+
+### Bug Fixes
+
+* undefined "this" in displayAndLog ([c1fac22](https://github.com/soberhacker/obsidian-telegram-sync/commit/c1fac22fb6b99a16476d81ec55448734cd9281c1))
+
 ## [1.5.0](https://github.com/soberhacker/obsidian-telegram-sync/compare/1.4.0...1.5.0) (2023-05-27)
 
 
