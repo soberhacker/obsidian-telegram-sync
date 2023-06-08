@@ -152,7 +152,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 					inputDeviceId = deviceIdSetting.controlEl.firstElementChild;
 					inputDeviceId.value = this.plugin.currentDeviceId;
 				} catch (error) {
-					displayAndLog(`Try to copy and paste device id manually. Error: ${error}`);
+					displayAndLog(this.plugin, `Try to copy and paste device id manually. Error: ${error}`);
 				}
 				if (inputDeviceId && inputDeviceId.value) {
 					this.setMainDeviceIdSetting(this.plugin.currentDeviceId);

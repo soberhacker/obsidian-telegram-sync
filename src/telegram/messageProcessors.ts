@@ -1,10 +1,10 @@
 import TelegramBot from "node-telegram-bot-api";
 import TelegramSyncPlugin from "../main.js";
-import { displayAndLogError, getFormattedMessage, getForwardFromLink, getUserLink } from "./utils";
+import { getFormattedMessage, getForwardFromLink, getUserLink } from "./utils";
 import { createFolderIfNotExist } from "src/utils/fsUtils.js";
 import { TFile, TFolder, normalizePath } from "obsidian";
 import { formatDateTime } from "../utils/dateUtils";
-import { displayAndLog } from "src/utils/logUtils.js";
+import { displayAndLog, displayAndLogError } from "src/utils/logUtils.js";
 import { createProgressBar, deleteProgressBar, updateProgressBar } from "./progressBar.js";
 
 // Delete a message or send a confirmation reply based on settings and message age
@@ -111,7 +111,7 @@ export async function applyTemplate(
 			} else if (Number.isInteger(parseFloat(length))) {
 				subContent = contentMd.substring(0, Number(length));
 			} else {
-				displayAndLog(`Template variable {{content:${length}}} isn't supported!`, 15 * 1000);
+				displayAndLog(plugin, `Template variable {{content:${length}}} isn't supported!`, 15 * 1000);
 			}
 			return subContent;
 		}) // message text of specified length
