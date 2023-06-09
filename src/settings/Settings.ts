@@ -81,6 +81,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 						this.plugin.settings.botToken = value;
 						await this.plugin.saveSettings();
 						this.plugin.initTelegramBot(); // Initialize the bot with the new token
+						this.plugin.initTelegramClient();
 					})
 			);
 

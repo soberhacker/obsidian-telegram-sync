@@ -1,7 +1,7 @@
 {
 	"id": "telegram-sync",
 	"name": "Telegram Sync",
-	"version": "1.6.0",
+	"version": "1.6.1",
 	"minAppVersion": "1.0.0",
 	"description": "Transfer messages and files from Telegram bot to Obsidian.",
 	"author": "soberHacker",

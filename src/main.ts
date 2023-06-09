@@ -106,12 +106,14 @@ export default class TelegramSyncPlugin extends Plugin {
 
 	async initTelegramClient() {
 		try {
-			if (this.settings.appId !== "" && this.settings.apiHash !== "") {
+			if (this.settings.appId !== "" && this.settings.apiHash !== "" && this.settings.botToken !== "") {
 				await GramJs.initClient(+this.settings.appId, this.settings.apiHash, this.currentDeviceId);
 				await GramJs.signInBot(this.settings.botToken);
 			}
 		} catch (e) {
-			await displayAndLogError(this, e, undefined, 60000);
+			if (!e.message.includes("API_ID_PUBLISHED_FLOOD")) {
+				await displayAndLogError(this, e, undefined, 60000);
+			}
 		}
 	}
 
