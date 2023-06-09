@@ -1,5 +1,5 @@
 // if "!"" in version code then notify user about latest release
-export const pluginVersion = "1.6.0!";
+export const pluginVersion = "1.6.1!";
 // change session name when changes in plugin require new client authorization
 export const sessionName = "telegram_sync_160";
 export const newFeatures = `
