@@ -1,6 +1,13 @@
 # Changelog
 
 
+## [1.6.1](https://github.com/soberhacker/obsidian-telegram-sync/compare/1.6.0...1.6.1) (2023-06-09)
+
+
+### Bug Fixes
+
+* API_ID_PUBLISHED_FLOOD during loading plugin ([ee96f32](https://github.com/soberhacker/obsidian-telegram-sync/commit/ee96f32e09dbe52aa8309049471678e6e2edb7ea))
+
 ## [1.6.0](https://github.com/soberhacker/obsidian-telegram-sync/compare/1.5.0...1.6.0) (2023-06-08)
 
 
