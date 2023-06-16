@@ -1,23 +1,23 @@
 import { TFile, normalizePath } from "obsidian";
-import TelegramSyncPlugin from "../main";
+import TelegramSyncPlugin from "../../main";
 import TelegramBot from "node-telegram-bot-api";
-import { sanitizeFileName, getFileObject } from "./utils";
 import { date2DateString, date2TimeString } from "src/utils/dateUtils";
-import { createFolderIfNotExist } from "src/utils/fsUtils";
-import { bugFixes, newFeatures, pluginVersion, possibleRoadMap } from "../../release-notes.mjs";
-import { buyMeACoffeeLink, cryptoDonationLink, kofiLink, paypalLink } from "../settings/donation.js";
+import { createFolderIfNotExist, sanitizeFileName } from "src/utils/fsUtils";
+import { bugFixes, newFeatures, pluginVersion, possibleRoadMap } from "../../../release-notes.mjs";
+import { buyMeACoffeeLink, cryptoDonationLink, kofiLink, paypalLink } from "../../settings/donation";
 import { SendMessageOptions } from "node-telegram-bot-api";
 import path from "path";
-import * as gram from "./GramJs/client";
+import * as gram from "../GramJs/client";
 import { extension } from "mime-types";
-import { applyTemplate, finalizeMessageProcessing } from "./messageProcessors";
-import { createProgressBar, deleteProgressBar, updateProgressBar } from "./progressBar";
+import { applyNoteContentTemplate, finalizeMessageProcessing } from "./processors";
+import { createProgressBar, deleteProgressBar, updateProgressBar } from "../progressBar";
+import { getFileObject } from "./getters";
 
 // handle all messages from Telegram
 export async function handleMessage(plugin: TelegramSyncPlugin, msg: TelegramBot.Message) {
 	let formattedContent = "";
 
-	if (!msg.text || msg.text == "") {
+	if (!msg.text) {
 		await handleFiles(plugin, msg);
 		return;
 	}
@@ -43,7 +43,7 @@ export async function handleMessage(plugin: TelegramSyncPlugin, msg: TelegramBot
 	const messageDateString = date2DateString(messageDate);
 	const messageTimeString = date2TimeString(messageDate);
 
-	formattedContent = await applyTemplate(plugin, plugin.settings.templateFileLocation, msg);
+	formattedContent = await applyNoteContentTemplate(plugin, plugin.settings.templateFileLocation, msg);
 
 	const appendAllToTelegramMd = plugin.settings.appendAllToTelegramMd;
 
@@ -74,7 +74,8 @@ export async function handleFiles(plugin: TelegramSyncPlugin, msg: TelegramBot.M
 
 	const basePath = plugin.settings.newFilesLocation || plugin.settings.newNotesLocation || "";
 	await createFolderIfNotExist(plugin.app.vault, basePath);
-	let filePath: string | undefined;
+	let filePath = "";
+	let telegramFileName = "";
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	let error: any;
 
@@ -85,13 +86,15 @@ export async function handleFiles(plugin: TelegramSyncPlugin, msg: TelegramBot.M
 	try {
 		// Iterate through each file type
 		const { fileType, fileObject } = getFileObject(msg);
+		if (!fileType || !fileObject) {
+			throw new Error("Can't get file object from the message!");
+		}
 		const fileObjectToUse = fileObject instanceof Array ? fileObject.pop() : fileObject;
 		const fileId = fileObjectToUse.file_id;
 		let fileByteArray: Uint8Array;
-		let telegramFileName: string;
 		try {
 			const fileLink = await plugin.bot.getFileLink(fileId);
-			telegramFileName = fileLink?.split("/").pop() || "";
+			telegramFileName = fileLink?.split("/").pop()?.replace(/file/, fileType) || "";
 			const fileStream = plugin.bot.getFileStream(fileId);
 			const fileChunks: Uint8Array[] = [];
 
@@ -121,10 +124,8 @@ export async function handleFiles(plugin: TelegramSyncPlugin, msg: TelegramBot.M
 		} catch (e) {
 			if (e.message == "ETELEGRAM: 400 Bad Request: file is too big") {
 				const media = await gram.downloadMedia(plugin.bot, msg, fileId, fileObjectToUse.file_size);
-				//const fileBuffer = media instanceof Buffer ? media : Buffer.alloc(0);
-				//fileByteArray = new Uint8Array(fileBuffer.buffer, fileBuffer.byteOffset, fileBuffer.byteLength);
 				fileByteArray = media instanceof Buffer ? media : Buffer.alloc(0);
-				telegramFileName = `file_${sanitizeFileName(fileObject.file_unique_id)}`;
+				telegramFileName = `${fileType}_${sanitizeFileName(fileObject.file_unique_id)}`;
 			} else {
 				throw e;
 			}
@@ -145,35 +146,38 @@ export async function handleFiles(plugin: TelegramSyncPlugin, msg: TelegramBot.M
 		error = e;
 	}
 
-	// Handle message captions and append to Telegram.md if necessary
-	if ((msg.caption && !(msg.caption === "")) || plugin.settings.appendAllToTelegramMd) {
-		const captionMd = !error
-			? `![](${filePath?.replace(/\s/g, "%20")})\n${msg.caption || ""}`
-			: `[❌ error while handling file](${error})\n${msg.caption || ""}`;
+	// exit if only file is needed
+	if (!plugin.settings.appendAllToTelegramMd && !plugin.settings.templateFileLocation) {
+		await finalizeMessageProcessing(plugin, msg, error);
+		return;
+	}
 
-		const formattedContent = await applyTemplate(plugin, plugin.settings.templateFileLocation, msg, captionMd);
-		if (plugin.settings.appendAllToTelegramMd) {
-			plugin.messageQueueToTelegramMd.push({ msg, formattedContent, error });
-			return;
-		} else if (msg.caption) {
-			// Save caption as a separate note
-			const noteLocation = plugin.settings.newNotesLocation || "";
-			await createFolderIfNotExist(plugin.app.vault, noteLocation);
-			const title = sanitizeFileName(msg.caption.slice(0, 20));
-			let fileCaptionName = `${title} - ${messageDateString}${messageTimeString}.md`;
-			let notePath = normalizePath(noteLocation ? `${noteLocation}/${fileCaptionName}` : fileCaptionName);
+	const fileLink = !error
+		? `![${telegramFileName}](${filePath?.replace(/\s/g, "%20")})`
+		: `[❌ error while handling file](${error})`;
 
-			while (
-				plugin.listOfNotePaths.includes(notePath) ||
-				plugin.app.vault.getAbstractFileByPath(notePath) instanceof TFile
-			) {
-				const newMessageTimeString = date2TimeString(messageDate);
-				fileCaptionName = `${title} - ${messageDateString}${newMessageTimeString}.md`;
-				notePath = normalizePath(noteLocation ? `${noteLocation}/${fileCaptionName}` : fileCaptionName);
-			}
-			plugin.listOfNotePaths.push(notePath);
-			await plugin.app.vault.create(notePath, formattedContent);
+	const noteContent = await applyNoteContentTemplate(plugin, plugin.settings.templateFileLocation, msg, fileLink);
+	if (plugin.settings.appendAllToTelegramMd) {
+		plugin.messageQueueToTelegramMd.push({ msg, formattedContent: noteContent, error });
+		return;
+	} else if (msg.caption || telegramFileName) {
+		// Save caption as a separate note
+		const noteLocation = plugin.settings.newNotesLocation || "";
+		await createFolderIfNotExist(plugin.app.vault, noteLocation);
+		const title = sanitizeFileName((msg.caption || telegramFileName).slice(0, 20));
+		let noteFileName = `${title} - ${messageDateString}${messageTimeString}.md`;
+		let notePath = normalizePath(noteLocation ? `${noteLocation}/${noteFileName}` : noteFileName);
+
+		while (
+			plugin.listOfNotePaths.includes(notePath) ||
+			plugin.app.vault.getAbstractFileByPath(notePath) instanceof TFile
+		) {
+			const newMessageTimeString = date2TimeString(messageDate);
+			noteFileName = `${title} - ${messageDateString}${newMessageTimeString}.md`;
+			notePath = normalizePath(noteLocation ? `${noteLocation}/${noteFileName}` : noteFileName);
 		}
+		plugin.listOfNotePaths.push(notePath);
+		await plugin.app.vault.create(notePath, noteContent);
 	}
 
 	await finalizeMessageProcessing(plugin, msg, error);

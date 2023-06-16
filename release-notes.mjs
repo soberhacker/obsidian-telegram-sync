@@ -1,25 +1,44 @@
 // if "!"" in version code then notify user about latest release
-export const pluginVersion = "1.6.1!";
+export const pluginVersion = "1.7.0!";
 // change session name when changes in plugin require new client authorization
 export const sessionName = "telegram_sync_160";
 export const newFeatures = `
-- add support of downloading files > 20 MB (quite a tough nut to crack 🤯)
-- add skipping command "/start" for keeping empty bots in chat list
-- add public <a href='https://t.me/ObsidianTelegramSync'>Telegram chat</a> for communication
+- add note template variables:
+    {{chat}} - link to the chat (bot / group / channel)
+    {{chatId}} - id of the chat (bot / group / channel)
+    {{topic}} - link to the topic
+    {{topicId}} - head message id representing the topic
+    {{messageId}} - message id
+    {{replyMessageId}} - reply message id
+    {{url1}} - first url from the message
+    {{url1:previewYYY}} - first url preview with YYY pixels height (default 250)
+    {{replace:TEXT=>WITH}} - replace or delete text in resulting note
+    {{file:link}} - link to the file 
+- improve behavior of content insertion 
+    {{content}} - forwarded from + file content + message text and urls + first url preview
+    {{content:firstLine}} - first line of the message text
+    {{content:text}} - only message text
+    {{file}} - only file content ![]()
+* To get full list tap on <a href='https://github.com/soberhacker/obsidian-telegram-sync/blob/main/docs/Template%20Variables%20List.md'>Template Variables List</a>
+* If Note Content Template is unspecified, template by default will be equal {{content}}. This variable is used to convey the appearance of the note as similar to the message as possible.
+
 `;
 // - no bugs, no fixes (create issues on <a href='https://github.com/soberhacker/obsidian-telegram-sync/issues'>github</a>)
 export const bugFixes = `
-- EISDIR: illegal operation on a directory, read (<a href='https://github.com/soberhacker/obsidian-telegram-sync/issues/108'>issue 108</a>)
-- 400 Bad Request: file is too big (<a href='https://github.com/soberhacker/obsidian-telegram-sync/issues/79'>issue 79</a>)
+- missing file captions formatting
+- missing inline external links
+- problem with nested formattings
 `;
 export const possibleRoadMap = `
-- add new template variables
-    {{chat}} - link to the chat (bot / group / channel)
-    {{topic}} - topic name
+- add setting Note Path Template to make notes creation more flexible: 
+    * setting any note names 
+    * using conditions for organizing notes by days, topics etc.
+  For example:
+    * myNotes/daily/{{messageDate}}.md
+    * myNotes/{{chat:Recipies}}/{content:30}.md
+    * myNotes/{{chat:Ideas}}/{{content:firstLine}}.md
 - send notes (as files) and files from Obsidian to one chat with bot
 - don't mark messages as processed and don't delete them (sending of errors will remain)
-- change replying to liking👍 when marking a message as processed (needs scanning qr code and entering Telegram password)
-- voice recognition for Telegram Premium subscribers (needs scanning qr code and entering Telegram password)
 
 You can "like" one of the possible feature <a href='https://t.me/ObsidianTelegramSync/5'>in Telegram chat</a> to increase its chances of being implemented.
 `;

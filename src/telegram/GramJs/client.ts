@@ -35,7 +35,7 @@ export async function initClient(apiId: number, apiHash: string, deviceId: strin
 	}
 }
 
-// TODO add after entering password and sign in button in setting
+// ?TODO add after entering password and sign in button in setting
 // npm i qrcode
 // npm install --save @types/qrcode
 // export async function signInUser(botName?: string, password?: string, container?: HTMLDivElement) {
@@ -132,7 +132,7 @@ export async function downloadMedia(bot: TelegramBot, botMsg: TelegramBot.Messag
 		});
 }
 
-// TODO integrate after signInUser integration
+// ?TODO integrate after signInUser integration
 export async function sendReaction(botMsg: TelegramBot.Message) {
 	const messages = await client.getMessages(inputPeerUser);
 

@@ -1,11 +1,12 @@
 import TelegramBot from "node-telegram-bot-api";
-import TelegramSyncPlugin from "../main.js";
-import { getFormattedMessage, getForwardFromLink, getUserLink } from "./utils";
-import { createFolderIfNotExist } from "src/utils/fsUtils.js";
+import TelegramSyncPlugin from "../../main";
+import { getChatLink, getForwardFromLink, getReplyMessageId, getTopicLink, getUrl, getUserLink } from "./getters";
+import { createFolderIfNotExist } from "src/utils/fsUtils";
 import { TFile, TFolder, normalizePath } from "obsidian";
-import { formatDateTime } from "../utils/dateUtils";
-import { displayAndLog, displayAndLogError } from "src/utils/logUtils.js";
-import { createProgressBar, deleteProgressBar, updateProgressBar } from "./progressBar.js";
+import { formatDateTime } from "../../utils/dateUtils";
+import { displayAndLog, displayAndLogError } from "src/utils/logUtils";
+import { createProgressBar, deleteProgressBar, updateProgressBar } from "../progressBar";
+import { escapeRegExp, convertMessageTextToMarkdown } from "./convertToMarkdown";
 
 // Delete a message or send a confirmation reply based on settings and message age
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -67,36 +68,58 @@ export async function appendMessageToTelegramMd(
 }
 
 // Apply a template to a message's content
-export async function applyTemplate(
+export async function applyNoteContentTemplate(
 	plugin: TelegramSyncPlugin,
 	templatePath: string,
 	msg: TelegramBot.Message,
-	content?: string
+	fileLink?: string
 ): Promise<string> {
-	const contentMd = content || (await getFormattedMessage(msg));
+	const textContentMd = await convertMessageTextToMarkdown(msg);
+	// Check if the message is forwarded and extract the required information
+	const forwardFromLink = getForwardFromLink(msg);
+	const fullContentMd =
+		(forwardFromLink ? `**Forwarded from ${forwardFromLink}**\n\n` : "") +
+		(fileLink ? fileLink + "\n" : "") +
+		textContentMd;
 	if (!templatePath) {
-		return contentMd;
+		return fullContentMd;
 	}
 	let templateFile: TFile;
 	try {
 		templateFile = plugin.app.vault.getAbstractFileByPath(normalizePath(templatePath)) as TFile;
 	} catch (e) {
 		await displayAndLogError(plugin, `Template "${templatePath}" not found! ${e}`, msg);
-		return contentMd;
+		return fullContentMd;
 	}
 	if (!templateFile || templateFile instanceof TFolder) {
-		return contentMd;
+		return fullContentMd;
 	}
 
 	const messageDateTime = new Date(msg.date * 1000);
 	const creationDateTime = msg.forward_date ? new Date(msg.forward_date * 1000) : messageDateTime;
-	// Check if the message is forwarded and extract the required information
-	const forwardFromLink = getForwardFromLink(msg);
 
 	const dateTimeNow = new Date();
 	const templateContent = await plugin.app.vault.read(templateFile);
-	return templateContent
-		.replace("{{content}}", contentMd)
+	const itemsForReplacing: [string, string][] = [];
+
+	let proccessedContent = templateContent
+		.replace("{{content}}", fullContentMd)
+		.replace(/{{content:(.*?)}}/g, (_, property: string) => {
+			let subContent = "";
+			if (property.toLowerCase() == "firstline") {
+				subContent = textContentMd.split("\n")[0];
+			} else if (property.toLowerCase() == "text") {
+				subContent = textContentMd;
+			} else if (Number.isInteger(parseFloat(property))) {
+				// property is length
+				subContent = textContentMd.substring(0, Number(property));
+			} else {
+				displayAndLog(plugin, `Template variable {{content:${property}}} isn't supported!`, 15 * 1000);
+			}
+			return subContent;
+		}) // message text of specified length
+		.replace(/{{file}}/g, fileLink || "")
+		.replace(/{{file:link}}/g, fileLink?.startsWith("!") ? fileLink.slice(1) : fileLink || "")
 		.replace(/{{messageDate:(.*?)}}/g, (_, format) => formatDateTime(messageDateTime, format))
 		.replace(/{{messageTime:(.*?)}}/g, (_, format) => formatDateTime(messageDateTime, format))
 		.replace(/{{date:(.*?)}}/g, (_, format) => formatDateTime(dateTimeNow, format))
@@ -104,45 +127,40 @@ export async function applyTemplate(
 		.replace(/{{forwardFrom}}/g, forwardFromLink)
 		.replace(/{{userId}}/g, msg.from?.id.toString() || msg.message_id.toString()) // id of the user who sent the message
 		.replace(/{{user}}/g, getUserLink(msg)) // link to the user who sent the message
-		.replace(/{{content:(.*?)}}/g, (_, length: string) => {
-			let subContent = "";
-			if (length.toLowerCase() == "firstline") {
-				subContent = contentMd.split("\n")[0];
-			} else if (Number.isInteger(parseFloat(length))) {
-				subContent = contentMd.substring(0, Number(length));
-			} else {
-				displayAndLog(plugin, `Template variable {{content:${length}}} isn't supported!`, 15 * 1000);
+		.replace(/{{chat}}/g, getChatLink(msg)) // link to the chat with the message
+		.replace(/{{chatId}}/g, msg.chat.id.toString()) // id of the chat with the message
+		.replace(/{{topic}}/g, getTopicLink(plugin, msg)) // link to the topic with the message
+		.replace(/{{topicId}}/g, (msg.reply_to_message?.message_thread_id || "").toString()) // head message id representing the topic
+		.replace(/{{messageId}}/g, msg.message_id.toString())
+		.replace(/{{replyMessageId}}/g, getReplyMessageId(msg))
+		.replace(/{{url1}}/g, getUrl(msg)) // fisrt url from the message
+		.replace(/{{url1:preview(.*?)}}/g, (_, height: string) => {
+			let linkPreview = "";
+			const url1 = getUrl(msg);
+			if (url1) {
+				if (!height || Number.isInteger(parseFloat(height))) {
+					linkPreview = `<iframe width="100%" height="${height || 250}" src="${url1}"></iframe>`;
+				} else {
+					displayAndLog(plugin, `Template variable {{url1:preview${height}}} isn't supported!`, 15 * 1000);
+				}
 			}
-			return subContent;
-		}) // message text of specified length
+			return linkPreview;
+		}) // preview for first url from the message
 		.replace(/{{creationDate:(.*?)}}/g, (_, format) => formatDateTime(creationDateTime, format)) // date, when the message was created
-		.replace(/{{creationTime:(.*?)}}/g, (_, format) => formatDateTime(creationDateTime, format)); // time, when the message was created
-}
+		.replace(/{{creationTime:(.*?)}}/g, (_, format) => formatDateTime(creationDateTime, format)) // time, when the message was created
+		// this replace statements should be in the end
+		.replace(/{{replace:(.*?)=>(.*?)}}/g, (_, replaceThis, replaceWith) => {
+			itemsForReplacing.push([replaceThis, replaceWith]);
+			return "";
+		})
+		.replace(/{{replace:(.*?)}}/g, (_, replaceThis) => {
+			itemsForReplacing.push([replaceThis, ""]);
+			return "";
+		});
 
-// example of msg object
-// {
-//     "message_id": 508,
-//     "from": {
-//         "id": 1112226370,
-//         "is_bot": false,
-//         "first_name": "soberHacker",
-//         "username": "soberhacker",
-//         "language_code": "en"
-//     },
-//     "chat": {
-//         "id": 1112226370,
-//         "first_name": "soberHacker",
-//         "username": "soberhacker",
-//         "type": "private"
-//     },
-//     "date": 1685138029,
-//     "forward_from": {
-//         "id": 1112226370,
-//         "is_bot": false,
-//         "first_name": "soberHacker",
-//         "username": "soberhacker",
-//         "language_code": "en"
-//     },
-//     "forward_date": 1684944034,
-//     "text": "Text"
-// }
+	itemsForReplacing.forEach(
+		([replaceThis, replaceWith]) =>
+			(proccessedContent = proccessedContent.replace(new RegExp(escapeRegExp(replaceThis), "g"), replaceWith))
+	);
+	return proccessedContent;
+}

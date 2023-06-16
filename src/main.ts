@@ -2,16 +2,17 @@ import { Plugin } from "obsidian";
 import { DEFAULT_SETTINGS, TelegramSyncSettings, TelegramSyncSettingTab } from "./settings/Settings";
 import TelegramBot from "node-telegram-bot-api";
 import * as async from "async";
-import { handleMessage, ifNewRelaseThenShowChanges } from "./telegram/messageHandlers";
+import { handleMessage, ifNewRelaseThenShowChanges } from "./telegram/message/handlers";
 import { machineIdSync } from "node-machine-id";
 import { displayAndLog } from "./utils/logUtils";
 import { displayAndLogError } from "./utils/logUtils";
-import { appendMessageToTelegramMd } from "./telegram/messageProcessors";
+import { appendMessageToTelegramMd } from "./telegram/message/processors";
 import * as GramJs from "./telegram/GramJs/client";
 
 // Main class for the Telegram Sync plugin
 export default class TelegramSyncPlugin extends Plugin {
 	settings: TelegramSyncSettings;
+	settingsTab: TelegramSyncSettingTab;
 	botConnected = false;
 	bot?: TelegramBot;
 	botName?: string;
@@ -26,7 +27,8 @@ export default class TelegramSyncPlugin extends Plugin {
 		await this.loadSettings();
 
 		// Add a settings tab for this plugin
-		this.addSettingTab(new TelegramSyncSettingTab(this));
+		this.settingsTab = new TelegramSyncSettingTab(this);
+		this.addSettingTab(this.settingsTab);
 
 		// Create a queue to handle appending messages to the Telegram.md file
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -87,6 +89,12 @@ export default class TelegramSyncPlugin extends Plugin {
 			// Skip processing if the message is a "/start" command
 			// https://github.com/soberhacker/obsidian-telegram-sync/issues/109
 			if (msg.text === "/start") {
+				return;
+			}
+
+			// Store topic name if  "/storeTopicName" command
+			if (msg.text === "/storeTopicName") {
+				await this.settingsTab.storeTopicName(msg);
 				return;
 			}
 

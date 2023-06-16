@@ -2,8 +2,16 @@ import TelegramSyncPlugin from "src/main";
 import { PluginSettingTab, Setting, normalizePath } from "obsidian";
 import { FileSuggest } from "./suggesters/FileSuggester";
 import { FolderSuggest } from "./suggesters/FolderSuggester";
-import { displayAndLog } from "src/utils/logUtils";
+import { displayAndLog, displayAndLogError } from "src/utils/logUtils";
 import { cryptoDonationButton, paypalButton, buyMeACoffeeButton, kofiButton } from "./donation";
+import TelegramBot from "node-telegram-bot-api";
+import { createProgressBar, updateProgressBar, deleteProgressBar } from "src/telegram/progressBar";
+
+export interface TopicName {
+	name: string;
+	chatId: number;
+	topicId: number;
+}
 
 export interface TelegramSyncSettings {
 	botToken: string;
@@ -18,6 +26,7 @@ export interface TelegramSyncSettings {
 	appId: string;
 	apiHash: string;
 	//telegramPassword: string;
+	topicNames: TopicName[];
 }
 
 export const DEFAULT_SETTINGS: TelegramSyncSettings = {
@@ -33,6 +42,7 @@ export const DEFAULT_SETTINGS: TelegramSyncSettings = {
 	appId: "17349", // public, ok to be here
 	apiHash: "344583e45741c457fe1862106095a5eb", // public, ok to be here
 	//telegramPassword: "",
+	topicNames: [],
 };
 
 export class TelegramSyncSettingTab extends PluginSettingTab {
@@ -346,5 +356,41 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 		this.plugin.settings.mainDeviceId = value;
 		await this.plugin.saveSettings();
 		this.plugin.initTelegramBot();
+	}
+
+	async storeTopicName(msg: TelegramBot.Message) {
+		const bot = this.plugin.bot;
+		if (!bot) return;
+
+		const reply = msg.reply_to_message;
+		if (reply && reply.message_thread_id && reply.forum_topic_created?.name) {
+			const newTopicName: TopicName = {
+				name: reply.forum_topic_created?.name,
+				chatId: reply.chat.id,
+				topicId: reply.message_thread_id,
+			};
+			let topicNameIndex = this.plugin.settings.topicNames.findIndex((tn) => tn == newTopicName);
+			if (topicNameIndex > -1) return;
+			topicNameIndex = this.plugin.settings.topicNames.findIndex(
+				(tn) => tn.topicId == newTopicName.topicId && tn.chatId == newTopicName.chatId
+			);
+			if (topicNameIndex > -1) {
+				this.plugin.settings.topicNames[topicNameIndex].name = newTopicName.name;
+			} else this.plugin.settings.topicNames.push(newTopicName);
+			await this.plugin.saveSettings();
+
+			const progressBarMessage = await createProgressBar(bot, msg, "stored");
+
+			// Update the progress bar during the delay
+			let stage = 0;
+			for (let i = 1; i <= 10; i++) {
+				await new Promise((resolve) => setTimeout(resolve, 50)); // 50 ms delay between updates
+				stage = await updateProgressBar(bot, msg, progressBarMessage, 10, i, stage);
+			}
+			await bot.deleteMessage(msg.chat.id, msg.message_id);
+			await deleteProgressBar(bot, msg, progressBarMessage);
+		} else {
+			displayAndLogError(this.plugin, `This is not a topic. msg = ${msg}`, msg);
+		}
 	}
 }
