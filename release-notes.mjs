@@ -1,12 +1,10 @@
-// if "!"" in version code then notify user about latest release
-export const pluginVersion = "1.7.0!";
-// change session name when changes in plugin require new client authorization
-export const sessionName = "telegram_sync_160";
+export const version = "1.7.0";
+export const showInTelegram = true;
 export const newFeatures = `
 - add note template variables:
     {{chat}} - link to the chat (bot / group / channel)
     {{chatId}} - id of the chat (bot / group / channel)
-    {{topic}} - link to the topic
+    {{topic}} - link to the topic (if the topic name displays incorrect, set the name manually using bot command "/topicName NAME")
     {{topicId}} - head message id representing the topic
     {{messageId}} - message id
     {{replyMessageId}} - reply message id
@@ -19,6 +17,8 @@ export const newFeatures = `
     {{content:firstLine}} - first line of the message text
     {{content:text}} - only message text
     {{file}} - only file content ![]()
+- add transcribing voices (for Telegram Premium subscribers only)
+	{{voiceTranscript}} - transcribing to text
 * To get full list tap on <a href='https://github.com/soberhacker/obsidian-telegram-sync/blob/main/docs/Template%20Variables%20List.md'>Template Variables List</a>
 * If Note Content Template is unspecified, template by default will be equal {{content}}. This variable is used to convey the appearance of the note as similar to the message as possible.
 
@@ -28,6 +28,7 @@ export const bugFixes = `
 - missing file captions formatting
 - missing inline external links
 - problem with nested formattings
+- false warnings about two parallel bot connections
 `;
 export const possibleRoadMap = `
 - add setting Note Path Template to make notes creation more flexible: 
@@ -46,10 +47,9 @@ You can "like" one of the possible feature <a href='https://t.me/ObsidianTelegra
 const check = process.argv[2] === "check";
 
 if (check) {
-	const pluginVersionCode = pluginVersion.replace(/!/g, "");
 	const packageVersion = process.env.npm_package_version;
 
-	if (packageVersion !== pluginVersionCode) {
+	if (packageVersion !== version) {
 		console.error("Failed! Release notes are outdated!");
 		process.exit(1);
 	}

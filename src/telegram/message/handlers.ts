@@ -3,11 +3,11 @@ import TelegramSyncPlugin from "../../main";
 import TelegramBot from "node-telegram-bot-api";
 import { date2DateString, date2TimeString } from "src/utils/dateUtils";
 import { createFolderIfNotExist, sanitizeFileName } from "src/utils/fsUtils";
-import { bugFixes, newFeatures, pluginVersion, possibleRoadMap } from "../../../release-notes.mjs";
+import * as release from "../../../release-notes.mjs";
 import { buyMeACoffeeLink, cryptoDonationLink, kofiLink, paypalLink } from "../../settings/donation";
 import { SendMessageOptions } from "node-telegram-bot-api";
 import path from "path";
-import * as gram from "../GramJs/client";
+import * as GramJs from "../GramJs/client";
 import { extension } from "mime-types";
 import { applyNoteContentTemplate, finalizeMessageProcessing } from "./processors";
 import { createProgressBar, deleteProgressBar, updateProgressBar } from "../progressBar";
@@ -16,6 +16,26 @@ import { getFileObject } from "./getters";
 // handle all messages from Telegram
 export async function handleMessage(plugin: TelegramSyncPlugin, msg: TelegramBot.Message) {
 	let formattedContent = "";
+
+	// save topic name and skip handling other data
+	if (msg.forum_topic_created || msg.forum_topic_edited) {
+		const topicName = {
+			name: msg.forum_topic_created?.name || msg.forum_topic_edited?.name || "",
+			chatId: msg.chat.id,
+			topicId: msg.message_thread_id || 1,
+		};
+		const topicNameIndex = plugin.settings.topicNames.findIndex(
+			(tn) => tn.chatId == msg.chat.id && tn.topicId == msg.message_thread_id
+		);
+		if (topicNameIndex == -1) {
+			plugin.settings.topicNames.push(topicName);
+			await plugin.saveSettings();
+		} else if (plugin.settings.topicNames[topicNameIndex].name != topicName.name) {
+			plugin.settings.topicNames[topicNameIndex].name = topicName.name;
+			await plugin.saveSettings();
+		}
+		return;
+	}
 
 	if (!msg.text) {
 		await handleFiles(plugin, msg);
@@ -123,7 +143,7 @@ export async function handleFiles(plugin: TelegramSyncPlugin, msg: TelegramBot.M
 			);
 		} catch (e) {
 			if (e.message == "ETELEGRAM: 400 Bad Request: file is too big") {
-				const media = await gram.downloadMedia(plugin.bot, msg, fileId, fileObjectToUse.file_size);
+				const media = await GramJs.downloadMedia(plugin.bot, msg, fileId, fileObjectToUse.file_size);
 				fileByteArray = media instanceof Buffer ? media : Buffer.alloc(0);
 				telegramFileName = `${fileType}_${sanitizeFileName(fileObject.file_unique_id)}`;
 			} else {
@@ -185,19 +205,13 @@ export async function handleFiles(plugin: TelegramSyncPlugin, msg: TelegramBot.M
 
 // show changes about new release
 export async function ifNewRelaseThenShowChanges(plugin: TelegramSyncPlugin, msg: TelegramBot.Message) {
-	const pluginVersionCode = pluginVersion.replace(/!/g, "");
-	if (
-		plugin.settings.pluginVersion &&
-		plugin.settings.pluginVersion !== pluginVersionCode &&
-		// warn user only when "!" sign is in pluginVersion
-		pluginVersionCode != pluginVersion
-	) {
-		plugin.settings.pluginVersion = pluginVersionCode;
-		plugin.saveSettings();
-		const announcing = `<b>Telegrm Sync ${pluginVersionCode}</b>\n\n`;
-		const newFeatures_ = `<u>New Features</u>${newFeatures}\n`;
-		const bugsFixes_ = `<u>Bug Fixes</u>${bugFixes}\n`;
-		const possibleRoadMap_ = `<u>Possible Road Map</u>${possibleRoadMap}\n`;
+	if (plugin.settings.pluginVersion && plugin.settings.pluginVersion !== release.version && release.showInTelegram) {
+		plugin.settings.pluginVersion = release.version;
+		await plugin.saveSettings();
+		const announcing = `<b>Telegrm Sync ${release.version}</b>\n\n`;
+		const newFeatures_ = `<u>New Features</u>${release.newFeatures}\n`;
+		const bugsFixes_ = `<u>Bug Fixes</u>${release.bugFixes}\n`;
+		const possibleRoadMap_ = `<u>Possible Road Map</u>${release.possibleRoadMap}\n`;
 		const donation =
 			"<b>If you like this plugin and are considering donating to support continued development, use the buttons below!</b>";
 		const releaseNotes = announcing + newFeatures_ + bugsFixes_ + possibleRoadMap_ + donation;
@@ -220,7 +234,7 @@ export async function ifNewRelaseThenShowChanges(plugin: TelegramSyncPlugin, msg
 
 		await plugin.bot?.sendMessage(msg.chat.id, releaseNotes, options);
 	} else if (!plugin.settings.pluginVersion) {
-		plugin.settings.pluginVersion = pluginVersionCode;
-		plugin.saveSettings();
+		plugin.settings.pluginVersion = release.version;
+		await plugin.saveSettings();
 	}
 }

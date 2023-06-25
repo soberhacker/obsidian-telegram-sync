@@ -1,113 +1,169 @@
 import { Api, TelegramClient } from "telegram";
 import { StoreSession } from "telegram/sessions";
-// import QRCode from "qrcode";
 import { PromisedWebSockets } from "telegram/extensions/PromisedWebSockets";
+import { version } from "release-notes.mjs";
 import TelegramBot from "node-telegram-bot-api";
-import { convertBotFileToMessageMedia } from "./convertBotFileToMessageMedia";
-import { pluginVersion, sessionName } from "release-notes.mjs";
+import QRCode from "qrcode";
 import os from "os";
+import { convertBotFileToMessageMedia } from "./convertBotFileToMessageMedia";
 import { createProgressBar, deleteProgressBar, updateProgressBar } from "../progressBar";
+import { getInputPeerUser, getMessage } from "./convertors";
+import { formatDateTime } from "src/utils/dateUtils";
 
-let client: TelegramClient;
-let botUser: Api.TypeUser | undefined;
+export type SessionType = "bot" | "user";
+
+let client: TelegramClient | undefined;
 let _apiId: number;
 let _apiHash: string;
 let _botToken: string | undefined;
-let inputPeerUser: Api.InputPeerUser;
+let _sessionType: SessionType;
+let _sessionId: number;
+let _clientUser: Api.User | undefined;
+let _voiceTranscripts: Map<number, string> | undefined;
 
-export async function initClient(apiId: number, apiHash: string, deviceId: string) {
-	stopClient();
-	if (_apiId !== apiId || _apiHash !== apiHash) {
-		const session = new StoreSession(`${sessionName}_${deviceId}`);
+// change session name when changes in plugin require new client authorization
+const sessionName = "telegram_sync_170";
+const NotConnected = new Error("Can't connect to the Telegram Api");
+const NotAuthorized = new Error("Not authorized");
+const NotAuthorizedAsUser = new Error("Not authorized as user. You have to log in as user, not as bot");
+
+export function getNewSessionId(): number {
+	return Number(formatDateTime(new Date(), "YYYYMMDDHHmmssSSS"));
+}
+
+// Stop the bot polling
+export async function stop() {
+	if (client) {
+		await client.destroy();
+		client = undefined;
+		_botToken = undefined;
+		_voiceTranscripts = undefined;
+	}
+}
+
+// init and connect to Telegram Api
+export async function init(
+	sessionId: number,
+	sessionType: SessionType,
+	apiId: number,
+	apiHash: string,
+	deviceId: string
+) {
+	if (
+		!client ||
+		_apiId !== apiId ||
+		_apiHash !== apiHash ||
+		_sessionType !== sessionType ||
+		_sessionId !== sessionId
+	) {
+		await stop();
+		const session = new StoreSession(`${sessionType}_${sessionId}_${sessionName}_${deviceId}`);
 		_apiId = apiId;
 		_apiHash = apiHash;
+		_sessionId = sessionId;
+		_sessionType = sessionType;
 		client = new TelegramClient(session, apiId, apiHash, {
-			connectionRetries: 5,
-			deviceModel: `Telegram Sync Plugin ${os.type()}`,
-			appVersion: pluginVersion,
+			connectionRetries: 2,
+			deviceModel: `Obsidian Telegram Sync ${os.type().replace("_NT", "")}`,
+			appVersion: version,
 			useWSS: true,
 			networkSocket: PromisedWebSockets,
 		});
 	}
 
+	if (!client) throw NotConnected;
+
 	if (!client.connected) {
-		await client.connect();
+		try {
+			await client.connect();
+			const authorized = await client.checkAuthorization();
+			if (sessionType == "user" && authorized && (await client.isBot()))
+				throw new Error("Stored session conflict. Try to log in again.");
+			if (!_clientUser && authorized) _clientUser = (await client.getMe()) as Api.User;
+		} catch (e) {
+			if (sessionType == "user") {
+				await init(_sessionId, "bot", apiId, apiHash, deviceId);
+				throw new Error(`Login as user failed. Error: ${e}`);
+			} else throw e;
+		}
 	}
 }
 
-// ?TODO add after entering password and sign in button in setting
-// npm i qrcode
-// npm install --save @types/qrcode
-// export async function signInUser(botName?: string, password?: string, container?: HTMLDivElement) {
-// 	if (!(await client.checkAuthorization()) && container) {
-// 		await client.signInUserWithQrCode(
-// 			{ apiId: _apiId, apiHash: _apiHash },
-// 			{
-// 				qrCode: async (qrCode) => {
-// 					const url = "tg://login?token=" + qrCode.token.toString("base64");
-// 					let qrCodeSvg = await QRCode.toString(url, { type: "svg" });
-// 					qrCodeSvg = qrCodeSvg.replace("<svg", `<svg width="${150}" height="${150}"`);
-// 					container.innerHTML = qrCodeSvg;
-// 				},
-// 				password: async (hint) => {
-// 					return password ? password : "";
-// 				},
-// 				onError: (error) => {
-// 					container.innerHTML = error.message;
-// 					console.log(error);
-// 				},
-// 			}
-// 		);
-// 	}
+export async function isAuthorizedAsUser(): Promise<boolean> {
+	return (client && (await client.checkAuthorization()) && !(await client.isBot())) || false;
+}
 
-// 	if (await client.checkAuthorization()) {
-// 		const searchResult = await client.invoke(
-// 			new Api.contacts.ResolveUsername({
-// 				username: botName,
-// 			})
-// 		);
-
-// 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-// 		const botUser: any = searchResult.users[0];
-// 		inputPeerUser = new Api.InputPeerUser({ userId: botUser.id, accessHash: botUser.accessHash });
-// 	}
-// }
-
-export async function signInBot(botToken: string) {
-	if (!(await client.checkAuthorization()) || _botToken != botToken) {
-		await client
-			.signInBot(
-				{
-					apiId: _apiId,
-					apiHash: _apiHash,
-				},
-				{
-					botAuthToken: botToken,
-				}
-			)
-			.then(async (bot_user) => {
-				botUser = bot_user;
-				_botToken = botToken;
-				inputPeerUser = new Api.InputPeerUser({
-					userId: botUser.id,
-					// eslint-disable-next-line @typescript-eslint/no-explicit-any
-					accessHash: (botUser as any).accessHash,
-				});
-				return bot_user;
-			})
-			.catch((e) => {
-				botUser = undefined;
-				_botToken = undefined;
-				throw new Error(e);
-			});
+export async function signInAsBot(botToken: string) {
+	if (!client) throw NotConnected;
+	if (await client.checkAuthorization()) {
+		if (!(await client.isBot())) throw new Error("Bot session is missed");
+		if (!_botToken) _botToken = botToken;
+		if (_botToken == botToken) return;
 	}
+	await client
+		.signInBot(
+			{
+				apiId: _apiId,
+				apiHash: _apiHash,
+			},
+			{
+				botAuthToken: botToken,
+			}
+		)
+		.then(async (botUser) => {
+			_botToken = botToken;
+			_clientUser = botUser as Api.User;
+			return botUser;
+		})
+		.catch((e) => {
+			_botToken = undefined;
+			_clientUser = undefined;
+			throw new Error(e);
+		});
+}
+
+export async function signInAsUserWithQrCode(container: HTMLDivElement, password?: string) {
+	if (!client) throw NotConnected;
+	if ((await client.checkAuthorization()) && (await client.isBot())) new Error("User session is missed");
+	await client
+		.signInUserWithQrCode(
+			{ apiId: _apiId, apiHash: _apiHash },
+			{
+				qrCode: async (qrCode) => {
+					const url = "tg://login?token=" + qrCode.token.toString("base64");
+					const qrCodeSvg = await QRCode.toString(url, { type: "svg" });
+					const parser = new DOMParser();
+					const svg = parser.parseFromString(qrCodeSvg, "image/svg+xml").documentElement;
+					svg.setAttribute("width", "150");
+					svg.setAttribute("height", "150");
+					// Removes all children from `container`
+					while (container.firstChild) {
+						container.removeChild(container.firstChild);
+					}
+					container.appendChild(svg);
+				},
+				password: async (hint) => {
+					return password ? password : "";
+				},
+				onError: (error) => {
+					container.setText(error.message);
+					console.log(error);
+				},
+			}
+		)
+		.then((clientUser) => {
+			_clientUser = clientUser as Api.User;
+			return clientUser;
+		})
+		.catch(() => {
+			_clientUser = undefined;
+		});
 }
 
 // download files > 20MB
 export async function downloadMedia(bot: TelegramBot, botMsg: TelegramBot.Message, fileId: string, fileSize: number) {
-	if (!(await client.checkAuthorization())) {
-		throw new Error("Not authorized as Bot Client");
-	}
+	if (!client) throw NotConnected;
+	if (!(await client.checkAuthorization())) throw NotAuthorized;
 
 	const progressBarMessage = await createProgressBar(bot, botMsg, "downloading");
 	let stage = 0;
@@ -132,24 +188,58 @@ export async function downloadMedia(bot: TelegramBot, botMsg: TelegramBot.Messag
 		});
 }
 
-// ?TODO integrate after signInUser integration
-export async function sendReaction(botMsg: TelegramBot.Message) {
-	const messages = await client.getMessages(inputPeerUser);
-
-	const clientMsg = messages.find((m) => m.text == botMsg.text);
-
+export async function sendReaction(botUser: TelegramBot.User, botMsg: TelegramBot.Message) {
+	if (!client || !(await client.checkAuthorization())) throw NotConnected;
+	if ((await client.isBot()) || !_clientUser) throw NotAuthorizedAsUser;
+	const inputPeerUser = await getInputPeerUser(client, _clientUser, botUser, botMsg);
+	const message = await getMessage(client, inputPeerUser, botMsg);
 	await client.invoke(
 		new Api.messages.SendReaction({
 			peer: inputPeerUser,
-			msgId: clientMsg?.id,
+			msgId: message.id,
 			reaction: [new Api.ReactionEmoji({ emoticon: "👍" })],
 		})
 	);
 }
 
-// Stop the bot polling
-export async function stopClient() {
-	if (client) {
-		await client.destroy();
+export async function transcribeAudio(
+	botMsg: TelegramBot.Message,
+	botUser?: TelegramBot.User,
+	mediaId?: number,
+	limit = 15 // minutes for waiting transcribing (not of the audio)
+): Promise<string> {
+	if (botMsg.text || !(botMsg.voice || botMsg.video_note)) {
+		return "";
 	}
+	if (!_voiceTranscripts) _voiceTranscripts = new Map();
+	if (_voiceTranscripts.size > 100) _voiceTranscripts.clear();
+	if (_voiceTranscripts.has(botMsg.message_id)) return _voiceTranscripts.get(botMsg.message_id) || "";
+
+	if (!client || !(await client.checkAuthorization())) throw NotConnected;
+	if ((await client.isBot()) || !_clientUser) throw NotAuthorizedAsUser;
+	if (!_clientUser.premium) {
+		throw new Error(
+			"Transcribing voice available only for Telegram Premium subscribers! Remove {{voice:transcript}} from template or log in with premium user."
+		);
+	}
+	if (!botUser) return "";
+	const inputPeerUser = await getInputPeerUser(client, _clientUser, botUser, botMsg);
+	const message = await getMessage(client, inputPeerUser, botMsg, mediaId);
+	let transcribedAudio: Api.messages.TranscribedAudio | undefined;
+	// to avoid endless loop, limited waiting
+	for (let i = 1; i <= limit * 14; i++) {
+		transcribedAudio = await client.invoke(
+			new Api.messages.TranscribeAudio({
+				peer: inputPeerUser,
+				msgId: message.id,
+			})
+		);
+		if (transcribedAudio.pending)
+			await new Promise((resolve) => setTimeout(resolve, 5000)); // 5 sec delay between updates
+		else if (i == limit * 14) throw new Error("Very long audio. Transcribing audio is limited with 15 min.");
+		else break;
+	}
+	if (!transcribedAudio) throw new Error("Can't transcribe the audio");
+	if (!_voiceTranscripts.has(botMsg.message_id)) _voiceTranscripts.set(botMsg.message_id, transcribedAudio.text);
+	return transcribedAudio.text;
 }

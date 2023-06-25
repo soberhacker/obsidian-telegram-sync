@@ -8,9 +8,11 @@
 {{content:XX}} - XX characters of the message text
 {{file}} - file content ![]()
 {{file:link}} - link to the file []()
+{{voiceTranscript}} - transcribing voice(video notes!) to text (same limits as for Telegram Premium subscribers)
+{{voiceTranscript:XX}} - XX symbols of transcribed voices (same limits as for Telegram Premium subscribers)
 {{chat}} - link to the chat (bot / group / channel)
 {{chatId}} - id of the chat (bot / group / channel)
-{{topic}} - link to the topic
+{{topic}} - link to the topic (if the topic name displays incorrect, set the name manually using bot command "/topicName NAME")
 {{topicId}} - head message id representing the topic
 {{messageId}} - message id
 {{replyMessageId}} - reply message id

@@ -1,6 +1,5 @@
 import TelegramBot from "node-telegram-bot-api";
 import LinkifyIt from "linkify-it";
-import { TopicName } from "src/settings/Settings";
 import TelegramSyncPlugin from "src/main";
 
 export const fileTypes = ["photo", "video", "voice", "document", "audio", "video_note"];
@@ -62,7 +61,9 @@ export function getChatLink(msg: TelegramBot.Message): string {
 	} else {
 		username =
 			msg.chat.username ||
-			`c/${msg.chat.id.toString().slice(4)}/${msg.reply_to_message?.message_thread_id}/${msg.message_id}`;
+			`c/${msg.chat.id.toString().slice(4)}/${msg.message_thread_id || msg.reply_to_message?.message_thread_id}/${
+				msg.message_id
+			}`;
 		username = username.replace(/\/\//g, "/"); // because message_thread_id can be undefined
 	}
 	const title = getChatTitle(msg);
@@ -92,36 +93,30 @@ export function getInlineUrls(msg: TelegramBot.Message): string {
 	return urls.trimEnd();
 }
 
-export function getTopicLink(plugin: TelegramSyncPlugin, msg: TelegramBot.Message): string {
+export async function getTopicLink(plugin: TelegramSyncPlugin, msg: TelegramBot.Message): Promise<string> {
+	if (!msg.chat.is_forum) return "";
+
 	const reply = msg.reply_to_message;
-	if (!(reply && reply.message_thread_id)) return "";
-	let topicName: TopicName;
-	const topicNameIndex = plugin.settings.topicNames.findIndex(
-		(tn) => tn.chatId == reply.chat.id && tn.topicId == reply.message_thread_id
+	let topicName = plugin.settings.topicNames.find(
+		(tn) => tn.chatId == msg.chat.id && tn.topicId == (msg.message_thread_id || reply?.message_thread_id || 1)
 	);
-	if (reply.forum_topic_created?.name) {
+	if (!topicName && reply?.forum_topic_created?.name) {
 		topicName = {
-			name: reply.forum_topic_created?.name,
-			chatId: reply.chat.id,
-			topicId: reply.message_thread_id,
+			name: reply?.forum_topic_created?.name,
+			chatId: msg.chat.id,
+			topicId: msg.message_thread_id || reply.message_thread_id || 1,
 		};
-		if (topicNameIndex == -1) {
-			plugin.settings.topicNames.push(topicName);
-			plugin.saveSettings();
-		} else if (plugin.settings.topicNames[topicNameIndex].name != topicName.name) {
-			plugin.settings.topicNames[topicNameIndex].name = topicName.name;
-			plugin.saveSettings();
-		}
-	} else if (topicNameIndex == -1) {
+		plugin.settings.topicNames.push(topicName);
+		await plugin.saveSettings();
+	}
+	if (!topicName) {
 		throw new Error(
-			"Telegram bot has a limitation to get the topic name if it is a reply to some message. " +
-				"The plugin can store the topic name automatically after sending a simple message (not a reply) in the topic and use this value in the future.\n\n" +
-				"Send simple message or press /storeTopicName"
+			`Telegram bot has a limitation to get topic names. if the topic name displays incorrect, set the name manually using bot command "/topicName NAME"`
 		);
-	} else topicName = plugin.settings.topicNames[topicNameIndex];
+	}
 
 	const title = topicName.name;
-	const path = (reply.chat.username || `c/${topicName.chatId.toString().slice(4)}`) + `/${topicName.topicId}`;
+	const path = (msg.chat.username || `c/${topicName.chatId.toString().slice(4)}`) + `/${topicName.topicId}`;
 	return `[${title}](https://t.me/${path})`;
 }
 

@@ -41,11 +41,13 @@
     },
     "dependencies": {
         "@popperjs/core": "^2.11.7",
+        "@types/qrcode": "^1.5.0",
         "async": "^3.2.4",
         "linkify-it": "^4.0.1",
         "mime-types": "^2.1.35",
         "node-machine-id": "^1.1.12",
         "node-telegram-bot-api": "^0.61.0",
+        "qrcode": "^1.5.3",
         "telegram": "^2.16.4"
     }
 }

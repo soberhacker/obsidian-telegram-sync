@@ -7,6 +7,7 @@ import { formatDateTime } from "../../utils/dateUtils";
 import { displayAndLog, displayAndLogError } from "src/utils/logUtils";
 import { createProgressBar, deleteProgressBar, updateProgressBar } from "../progressBar";
 import { escapeRegExp, convertMessageTextToMarkdown } from "./convertToMarkdown";
+import * as GramJs from "../GramJs/client";
 
 // Delete a message or send a confirmation reply based on settings and message age
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -36,6 +37,10 @@ export async function finalizeMessageProcessing(plugin: TelegramSyncPlugin, msg:
 		await deleteProgressBar(plugin.bot, msg, progressBarMessage);
 	} else {
 		// Send a confirmation reply if the message is too old to be deleted
+		// TODO: needs deep testing and integration
+		// if (plugin.botUser) {
+		// 	await GramJs.sendReaction(plugin.botUser, msg);
+		// }
 		await plugin.bot?.sendMessage(msg.chat.id, "...✅...", { reply_to_message_id: msg.message_id });
 	}
 }
@@ -77,9 +82,14 @@ export async function applyNoteContentTemplate(
 	const textContentMd = await convertMessageTextToMarkdown(msg);
 	// Check if the message is forwarded and extract the required information
 	const forwardFromLink = getForwardFromLink(msg);
+	let voiceTranscript = "";
+	if (textContentMd.includes("{{voiceTranscript") || textContentMd.includes("{{content}}")) {
+		voiceTranscript = await GramJs.transcribeAudio(msg, await plugin.getBotUser(msg));
+	}
 	const fullContentMd =
 		(forwardFromLink ? `**Forwarded from ${forwardFromLink}**\n\n` : "") +
 		(fileLink ? fileLink + "\n" : "") +
+		(voiceTranscript ? voiceTranscript + "\n\n" : "") +
 		textContentMd;
 	if (!templatePath) {
 		return fullContentMd;
@@ -103,6 +113,7 @@ export async function applyNoteContentTemplate(
 	const itemsForReplacing: [string, string][] = [];
 
 	let proccessedContent = templateContent
+		// TODO Copy tab and blockquotes to every new line of {{content*}} or {{voiceTranscript*}} if they are placed in front of this variables.
 		.replace("{{content}}", fullContentMd)
 		.replace(/{{content:(.*?)}}/g, (_, property: string) => {
 			let subContent = "";
@@ -120,17 +131,35 @@ export async function applyNoteContentTemplate(
 		}) // message text of specified length
 		.replace(/{{file}}/g, fileLink || "")
 		.replace(/{{file:link}}/g, fileLink?.startsWith("!") ? fileLink.slice(1) : fileLink || "")
+		// TODO deep tests
+		.replace(/{{voiceTranscript}}/g, voiceTranscript)
+		.replace(/{{voiceTranscript:(.*?)}}/g, (_, property: string) => {
+			let subContent = "";
+			if (property.toLowerCase() == "firstline") {
+				subContent = voiceTranscript.split("\n")[0];
+			} else if (Number.isInteger(parseFloat(property))) {
+				// property is length
+				subContent = voiceTranscript.substring(0, Number(property));
+			} else {
+				displayAndLog(plugin, `Template variable {{voiceTranscript:${property}}} isn't supported!`, 15 * 1000);
+			}
+			return subContent;
+		})
 		.replace(/{{messageDate:(.*?)}}/g, (_, format) => formatDateTime(messageDateTime, format))
 		.replace(/{{messageTime:(.*?)}}/g, (_, format) => formatDateTime(messageDateTime, format))
 		.replace(/{{date:(.*?)}}/g, (_, format) => formatDateTime(dateTimeNow, format))
 		.replace(/{{time:(.*?)}}/g, (_, format) => formatDateTime(dateTimeNow, format))
 		.replace(/{{forwardFrom}}/g, forwardFromLink)
-		.replace(/{{userId}}/g, msg.from?.id.toString() || msg.message_id.toString()) // id of the user who sent the message
 		.replace(/{{user}}/g, getUserLink(msg)) // link to the user who sent the message
+		.replace(/{{userId}}/g, msg.from?.id.toString() || msg.message_id.toString()) // id of the user who sent the message
 		.replace(/{{chat}}/g, getChatLink(msg)) // link to the chat with the message
 		.replace(/{{chatId}}/g, msg.chat.id.toString()) // id of the chat with the message
-		.replace(/{{topic}}/g, getTopicLink(plugin, msg)) // link to the topic with the message
-		.replace(/{{topicId}}/g, (msg.reply_to_message?.message_thread_id || "").toString()) // head message id representing the topic
+		.replace(/{{topic}}/g, await getTopicLink(plugin, msg)) // link to the topic with the message
+		.replace(
+			/{{topicId}}/g,
+			(msg.chat.is_forum && (msg.message_thread_id || msg.reply_to_message?.message_thread_id || 1).toString()) ||
+				""
+		) // head message id representing the topic
 		.replace(/{{messageId}}/g, msg.message_id.toString())
 		.replace(/{{replyMessageId}}/g, getReplyMessageId(msg))
 		.replace(/{{url1}}/g, getUrl(msg)) // fisrt url from the message
@@ -148,7 +177,6 @@ export async function applyNoteContentTemplate(
 		}) // preview for first url from the message
 		.replace(/{{creationDate:(.*?)}}/g, (_, format) => formatDateTime(creationDateTime, format)) // date, when the message was created
 		.replace(/{{creationTime:(.*?)}}/g, (_, format) => formatDateTime(creationDateTime, format)) // time, when the message was created
-		// this replace statements should be in the end
 		.replace(/{{replace:(.*?)=>(.*?)}}/g, (_, replaceThis, replaceWith) => {
 			itemsForReplacing.push([replaceThis, replaceWith]);
 			return "";
@@ -159,6 +187,7 @@ export async function applyNoteContentTemplate(
 		});
 
 	itemsForReplacing.forEach(
+		// TODO add replacing new lines "\n"
 		([replaceThis, replaceWith]) =>
 			(proccessedContent = proccessedContent.replace(new RegExp(escapeRegExp(replaceThis), "g"), replaceWith))
 	);
