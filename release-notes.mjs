@@ -29,6 +29,8 @@ export const bugFixes = `
 - missing inline external links
 - problem with nested formattings
 - false warnings about two parallel bot connections
+- inconsistent names of downloaded files
+- ignoring Obsidian File & Link settings
 `;
 export const possibleRoadMap = `
 - add setting Note Path Template to make notes creation more flexible: 

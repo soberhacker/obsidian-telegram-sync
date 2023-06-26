@@ -95,6 +95,7 @@ export async function handleFiles(plugin: TelegramSyncPlugin, msg: TelegramBot.M
 	const basePath = plugin.settings.newFilesLocation || plugin.settings.newNotesLocation || "";
 	await createFolderIfNotExist(plugin.app.vault, basePath);
 	let filePath = "";
+	let markdownLink = "";
 	let telegramFileName = "";
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	let error: any;
@@ -169,7 +170,8 @@ export async function handleFiles(plugin: TelegramSyncPlugin, msg: TelegramBot.M
 		const fileFullName = `${fileName} - ${messageDateString}${messageTimeString}${fileExtension}`;
 		filePath = `${specificFolder}/${fileFullName}`;
 
-		await plugin.app.vault.createBinary(filePath, fileByteArray);
+		const file = await plugin.app.vault.createBinary(filePath, fileByteArray);
+		markdownLink = plugin.app.fileManager.generateMarkdownLink(file, filePath);
 	} catch (e) {
 		error = e;
 	}
@@ -180,9 +182,7 @@ export async function handleFiles(plugin: TelegramSyncPlugin, msg: TelegramBot.M
 		return;
 	}
 
-	const fileLink = !error
-		? `![${telegramFileName}](${filePath?.replace(/\s/g, "%20")})`
-		: `[❌ error while handling file](${error})`;
+	const fileLink = !error ? markdownLink : `[❌ error while handling file](${error})`;
 
 	const noteContent = await applyNoteContentTemplate(plugin, plugin.settings.templateFileLocation, msg, fileLink);
 	if (plugin.settings.appendAllToTelegramMd) {
