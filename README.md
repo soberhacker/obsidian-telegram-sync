@@ -16,10 +16,6 @@ Transfer messages and files from Telegram to your Obsidian vault. You can easily
 
 ---
 
-## Demo
-
-![](https://raw.githubusercontent.com/vslinko/obsidian-outliner/main/demos/demo1.gif)<br>
-
 ## Features
 
 - Synchronize text messages and files
@@ -53,7 +49,7 @@ Transfer messages and files from Telegram to your Obsidian vault. You can easily
 5. Configure the remaining settings according to your preferences
 6. Start sending messages and files to your Telegram bot
 7. When the Obsidian app is running on your lapton or PC, it syncs all your messages
-8. You can optionally add your bot to any chats that you want to sync (grant admin rights)
+8. You can optionally add your bot to any chats that you want to sync (the bot needs admin rights)
 
 ## Tips
 
@@ -67,6 +63,7 @@ I want to say thank you to the people who support me, I really appreciate it!
 - maauso
 - ekalinin
 - knopki
+- Fabio Scarsi
 - anonymous patrons and contributors
 
 ---

@@ -1,4 +1,8 @@
 export const version = "1.7.0";
+// TODO in github actions creating an archive with 3 main files for easy installing
+// TODO Add Demo gif and screenshots to readme.md
+// ## Demo
+//![](https://raw.githubusercontent.com/vslinko/obsidian-outliner/main/demos/demo1.gif)<br>
 export const showInTelegram = true;
 export const newFeatures = `
 - add note template variables:
