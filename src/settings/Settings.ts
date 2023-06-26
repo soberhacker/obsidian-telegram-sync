@@ -1,9 +1,19 @@
 import TelegramSyncPlugin from "src/main";
-import { PluginSettingTab, Setting, normalizePath } from "obsidian";
+import { ButtonComponent, PluginSettingTab, Setting, TextComponent, normalizePath } from "obsidian";
 import { FileSuggest } from "./suggesters/FileSuggester";
 import { FolderSuggest } from "./suggesters/FolderSuggester";
-import { displayAndLog } from "src/utils/logUtils";
 import { cryptoDonationButton, paypalButton, buyMeACoffeeButton, kofiButton } from "./donation";
+import TelegramBot from "node-telegram-bot-api";
+import { createProgressBar, updateProgressBar, deleteProgressBar } from "src/telegram/progressBar";
+import * as GramJs from "src/telegram/GramJs/client";
+import { BotSettingsModal } from "./BotSettingsModal";
+import { UserLogInModal } from "./UserLogInModal";
+
+export interface TopicName {
+	name: string;
+	chatId: number;
+	topicId: number;
+}
 
 export interface TelegramSyncSettings {
 	botToken: string;
@@ -17,7 +27,9 @@ export interface TelegramSyncSettings {
 	pluginVersion: string;
 	appId: string;
 	apiHash: string;
-	//telegramPassword: string;
+	topicNames: TopicName[];
+	telegramSessionType: GramJs.SessionType;
+	telegramSessionId: number;
 }
 
 export const DEFAULT_SETTINGS: TelegramSyncSettings = {
@@ -32,7 +44,9 @@ export const DEFAULT_SETTINGS: TelegramSyncSettings = {
 	pluginVersion: "",
 	appId: "17349", // public, ok to be here
 	apiHash: "344583e45741c457fe1862106095a5eb", // public, ok to be here
-	//telegramPassword: "",
+	topicNames: [],
+	telegramSessionType: "bot",
+	telegramSessionId: GramJs.getNewSessionId(),
 };
 
 export class TelegramSyncSettingTab extends PluginSettingTab {
@@ -43,9 +57,9 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 	display(): void {
 		this.containerEl.empty();
 		this.addSettingsHeader();
-		this.addBotToken();
-		this.addAllowedChatFromUsernamesSetting();
-		this.addDeviceId();
+
+		this.addBot();
+		this.addUser();
 		this.containerEl.createEl("h2", { text: "Locations" });
 		this.addNewNotesLocation();
 		this.addNewFilesLocation();
@@ -53,11 +67,6 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 		this.containerEl.createEl("h2", { text: "Behavior settings" });
 		this.addAppendAllToTelegramMd();
 		this.addDeleteMessagesFromTelegram();
-		// Uncomment only if error API_ID_PUBLISHED_FLOOD
-		//this.containerEl.createEl("h2", { text: "Client Authorization" });
-		//this.addClientAuthorizationDescription();
-		//this.addApiId();
-		//this.addAppHash();
 		this.addDonation();
 	}
 
@@ -69,22 +78,39 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 		});
 	}
 
-	addBotToken() {
-		const botFatherSetting = new Setting(this.containerEl)
-			.setName("Bot token (required)")
-			.setDesc("Enter your Telegram bot token.")
-			.addText((text) =>
-				text
-					.setPlaceholder("example: 6123456784:AAX9mXnFE2q9WahQ")
-					.setValue(this.plugin.settings.botToken)
-					.onChange(async (value: string) => {
-						this.plugin.settings.botToken = value;
-						await this.plugin.saveSettings();
-						this.plugin.initTelegramBot(); // Initialize the bot with the new token
-						this.plugin.initTelegramClient();
-					})
-			);
+	addBot() {
+		let botStatusComponent: TextComponent;
 
+		const botStatusConstructor = (botStatus: TextComponent) => {
+			botStatusComponent = botStatusComponent || botStatus;
+			botStatus.setDisabled(true);
+			if (this.plugin.settings.botToken && this.plugin.botConnected) botStatus.setValue("🤖 connected");
+			else botStatus.setValue("❌ disconnected");
+		};
+
+		const botSettingsConstructor = (botSettingsButton: ButtonComponent) => {
+			if (this.plugin.settings.botToken && this.plugin.botConnected) botSettingsButton.setButtonText("Settings");
+			else botSettingsButton.setButtonText("Connect");
+			botSettingsButton.onClick(async () => {
+				const botSettingsModal = new BotSettingsModal(this.plugin);
+				botSettingsModal.onClose = async () => {
+					if (botSettingsModal.saved) {
+						// Initialize the bot with the new token
+						await this.plugin.initTelegramBot();
+						if (this.plugin.settings.telegramSessionType == "bot")
+							await this.plugin.initTelegramClient(this.plugin.settings.telegramSessionType);
+						botStatusConstructor.call(this, botStatusComponent);
+						botSettingsConstructor.call(this, botSettingsButton);
+					}
+				};
+				botSettingsModal.open();
+			});
+		};
+		const botSettings = new Setting(this.containerEl)
+			.setName("Bot (required)")
+			.setDesc("Connect your telegram bot. It's required for all features.")
+			.addText(botStatusConstructor)
+			.addButton(botSettingsConstructor);
 		// add link to botFather
 		const botFatherLink = document.createElement("div");
 		botFatherLink.textContent = "To create a new bot click on -> ";
@@ -92,74 +118,54 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 			href: "https://t.me/botfather",
 			text: "@botFather",
 		});
-		botFatherSetting.descEl.appendChild(botFatherLink);
+		botSettings.descEl.appendChild(botFatherLink);
 	}
 
-	addAllowedChatFromUsernamesSetting() {
-		const allowedChatFromUsernamesSetting = new Setting(this.containerEl)
-			.setName("Allowed chat from usernames (required)")
-			.setDesc("Only messages from these usernames will be processed. At least your username must be entered.")
-			.addTextArea((text) => {
-				const textArea = text
-					.setPlaceholder("example: soberHacker,soberHackerBot")
-					.setValue(this.plugin.settings.allowedChatFromUsernames.join(","))
-					.onChange(async (value: string) => {
-						if (!value.trim()) {
-							textArea.inputEl.style.borderColor = "red";
-							textArea.inputEl.style.borderWidth = "2px";
-							textArea.inputEl.style.borderStyle = "solid";
-							return;
-						}
-						this.plugin.settings.allowedChatFromUsernames = value.split(",");
-						await this.plugin.saveSettings();
-					});
+	addUser() {
+		let userStatusComponent: TextComponent;
+
+		const userStatusConstructor = (userStatus: TextComponent) => {
+			userStatusComponent = userStatusComponent || userStatus;
+			userStatus.setDisabled(true);
+			if (this.plugin.settings.telegramSessionType == "user" && this.plugin.userConnected)
+				userStatus.setValue("👨🏽‍💻 connected");
+			else userStatus.setValue("❌ disconnected");
+		};
+
+		const userLogInConstructor = (userLogInButton: ButtonComponent) => {
+			if (this.plugin.settings.telegramSessionType == "user" && this.plugin.userConnected)
+				userLogInButton.setButtonText("Log out");
+			else userLogInButton.setButtonText("Log in");
+
+			userLogInButton.onClick(async () => {
+				if (this.plugin.settings.telegramSessionType == "user" && this.plugin.userConnected) {
+					// Log Out
+					await this.plugin.initTelegramClient("bot");
+					userStatusConstructor.call(this, userStatusComponent);
+					userLogInConstructor.call(this, userLogInButton);
+				} else {
+					// Log In
+					const userLogInModal = new UserLogInModal(this.plugin);
+					userLogInModal.onClose = async () => {
+						userStatusConstructor.call(this, userStatusComponent);
+						userLogInConstructor.call(this, userLogInButton);
+					};
+					userLogInModal.open();
+				}
 			});
-		// add link to Telegram FAQ about getting username
-		const howDoIGetUsername = document.createElement("div");
-		howDoIGetUsername.textContent = "To get help click on -> ";
-		howDoIGetUsername.createEl("a", {
-			href: "https://telegram.org/faq?setln=en#q-what-are-usernames-how-do-i-get-one",
-			text: "Telegram FAQ",
+		};
+
+		const userSettings = new Setting(this.containerEl)
+			.setName("User (optionally)")
+			.setDesc("Connect your telegram user. It's required only for ")
+			.addText(userStatusConstructor)
+			.addButton(userLogInConstructor);
+
+		// add link to authorized user features
+		userSettings.descEl.createEl("a", {
+			href: "https://github.com/soberhacker/obsidian-telegram-sync/blob/main/docs/Authorized%20User%20Features.md",
+			text: "a few secondary features",
 		});
-		allowedChatFromUsernamesSetting.descEl.appendChild(howDoIGetUsername);
-	}
-
-	addDeviceId() {
-		const deviceIdSetting = new Setting(this.containerEl)
-			.setName("Main device id")
-			.setDesc(
-				"Specify the device to be used for sync when running Obsidian simultaneously on multiple desktops. If not specified, the priority will shift unpredictably."
-			)
-			.addText((text) =>
-				text
-					.setPlaceholder("example: 98912984-c4e9-5ceb-8000-03882a0485e4")
-					.setValue(this.plugin.settings.mainDeviceId)
-					.onChange(async (value) => await this.setMainDeviceIdSetting(value))
-			);
-
-		// current device id copy to settings
-		const deviceIdLink = document.createElement("div");
-		deviceIdLink.textContent = "To make the current device as main, click on -> ";
-		deviceIdLink
-			.createEl("a", {
-				href: this.plugin.currentDeviceId,
-				text: this.plugin.currentDeviceId,
-			})
-			.onClickEvent((evt) => {
-				evt.preventDefault();
-				// eslint-disable-next-line @typescript-eslint/no-explicit-any
-				let inputDeviceId: any;
-				try {
-					inputDeviceId = deviceIdSetting.controlEl.firstElementChild;
-					inputDeviceId.value = this.plugin.currentDeviceId;
-				} catch (error) {
-					displayAndLog(this.plugin, `Try to copy and paste device id manually. Error: ${error}`);
-				}
-				if (inputDeviceId && inputDeviceId.value) {
-					this.setMainDeviceIdSetting(this.plugin.currentDeviceId);
-				}
-			});
-		deviceIdSetting.descEl.appendChild(deviceIdLink);
 	}
 
 	addNewNotesLocation() {
@@ -170,9 +176,9 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 				new FolderSuggest(cb.inputEl);
 				cb.setPlaceholder("example: folder1/folder2")
 					.setValue(this.plugin.settings.newNotesLocation)
-					.onChange((newFolder) => {
+					.onChange(async (newFolder) => {
 						this.plugin.settings.newNotesLocation = newFolder ? normalizePath(newFolder) : newFolder;
-						this.plugin.saveSettings();
+						await this.plugin.saveSettings();
 					});
 			});
 	}
@@ -185,9 +191,9 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 				new FolderSuggest(cb.inputEl);
 				cb.setPlaceholder("example: folder1/folder2")
 					.setValue(this.plugin.settings.newFilesLocation)
-					.onChange((newFolder) => {
+					.onChange(async (newFolder) => {
 						this.plugin.settings.newFilesLocation = newFolder ? normalizePath(newFolder) : newFolder;
-						this.plugin.saveSettings();
+						await this.plugin.saveSettings();
 					});
 			});
 	}
@@ -200,11 +206,11 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 				new FileSuggest(cb.inputEl, this.plugin);
 				cb.setPlaceholder("example: folder/zettelkasten.md")
 					.setValue(this.plugin.settings.templateFileLocation)
-					.onChange((templateFile) => {
+					.onChange(async (templateFile) => {
 						this.plugin.settings.templateFileLocation = templateFile
 							? normalizePath(templateFile)
 							: templateFile;
-						this.plugin.saveSettings();
+						await this.plugin.saveSettings();
 					});
 			});
 		// add template available variables
@@ -246,80 +252,6 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 			});
 	}
 
-	// addClientAuthorizationDescription() {
-	// 	const clientAuthorizationDescription = new Setting(this.containerEl).setDesc(
-	// 		"Entering api_id and api_hash is required for downloading files over 20MB."
-	// 	);
-	// 	clientAuthorizationDescription.descEl.createDiv({ text: "To get manual click on -> " }).createEl("a", {
-	// 		href: "https://core.telegram.org/api/obtaining_api_id",
-	// 		text: "Obtaining api_id",
-	// 	});
-	// }
-
-	// addApiId() {
-	// 	new Setting(this.containerEl)
-	// 		.setName("api_id")
-	// 		.setDesc("Enter Telegram Client api_id")
-	// 		.addText((text) =>
-	// 			text
-	// 				.setPlaceholder("example: 61234")
-	// 				.setValue(this.plugin.settings.appId)
-	// 				.onChange(async (value: string) => {
-	// 					this.plugin.settings.appId = value;
-	// 					await this.plugin.saveSettings();
-	// 					this.plugin.initTelegramClient();
-	// 				})
-	// 		);
-	// }
-
-	// addAppHash() {
-	// 	new Setting(this.containerEl)
-	// 		.setName("api_hash")
-	// 		.setDesc("Enter Telegram Client api_hash")
-	// 		.addText((text) =>
-	// 			text
-	// 				.setPlaceholder("example: asdda623sdk4")
-	// 				.setValue(this.plugin.settings.apiHash)
-	// 				.onChange(async (value: string) => {
-	// 					this.plugin.settings.apiHash = value;
-	// 					await this.plugin.saveSettings();
-	// 					this.plugin.initTelegramClient();
-	// 				})
-	// 		);
-	// }
-
-	// new Setting(secretSettingsDiv)
-	// 	.setName("Telegram Password")
-	// 	.setDesc(
-	// 		"Enter your password from Telegram. Will not be stored and will be removed after succeeding log in."
-	// 	)
-	// 	.addText((text) =>
-	// 		text
-	// 			.setPlaceholder("*********")
-	// 			.setValue(this.plugin.settings.telegramPassword)
-	// 			.onChange(async (value: string) => {
-	// 				this.plugin.settings.telegramPassword = value;
-	// 			})
-	// 	);
-
-	// new Setting(secretSettingsDiv)
-	// 	.setName("Log In By Qr Code")
-	// 	.setDesc("Scan this Qr Code by official Telegram app on your smartphone. You have 30 sec to do this.")
-	// 	.addButton((button) => {
-	// 		button.setButtonText("GENERATE QR CODE");
-	// 		button.setDisabled(this.plugin.settings.appId == "" || this.plugin.settings.apiHash == "");
-	// 		button.onClick(async () => {
-	// 			const qrCodeContainer: HTMLDivElement = secretSettingsDiv.createDiv({ cls: "qr-code-container" });
-	// 			await gram.initUser(
-	// 				+this.plugin.settings.appId,
-	// 				this.plugin.settings.apiHash,
-	// 				this.plugin.botName,
-	// 				this.plugin.settings.telegramPassword,
-	// 				qrCodeContainer
-	// 			);
-	// 		});
-	// 	});
-
 	addDonation() {
 		this.containerEl.createEl("hr");
 
@@ -342,9 +274,39 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 		donationDiv.appendChild(paypalButton);
 	}
 
-	async setMainDeviceIdSetting(value: string) {
-		this.plugin.settings.mainDeviceId = value;
-		await this.plugin.saveSettings();
-		this.plugin.initTelegramBot();
+	async storeTopicName(msg: TelegramBot.Message) {
+		const bot = this.plugin.bot;
+		if (!bot || !msg.text) return;
+
+		const reply = msg.reply_to_message;
+		if (msg.message_thread_id || (reply && reply.message_thread_id)) {
+			const topicName = msg.text.substring(11);
+			if (!topicName) throw new Error("Set topic name! example: /topicName NewTopicName");
+			const newTopicName: TopicName = {
+				name: topicName,
+				chatId: msg.chat.id,
+				topicId: msg.message_thread_id || reply?.message_thread_id || 1,
+			};
+			const topicNameIndex = this.plugin.settings.topicNames.findIndex(
+				(tn) => tn.topicId == newTopicName.topicId && tn.chatId == newTopicName.chatId
+			);
+			if (topicNameIndex > -1) {
+				this.plugin.settings.topicNames[topicNameIndex].name = newTopicName.name;
+			} else this.plugin.settings.topicNames.push(newTopicName);
+			await this.plugin.saveSettings();
+
+			const progressBarMessage = await createProgressBar(bot, msg, "stored");
+
+			// Update the progress bar during the delay
+			let stage = 0;
+			for (let i = 1; i <= 10; i++) {
+				await new Promise((resolve) => setTimeout(resolve, 50)); // 50 ms delay between updates
+				stage = await updateProgressBar(bot, msg, progressBarMessage, 10, i, stage);
+			}
+			await bot.deleteMessage(msg.chat.id, msg.message_id);
+			await deleteProgressBar(bot, msg, progressBarMessage);
+		} else {
+			throw new Error("You can set the topic name only by sending the command to the topic!");
+		}
 	}
 }

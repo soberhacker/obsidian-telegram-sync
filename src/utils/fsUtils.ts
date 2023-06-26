@@ -23,3 +23,13 @@ export async function createFolderIfNotExist(vault: Vault, folderpath: string) {
 		}
 	});
 }
+
+export function sanitizeFileName(fileName: string): string {
+	const invalidCharacters = /[\\/:*?"<>|\n\r]/g;
+	const replacementCharacter = "_";
+	return fileName.replace(invalidCharacters, replacementCharacter);
+}
+
+export function base64ToString(base64: string): string {
+	return Buffer.from(base64, "base64").toString("utf-8");
+}

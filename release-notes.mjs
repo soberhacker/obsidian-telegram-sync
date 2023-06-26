@@ -1,25 +1,51 @@
-// if "!"" in version code then notify user about latest release
-export const pluginVersion = "1.6.1!";
-// change session name when changes in plugin require new client authorization
-export const sessionName = "telegram_sync_160";
+export const version = "1.7.0";
+// TODO in github actions creating an archive with 3 main files for easy installing
+// TODO Add Demo gif and screenshots to readme.md
+// ## Demo
+//![](https://raw.githubusercontent.com/vslinko/obsidian-outliner/main/demos/demo1.gif)<br>
+export const showInTelegram = true;
 export const newFeatures = `
-- add support of downloading files > 20 MB (quite a tough nut to crack 🤯)
-- add skipping command "/start" for keeping empty bots in chat list
-- add public <a href='https://t.me/ObsidianTelegramSync'>Telegram chat</a> for communication
+- add note template variables:
+    {{chat}} - link to the chat (bot / group / channel)
+    {{chatId}} - id of the chat (bot / group / channel)
+    {{topic}} - link to the topic (if the topic name displays incorrect, set the name manually using bot command "/topicName NAME")
+    {{topicId}} - head message id representing the topic
+    {{messageId}} - message id
+    {{replyMessageId}} - reply message id
+    {{url1}} - first url from the message
+    {{url1:previewYYY}} - first url preview with YYY pixels height (default 250)
+    {{replace:TEXT=>WITH}} - replace or delete text in resulting note
+    {{file:link}} - link to the file 
+- improve behavior of content insertion 
+    {{content}} - forwarded from + file content + message text
+    {{content:firstLine}} - first line of the message text
+    {{content:text}} - only message text
+    {{file}} - only file content ![]()
+- add transcribing voices (for Telegram Premium subscribers only)
+	{{voiceTranscript}} - transcribing to text
+* If Note Content Template is unspecified, template by default will be equal {{content}}
+* To get full list tap on <a href='https://github.com/soberhacker/obsidian-telegram-sync/blob/main/docs/Template%20Variables%20List.md'>Template Variables List</a>
+
 `;
 // - no bugs, no fixes (create issues on <a href='https://github.com/soberhacker/obsidian-telegram-sync/issues'>github</a>)
 export const bugFixes = `
-- EISDIR: illegal operation on a directory, read (<a href='https://github.com/soberhacker/obsidian-telegram-sync/issues/108'>issue 108</a>)
-- 400 Bad Request: file is too big (<a href='https://github.com/soberhacker/obsidian-telegram-sync/issues/79'>issue 79</a>)
+- missing file captions formatting
+- missing inline external links
+- problem with nested formattings
+- false warnings about two parallel bot connections
+- inconsistent names of downloaded files
+- ignoring Obsidian File & Link settings
 `;
 export const possibleRoadMap = `
-- add new template variables
-    {{chat}} - link to the chat (bot / group / channel)
-    {{topic}} - topic name
+- add setting Note Path Template to make notes creation more flexible: 
+    * setting any note names 
+    * using conditions for organizing notes by days, topics etc.
+  For example:
+    * myNotes/daily/{{messageDate}}.md
+    * myNotes/{{chat:Recipies}}/{content:30}.md
+    * myNotes/{{chat:Ideas}}/{{content:firstLine}}.md
 - send notes (as files) and files from Obsidian to one chat with bot
 - don't mark messages as processed and don't delete them (sending of errors will remain)
-- change replying to liking👍 when marking a message as processed (needs scanning qr code and entering Telegram password)
-- voice recognition for Telegram Premium subscribers (needs scanning qr code and entering Telegram password)
 
 You can "like" one of the possible feature <a href='https://t.me/ObsidianTelegramSync/5'>in Telegram chat</a> to increase its chances of being implemented.
 `;
@@ -27,10 +53,9 @@ You can "like" one of the possible feature <a href='https://t.me/ObsidianTelegra
 const check = process.argv[2] === "check";
 
 if (check) {
-	const pluginVersionCode = pluginVersion.replace(/!/g, "");
 	const packageVersion = process.env.npm_package_version;
 
-	if (packageVersion !== pluginVersionCode) {
+	if (packageVersion !== version) {
 		console.error("Failed! Release notes are outdated!");
 		process.exit(1);
 	}

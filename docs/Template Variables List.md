@@ -1,17 +1,31 @@
-#### Note Content Template 
+#### Note Content Template
 
 ###### Variables:
 ```ts
-❌{{chat}} - link to the chat (bot / group / channel) (not implemented)
-❌{{topic}} - topic name (not implemented)
-{{userId}} - id of the user who sent the message
+{{content}} - forwarded from + file content + message text
+{{content:text}} - only message text
+{{content:firstLine}} - first line of the message text
+{{content:XX}} - XX characters of the message text
+{{file}} - file content ![]()
+{{file:link}} - link to the file []()
+{{voiceTranscript}} - transcribing voice(video notes!) to text (same limits as for Telegram Premium subscribers)
+{{voiceTranscript:XX}} - XX symbols of transcribed voices (same limits as for Telegram Premium subscribers)
+{{chat}} - link to the chat (bot / group / channel)
+{{chatId}} - id of the chat (bot / group / channel)
+{{topic}} - link to the topic (if the topic name displays incorrect, set the name manually using bot command "/topicName NAME")
+{{topicId}} - head message id representing the topic
+{{messageId}} - message id
+{{replyMessageId}} - reply message id
 {{user}} - link to the user who sent the message
-{{content:XX}} - message text: full or of specified length
-{{forwardFrom}} - link to the initial creator of the message (user / channel)
+{{userId}} - id of the user who sent the message
+{{forwardFrom}} - link to the forwarded message or its creator (user / channel)
 {{messageDate:YYYYMMDD}} - date, when the message was sent
 {{messageTime:HHmmss}} - time, when the message was sent
 {{creationDate:YYYYMMDD}} - date, when the message was created
 {{creationTime:HHmmss}} - time, when the message was created
+{{url1}} - first url from the message
+{{url1:previewYYY}} - first url preview with YYY pixels height (default 250)
+{{replace:TEXT=>WITH}} - replace or delete text in resulting note
 ```
 
 ###### Template example:
@@ -24,16 +38,20 @@ Source: {{chat}}-{{forwardFrom}}
 Created: {{creationDate:YYYY-DD-MM}} {{creationTime:HH:mm:ss}}
 ```
 
+- If Note Content Template is unspecified, template by default will be equal {{content}}
 - All available formats for dates and time you can find in [Monent JS Docs](https://momentjs.com/docs/#/parsing/string-format/)
+
+
 
 
 #### Note Path Template (❌ not implemented)
 
 ###### Variables:
 ```json
-❌{{userId:VALUE}} - only when user id equal VALUE use this path
 ❌{{user:VALUE}} - only when user name equal VALUE use this path
+❌{{userId:VALUE}} - only when user id equal VALUE use this path
 ❌{{chat:VALUE}} - only when chat name equal VALUE use this path
+❌{{chatId:VALUE}} - only when chat id equal VALUE use this path
 ❌{{topic:VALUE}} - only when topic name equal VALUE use this path
 ❌{{forwardFrom:VALUE}} - only when message creator equal VALUE use this path
 ```
@@ -46,8 +64,8 @@ myNotes/WorldNews/{{forwardFrom:The Washington Post}}.md
 myNotes/Telegram.md
 
 // Important channels are written in separate folders, other messages - in root folder in separate notes
-myNotes/{{chat:Recipies}}/{context:30}.md
-myNotes/{{chat:Ideas}}/{{context:firstLine}}.md
+myNotes/{{chat:Recipies}}/{content:30}.md
+myNotes/{{chat:Ideas}}/{{content:firstLine}}.md
 myNotes/{{chat:Work}}/{{forwardFrom}}_{{creationDate}}.md
 myNotes/{{content:20}}_{{messageDate}}_{{messageTime}}.md
 
@@ -61,16 +79,18 @@ myNotes/{{messageDate:YYYY}}/{{messageDate:MM}}/{{messageDate:DD}}/{{messageTime
 myNotes/{{creationDate:YYYY}}/{{creationDate:MM-DD}}.{{creationTime:HH:mm:ss(SSS)}}.md
 ```
 
--  All **Note Content Template Variables** are also available here
+-  **Note Content Template Variables** are also available here (except for {{file*}}, {{url1*}}, {{replace*}}, {{content}}, {{content:text}})
 -  Always define note names and finish paths with *".md"*
 -  If a note with such name exists then new data will be always appended to this notes 
+
+
 
 
 #### File Path Template (❌ not implemented)
 
 ###### Variables:
 ```json
-❌{{fileType}} - file type identified by Telegram (videos, audios, voices, photos, documents...)
+❌{{fileType}} - file type identified by Telegram (video, audio, voice, photo, document...)
 ❌{{fileExtention}} - file extension (mp3, ogg, docx, png...)
 ❌{{fileName}} - unique file name assigned by Telegram (without extension)
 ```
@@ -82,16 +102,18 @@ myFiles/{{forwardFrom}}_{{fileName}}.{{fileExtension}}
 myFiles/{{messageDate:YYYY}}/{{fileType}}.{{messageTime:HHmmss}}.{{fileName}}.{{fileExtension}}
 ```
 
--  All **Note Path Template Variables** are also available here
+-  **Note Content Template Variables** are also available here (except for {{file*}}, {{url1*}}, {{replace*}}, {{content}}, {{content:text}})
 -  Always define file names and finish paths with *".{{fileExtention}}"*
 -  If a file with such name exists then new file will be created with auto-generated unique name
+
+
 
 
 #### ⚠ Not Implemented Features ⚠
 
 Integrating these new features might prove challenging and time-consuming, so your assistance would be much appreciated. You can help by:
 -  Donating to enhance my motivation
--  Contributing to the development (branch "develop")
+-  Contributing to the development (branch "[develop](https://github.com/soberhacker/obsidian-telegram-sync/tree/develop)")
 
 [![Crypto Ð⟠na₮i⟠n](https://img.buymeacoffee.com/button-api/?text=Crypto%20Donation&emoji=🚀&slug=soberhacker&button_colour=5b5757&font_colour=ffffff&font_family=Lato&outline_colour=ffffff&coffee_colour=FFDD00)](https://oxapay.com/donate/5855474)
 

@@ -1,6 +1,24 @@
 # Changelog
 
 
+## [1.7.0](https://github.com/soberhacker/obsidian-telegram-sync/compare/1.6.1...1.7.0) (2023-06-26)
+
+
+### Features
+
+* add chat and topic template variables ([60437c9](https://github.com/soberhacker/obsidian-telegram-sync/commit/60437c94817c47b6569580c145bacbec3f8d4fa5))
+* add support of downloading files &gt; 20 MB ([57ec22f](https://github.com/soberhacker/obsidian-telegram-sync/commit/57ec22fd1690c52684fc5ff279057f1b8fea4768))
+* add transcribing voice messages to text ([8405f6d](https://github.com/soberhacker/obsidian-telegram-sync/commit/8405f6d3f478aeb1be0cd2f9b8f38d2719958039))
+
+
+### Bug Fixes
+
+* caption handling after handling files error ([d0ed63b](https://github.com/soberhacker/obsidian-telegram-sync/commit/d0ed63bef37650763f09fefe23d2a3d2f187492f))
+* false attempt to create a directory structure ([f2a23ad](https://github.com/soberhacker/obsidian-telegram-sync/commit/f2a23adf613d6c37fa31949104c68738be3fcc37))
+* ignoring Obsidian File & Link settings ([531c70f](https://github.com/soberhacker/obsidian-telegram-sync/commit/531c70fcd52621d8104c7f2b8f367bbd825bb932))
+* inconsistent file names and extensions ([190f560](https://github.com/soberhacker/obsidian-telegram-sync/commit/190f560e434546df45741a83486ecf85c33706ea))
+* two bots instances conflict ([19f6bed](https://github.com/soberhacker/obsidian-telegram-sync/commit/19f6bedb5f1d966bc2f190d49fbd88ebeff193e4))
+
 ## [1.6.1](https://github.com/soberhacker/obsidian-telegram-sync/compare/1.6.0...1.6.1) (2023-06-09)
 
 

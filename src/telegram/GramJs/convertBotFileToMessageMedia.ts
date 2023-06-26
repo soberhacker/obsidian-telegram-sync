@@ -1,4 +1,3 @@
-// TODO: PR to GramJs
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import bigInt from "big-integer";
 import { Api } from "telegram";
@@ -129,6 +128,36 @@ export function convertBotFileToMessageMedia(fileId: string, fileSize: number): 
 	return new Api.MessageMediaDocument({
 		document: document,
 	});
+}
+
+// converting Telegram Bot Api file_id to Telegram Client Api media object
+export function extractMediaId(fileId: string): number {
+	const decoded = rle_decode(b64_decode(fileId));
+	const major = decoded[decoded.length - 1];
+	const buffer = major < 4 ? decoded.slice(0, -1) : decoded.slice(0, -2);
+
+	let bufferPosition = 0;
+	let fileType = buffer.readInt32LE(bufferPosition);
+	bufferPosition += 4;
+	buffer.readInt32LE(bufferPosition);
+	bufferPosition += 4;
+
+	const hasFileReference = Boolean(fileType & FILE_REFERENCE_FLAG);
+
+	fileType &= ~WEB_LOCATION_FLAG;
+	fileType &= ~FILE_REFERENCE_FLAG;
+
+	if (!(fileType in FileType)) {
+		throw new Error(`Unknown file_type ${fileType} of file_id ${fileId}`);
+	}
+
+	if (hasFileReference) {
+		const { newPosition } = readBytes(buffer, bufferPosition);
+		bufferPosition = newPosition;
+	}
+
+	const mediaId = Number(buffer.readBigInt64LE(bufferPosition).toString());
+	return mediaId;
 }
 
 function b64_decode(s: string): Buffer {
