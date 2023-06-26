@@ -111,10 +111,12 @@ export async function handleFiles(plugin: TelegramSyncPlugin, msg: TelegramBot.M
 		}
 		const fileObjectToUse = fileObject instanceof Array ? fileObject.pop() : fileObject;
 		const fileId = fileObjectToUse.file_id;
+		telegramFileName = ("file_name" in fileObjectToUse && fileObjectToUse.file_name) || "";
 		let fileByteArray: Uint8Array;
 		try {
 			const fileLink = await plugin.bot.getFileLink(fileId);
-			telegramFileName = fileLink?.split("/").pop()?.replace(/file/, fileType) || "";
+			telegramFileName =
+				telegramFileName || fileLink?.split("/").pop()?.replace(/file/, `${fileType}_${msg.chat.id}`) || "";
 			const fileStream = plugin.bot.getFileStream(fileId);
 			const fileChunks: Uint8Array[] = [];
 
@@ -143,9 +145,15 @@ export async function handleFiles(plugin: TelegramSyncPlugin, msg: TelegramBot.M
 			);
 		} catch (e) {
 			if (e.message == "ETELEGRAM: 400 Bad Request: file is too big") {
-				const media = await GramJs.downloadMedia(plugin.bot, msg, fileId, fileObjectToUse.file_size);
+				const media = await GramJs.downloadMedia(
+					plugin.bot,
+					msg,
+					fileId,
+					fileObjectToUse.file_size,
+					plugin.botUser
+				);
 				fileByteArray = media instanceof Buffer ? media : Buffer.alloc(0);
-				telegramFileName = `${fileType}_${sanitizeFileName(fileObject.file_unique_id)}`;
+				telegramFileName = telegramFileName || `${fileType}_${msg.chat.id}_${msg.message_id}`;
 			} else {
 				throw e;
 			}

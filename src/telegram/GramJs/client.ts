@@ -161,14 +161,27 @@ export async function signInAsUserWithQrCode(container: HTMLDivElement, password
 }
 
 // download files > 20MB
-export async function downloadMedia(bot: TelegramBot, botMsg: TelegramBot.Message, fileId: string, fileSize: number) {
+export async function downloadMedia(
+	bot: TelegramBot,
+	botMsg: TelegramBot.Message,
+	fileId: string,
+	fileSize: number,
+	botUser?: TelegramBot.User
+) {
 	if (!client) throw NotConnected;
 	if (!(await client.checkAuthorization())) throw NotAuthorized;
 
-	const progressBarMessage = await createProgressBar(bot, botMsg, "downloading");
+	// user clients needs different file id
 	let stage = 0;
+	let message: Api.Message | undefined = undefined;
+	if (_clientUser && botUser && (await isAuthorizedAsUser())) {
+		const inputPeerUser = await getInputPeerUser(client, _clientUser, botUser, botMsg);
+		message = await getMessage(client, inputPeerUser, botMsg);
+	}
+
+	const progressBarMessage = await createProgressBar(bot, botMsg, "downloading");
 	return await client
-		.downloadMedia(convertBotFileToMessageMedia(fileId || "", fileSize), {
+		.downloadMedia(message || convertBotFileToMessageMedia(fileId || "", fileSize), {
 			progressCallback: async (receivedBytes, totalBytes) => {
 				stage = await updateProgressBar(
 					bot,
