@@ -3,7 +3,6 @@ import TelegramSyncPlugin from "src/main";
 import * as GramJs from "src/telegram/GramJs/client";
 import { displayAndLog, displayAndLogError } from "src/utils/logUtils";
 
-// TODO Проверить установку плагина с нуля
 export class UserLogInModal extends Modal {
 	botSetingsDiv: HTMLDivElement;
 	qrCodeContainer: HTMLDivElement;

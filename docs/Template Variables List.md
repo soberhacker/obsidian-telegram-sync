@@ -2,7 +2,7 @@
 
 ###### Variables:
 ```ts
-{{content}} - forwarded from + file content + message text and urls + first url preview
+{{content}} - forwarded from + file content + message text
 {{content:text}} - only message text
 {{content:firstLine}} - first line of the message text
 {{content:XX}} - XX characters of the message text
@@ -38,8 +38,8 @@ Source: {{chat}}-{{forwardFrom}}
 Created: {{creationDate:YYYY-DD-MM}} {{creationTime:HH:mm:ss}}
 ```
 
+- If Note Content Template is unspecified, template by default will be equal {{content}}
 - All available formats for dates and time you can find in [Monent JS Docs](https://momentjs.com/docs/#/parsing/string-format/)
-- If Note Content Template is unspecified, template by default will be equal {{content}}. This variable is used to convey the appearance of the note as similar to the message as possible.
 
 
 

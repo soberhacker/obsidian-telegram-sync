@@ -2,7 +2,7 @@ import TelegramBot from "node-telegram-bot-api";
 import TelegramSyncPlugin from "../../main";
 import { getChatLink, getForwardFromLink, getReplyMessageId, getTopicLink, getUrl, getUserLink } from "./getters";
 import { createFolderIfNotExist } from "src/utils/fsUtils";
-import { TFile, TFolder, normalizePath } from "obsidian";
+import { TFile, normalizePath } from "obsidian";
 import { formatDateTime } from "../../utils/dateUtils";
 import { displayAndLog, displayAndLogError } from "src/utils/logUtils";
 import { createProgressBar, deleteProgressBar, updateProgressBar } from "../progressBar";
@@ -79,37 +79,35 @@ export async function applyNoteContentTemplate(
 	msg: TelegramBot.Message,
 	fileLink?: string
 ): Promise<string> {
+	let templateContent: string;
+	try {
+		const templateFile = plugin.app.vault.getAbstractFileByPath(normalizePath(templatePath)) as TFile;
+		templateContent = await plugin.app.vault.read(templateFile);
+	} catch (e) {
+		throw new Error(`Template "${templatePath}" not found! ${e}`);
+	}
+
 	const textContentMd = await convertMessageTextToMarkdown(msg);
 	// Check if the message is forwarded and extract the required information
 	const forwardFromLink = getForwardFromLink(msg);
-	let voiceTranscript = "";
-	if (textContentMd.includes("{{voiceTranscript") || textContentMd.includes("{{content}}")) {
-		voiceTranscript = await GramJs.transcribeAudio(msg, await plugin.getBotUser(msg));
-	}
 	const fullContentMd =
 		(forwardFromLink ? `**Forwarded from ${forwardFromLink}**\n\n` : "") +
-		(fileLink ? fileLink + "\n" : "") +
-		(voiceTranscript ? voiceTranscript + "\n\n" : "") +
+		(fileLink ? fileLink + "\n\n" : "") +
 		textContentMd;
-	if (!templatePath) {
+
+	if (!templateContent) {
 		return fullContentMd;
 	}
-	let templateFile: TFile;
-	try {
-		templateFile = plugin.app.vault.getAbstractFileByPath(normalizePath(templatePath)) as TFile;
-	} catch (e) {
-		await displayAndLogError(plugin, `Template "${templatePath}" not found! ${e}`, msg);
-		return fullContentMd;
-	}
-	if (!templateFile || templateFile instanceof TFolder) {
-		return fullContentMd;
+
+	let voiceTranscript = "";
+	if (!templateContent || templateContent.includes("{{voiceTranscript")) {
+		voiceTranscript = await GramJs.transcribeAudio(msg, await plugin.getBotUser(msg));
 	}
 
 	const messageDateTime = new Date(msg.date * 1000);
 	const creationDateTime = msg.forward_date ? new Date(msg.forward_date * 1000) : messageDateTime;
 
 	const dateTimeNow = new Date();
-	const templateContent = await plugin.app.vault.read(templateFile);
 	const itemsForReplacing: [string, string][] = [];
 
 	let proccessedContent = templateContent
@@ -131,7 +129,6 @@ export async function applyNoteContentTemplate(
 		}) // message text of specified length
 		.replace(/{{file}}/g, fileLink || "")
 		.replace(/{{file:link}}/g, fileLink?.startsWith("!") ? fileLink.slice(1) : fileLink || "")
-		// TODO deep tests
 		.replace(/{{voiceTranscript}}/g, voiceTranscript)
 		.replace(/{{voiceTranscript:(.*?)}}/g, (_, property: string) => {
 			let subContent = "";

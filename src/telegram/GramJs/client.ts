@@ -19,7 +19,7 @@ let _botToken: string | undefined;
 let _sessionType: SessionType;
 let _sessionId: number;
 let _clientUser: Api.User | undefined;
-let _voiceTranscripts: Map<number, string> | undefined;
+let _voiceTranscripts: Map<string, string> | undefined;
 
 // change session name when changes in plugin require new client authorization
 const sessionName = "telegram_sync_170";
@@ -226,13 +226,14 @@ export async function transcribeAudio(
 	}
 	if (!_voiceTranscripts) _voiceTranscripts = new Map();
 	if (_voiceTranscripts.size > 100) _voiceTranscripts.clear();
-	if (_voiceTranscripts.has(botMsg.message_id)) return _voiceTranscripts.get(botMsg.message_id) || "";
+	if (_voiceTranscripts.has(`${botMsg.chat.id}_${botMsg.message_id}`))
+		return _voiceTranscripts.get(`${botMsg.chat.id}_${botMsg.message_id}`) || "";
 
 	if (!client || !(await client.checkAuthorization())) throw NotConnected;
 	if ((await client.isBot()) || !_clientUser) throw NotAuthorizedAsUser;
 	if (!_clientUser.premium) {
 		throw new Error(
-			"Transcribing voice available only for Telegram Premium subscribers! Remove {{voice:transcript}} from template or log in with premium user."
+			"Transcribing voices available only for Telegram Premium subscribers! Remove {{voice:transcript}} from current template or log in with a premium user."
 		);
 	}
 	if (!botUser) return "";
@@ -253,6 +254,7 @@ export async function transcribeAudio(
 		else break;
 	}
 	if (!transcribedAudio) throw new Error("Can't transcribe the audio");
-	if (!_voiceTranscripts.has(botMsg.message_id)) _voiceTranscripts.set(botMsg.message_id, transcribedAudio.text);
+	if (!_voiceTranscripts.has(`${botMsg.chat.id}_${botMsg.message_id}`))
+		_voiceTranscripts.set(`${botMsg.chat.id}_${botMsg.message_id}`, transcribedAudio.text);
 	return transcribedAudio.text;
 }

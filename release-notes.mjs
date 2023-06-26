@@ -13,14 +13,14 @@ export const newFeatures = `
     {{replace:TEXT=>WITH}} - replace or delete text in resulting note
     {{file:link}} - link to the file 
 - improve behavior of content insertion 
-    {{content}} - forwarded from + file content + message text and urls + first url preview
+    {{content}} - forwarded from + file content + message text
     {{content:firstLine}} - first line of the message text
     {{content:text}} - only message text
     {{file}} - only file content ![]()
 - add transcribing voices (for Telegram Premium subscribers only)
 	{{voiceTranscript}} - transcribing to text
+* If Note Content Template is unspecified, template by default will be equal {{content}}
 * To get full list tap on <a href='https://github.com/soberhacker/obsidian-telegram-sync/blob/main/docs/Template%20Variables%20List.md'>Template Variables List</a>
-* If Note Content Template is unspecified, template by default will be equal {{content}}. This variable is used to convey the appearance of the note as similar to the message as possible.
 
 `;
 // - no bugs, no fixes (create issues on <a href='https://github.com/soberhacker/obsidian-telegram-sync/issues'>github</a>)

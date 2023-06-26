@@ -71,7 +71,7 @@ export async function handleMessage(plugin: TelegramSyncPlugin, msg: TelegramBot
 		plugin.messageQueueToTelegramMd.push({ msg, formattedContent });
 		return;
 	} else {
-		const title = sanitizeFileName(rawText.slice(0, 20));
+		const title = sanitizeFileName(rawText.slice(0, 30));
 		let fileName = `${title} - ${messageDateString}${messageTimeString}.md`;
 		let notePath = normalizePath(location ? `${location}/${fileName}` : fileName);
 		while (
@@ -192,7 +192,7 @@ export async function handleFiles(plugin: TelegramSyncPlugin, msg: TelegramBot.M
 		// Save caption as a separate note
 		const noteLocation = plugin.settings.newNotesLocation || "";
 		await createFolderIfNotExist(plugin.app.vault, noteLocation);
-		const title = sanitizeFileName((msg.caption || telegramFileName).slice(0, 20));
+		const title = sanitizeFileName((msg.caption || telegramFileName).slice(0, 30));
 		let noteFileName = `${title} - ${messageDateString}${messageTimeString}.md`;
 		let notePath = normalizePath(noteLocation ? `${noteLocation}/${noteFileName}` : noteFileName);
 

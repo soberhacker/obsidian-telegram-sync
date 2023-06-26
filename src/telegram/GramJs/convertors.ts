@@ -58,7 +58,11 @@ export async function getMessage(
 	if (!clientMsg && limit <= 200) return await getMessage(client, inputPeerUser, botMsg, mediaId, limit + 50);
 	else if (!clientMsg) {
 		console.log(messages);
-		throw new Error(`Can't find the message using Telegram Client Api`);
+		throw new Error(
+			`Can't find the message using Telegram Client Api. Maybe current connected user doesn't have this chat ${
+				botMsg.chat.title || botMsg.chat.username || botMsg.chat.first_name
+			}`
+		);
 	}
 	return clientMsg;
 }
