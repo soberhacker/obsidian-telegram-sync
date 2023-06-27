@@ -21,30 +21,10 @@ jobs:
           fetch-depth: 0
           ref: main
 
-      - name: Create Pull Request
-        id: cpr
-        uses: peter-evans/create-pull-request@v5
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: Merge main into develop
-          branch: main
-          delete-branch: false
-          title: Merge main into develop
-          body: Merge main into develop
-          base: develop
-          labels: automerge
-
-      - name: Print cpr outputs
-        run: echo '${{ toJson(steps.cpr.outputs) }}'
-
-      - name: Merge PR
-        if: ${{steps.cpr.outputs.pull-request-number}}
-        uses: pascalgn/automerge-action@v0.15.6
+      - name: Create and merge pull request
+        run: |
+          gh pr create -B develop -H main --title 'Merge main into develop' --body 'Merge main into develop'
+          gh pr merge main --merge --auto --body 'Merge main into develop'
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          MERGE_REMOVE_LABELS: automerge
-          MERGE_METHOD: merge
-          MERGE_COMMIT_MESSAGE: pull-request-title
-          MERGE_FORKS: false
-          PULL_REQUEST: ${{ steps.cpr.outputs.pull-request-number }}
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   
