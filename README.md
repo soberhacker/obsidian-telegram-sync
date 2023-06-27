@@ -73,6 +73,7 @@ I want to say thank you to the people who support me, I really appreciate it!
 - ekalinin
 - knopki
 - Fabio Scarsi
+- jothi-prasath
 - anonymous patrons and contributors
 
 ---
