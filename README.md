@@ -16,6 +16,15 @@ Transfer messages and files from Telegram to your Obsidian vault. You can easily
 
 ---
 
+## Table of Contents
+
+- [Features](#features)
+- [Installation](#installation)
+- [Manual Installation](#manuall-installation)
+- [Usage](#usage)
+- [Tips](#tips)
+- [Patrons & Supporters](#patrons--supporters)
+
 ## Features
 
 - Synchronize text messages and files
