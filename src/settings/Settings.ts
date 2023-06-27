@@ -73,7 +73,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 	addSettingsHeader() {
 		this.containerEl.createEl("h1", { text: "Telegram Sync" });
 		this.containerEl.createEl("p", { text: "Created by " }).createEl("a", {
-			text: "soberHacker🍃🧘💻",
+			text: "soberhacker🍃🧘💻",
 			href: "https://github.com/soberhacker",
 		});
 	}
