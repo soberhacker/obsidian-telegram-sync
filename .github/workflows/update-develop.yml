@@ -1,0 +1,52 @@
+name: Auto PR from main to develop
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update-develop:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print github
+        run: echo '${{ toJson(github) }}'
+
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Create Pull Request
+        id: cpr
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: Merge main into develop
+          branch: auto-pr/merge-main-to-develop
+          delete-branch: true
+          title: Merge main into develop
+          body: Merge main into develop
+          base: develop
+          labels: automerge
+
+      - name: Check outputs
+        if: ${{ steps.cpr.outputs.pull-request-number }}
+        run: |
+          echo "Pull Request Number - ${{ steps.cpr.outputs.pull-request-number }}"
+          echo "Pull Request URL - ${{ steps.cpr.outputs.pull-request-url }}"
+
+      - name: Merge PR
+        if: ${{steps.cpr.outputs.pull-request-number}}
+        uses: pascalgn/automerge-action@v0.15.6
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MERGE_REMOVE_LABELS: automerge
+          MERGE_METHOD: merge
+          MERGE_COMMIT_MESSAGE: pull-request-title
+          MERGE_FORKS: false
+          PULL_REQUEST: ${{ steps.cpr.outputs.pull-request-number }}
+  
