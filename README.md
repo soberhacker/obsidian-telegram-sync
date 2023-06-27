@@ -82,12 +82,12 @@ I want to say thank you to the people who support me, I really appreciate it!
 If you like this plugin and are considering donating to support continued development, use the buttons below!<br>
 <a href="https://oxapay.com/donate/5855474">
 <img src="https://img.buymeacoffee.com/button-api/?text=Crypto%20Donation&emoji=🚀&slug=soberhacker&button_colour=5b5757&font_colour=ffffff&font_family=Lato&outline_colour=ffffff&coffee_colour=FFDD00" width=210 height=71>
-</a>&nbsp;<a href="https://www.buymeacoffee.com/soberhacker">
+</a>&nbsp;&nbsp;<a href="https://www.buymeacoffee.com/soberhacker">
 <img src="https://img.buymeacoffee.com/button-api/?text=Buy%20me%20a%20book&emoji=📖&slug=soberhacker&button_colour=FFDD00&font_colour=000000&font_family=Cookie&outline_colour=000000&coffee_colour=ffffff"  width=190 height=71>
 </a><br>
 <a href="https://ko-fi.com/soberhacker">
 <img src="https://storage.ko-fi.com/cdn/brandasset/logo_white_stroke.png?" width=140 height=40>
-</a>&nbsp;<a href="https://www.paypal.com/donate/?hosted_button_id=VYSCUZX8MYGCU">
+</a>&nbsp;&nbsp;<a href="https://www.paypal.com/donate/?hosted_button_id=VYSCUZX8MYGCU">
 <img src="https://www.paypalobjects.com/digitalassets/c/website/logo/full-text/pp_fc_hl.svg" width=140 height=40>
 </a>
 </div>
