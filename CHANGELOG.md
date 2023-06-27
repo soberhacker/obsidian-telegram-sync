@@ -1,6 +1,14 @@
 # Changelog
 
 
+## [1.7.1](https://github.com/soberhacker/obsidian-telegram-sync/compare/1.7.0...1.7.1) (2023-06-27)
+
+
+### Bug Fixes
+
+* empty note content template error ([1b74b94](https://github.com/soberhacker/obsidian-telegram-sync/commit/1b74b946100d13a1cc0d09717d17c26228169824))
+* unnecessary warning logs ([f227207](https://github.com/soberhacker/obsidian-telegram-sync/commit/f227207ffd1a427efb2d2fc9ebcd55c02c6de012))
+
 ## [1.7.0](https://github.com/soberhacker/obsidian-telegram-sync/compare/1.6.1...1.7.0) (2023-06-26)
 
 

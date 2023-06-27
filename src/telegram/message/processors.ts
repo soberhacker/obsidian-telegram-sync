@@ -79,10 +79,12 @@ export async function applyNoteContentTemplate(
 	msg: TelegramBot.Message,
 	fileLink?: string
 ): Promise<string> {
-	let templateContent: string;
+	let templateContent = "";
 	try {
-		const templateFile = plugin.app.vault.getAbstractFileByPath(normalizePath(templatePath)) as TFile;
-		templateContent = await plugin.app.vault.read(templateFile);
+		if (templatePath) {
+			const templateFile = plugin.app.vault.getAbstractFileByPath(normalizePath(templatePath)) as TFile;
+			templateContent = await plugin.app.vault.read(templateFile);
+		}
 	} catch (e) {
 		throw new Error(`Template "${templatePath}" not found! ${e}`);
 	}

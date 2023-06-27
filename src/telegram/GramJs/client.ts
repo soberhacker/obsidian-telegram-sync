@@ -9,6 +9,7 @@ import { convertBotFileToMessageMedia } from "./convertBotFileToMessageMedia";
 import { createProgressBar, deleteProgressBar, updateProgressBar } from "../progressBar";
 import { getInputPeerUser, getMessage } from "./convertors";
 import { formatDateTime } from "src/utils/dateUtils";
+import { LogLevel, Logger } from "telegram/extensions/Logger";
 
 export type SessionType = "bot" | "user";
 
@@ -68,6 +69,7 @@ export async function init(
 			appVersion: version,
 			useWSS: true,
 			networkSocket: PromisedWebSockets,
+			baseLogger: new Logger(LogLevel.ERROR),
 		});
 	}
 
