@@ -56,7 +56,7 @@ if (check) {
 	const packageVersion = process.env.npm_package_version;
 
 	if (packageVersion !== version) {
-		console.error("Failed! Release notes are outdated!");
+		console.error(`Failed! Release notes are outdated! ${packageVersion} !== ${version}`);
 		process.exit(1);
 	}
 }
