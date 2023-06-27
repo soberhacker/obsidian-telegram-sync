@@ -11,7 +11,7 @@
 
 Transfer messages and files from Telegram to your Obsidian vault. You can easily save text, voice transcripts, images and other files from your Telegram chats to Obsidian for further processing and organization.
 
-📮 [Ask a question in Telegram](https://t.me/ObsidianTelegramSync)<br>
+📮 [Ask a question in Telegram](https://t.me/ObsidianTelegramSync)<br/>
 🐛 [Report issue](https://github.com/soberhacker/obsidian-telegram-sync/issues)
 
 ---
@@ -20,10 +20,11 @@ Transfer messages and files from Telegram to your Obsidian vault. You can easily
 
 - [Features](#features)
 - [Installation](#installation)
-- [Manual Installation](#manuall-installation)
+- [Manual Installation](#manual-installation)
 - [Usage](#usage)
 - [Tips](#tips)
-- [Patrons & Supporters](#patrons--supporters)
+- [Supporters & Donations](#supporters--donations)
+- [Contributing](#contributing)
 
 ## Features
 
@@ -65,37 +66,38 @@ Transfer messages and files from Telegram to your Obsidian vault. You can easily
 1. For syncing your notes between different devices should use Obsidian Sync, Syncthing, iCloud, Google Drive, etc. 
 2. If you use Obsidian only on your cellphone, use "share" to transfer data between mobile applications.
 
-## Patrons & Supporters
+## Supporters & Donations
 
-I want to say thank you to the people who support me, I really appreciate it!
+Big thanks to everyone who's already been supporting this project - you rock!
 
 - maauso
-- ekalinin
 - knopki
 - Fabio Scarsi
-- anonymous patrons and contributors
+- anonymous patrons
 
 ---
 
 <div align="center">
-If you like this plugin and are considering donating to support continued development, use the buttons below!<br>
+If you like this plugin and are considering donating 🌠 to support continued development, use the buttons below.<br><br>
+
 <a href="https://oxapay.com/donate/5855474">
-<img src="https://img.buymeacoffee.com/button-api/?text=Crypto%20Donation&emoji=🚀&slug=soberhacker&button_colour=5b5757&font_colour=ffffff&font_family=Lato&outline_colour=ffffff&coffee_colour=FFDD00" width=210 height=71>
-</a>&nbsp;<a href="https://www.buymeacoffee.com/soberhacker">
+<img src="https://img.buymeacoffee.com/button-api/?text=Crypto%20Donation&emoji=🚀 &slug=soberhacker&button_colour=5b5757&font_colour=ffffff&font_family=Lato&outline_colour=ffffff&coffee_colour=FFDD00" width=210 height=71>
+</a>&nbsp;&nbsp;<a href="https://www.buymeacoffee.com/soberhacker">
 <img src="https://img.buymeacoffee.com/button-api/?text=Buy%20me%20a%20book&emoji=📖&slug=soberhacker&button_colour=FFDD00&font_colour=000000&font_family=Cookie&outline_colour=000000&coffee_colour=ffffff"  width=190 height=71>
 </a><br>
 <a href="https://ko-fi.com/soberhacker">
 <img src="https://storage.ko-fi.com/cdn/brandasset/logo_white_stroke.png?" width=140 height=40>
-</a>&nbsp;<a href="https://www.paypal.com/donate/?hosted_button_id=VYSCUZX8MYGCU">
+</a>&nbsp;&nbsp;<a href="https://www.paypal.com/donate/?hosted_button_id=VYSCUZX8MYGCU">
 <img src="https://www.paypalobjects.com/digitalassets/c/website/logo/full-text/pp_fc_hl.svg" width=140 height=40>
 </a>
 </div>
 
-## Contributors
+---
 
-Please read the [Contributing Guide](./CONTRIBUTING.md) before contributing
+## Contributing
 
-Thanks to everyone who contributed!
+If you're thinking about contributing, please check out the [Contributing Guide](./CONTRIBUTING.md) first. And a heartfelt thank you to everyone who has already contributed - your help is greatly appreciated!
+<br>
 
 <div align="center">
 <a href="https://github.com/soberhacker/obsidian-telegram-sync/graphs/contributors">
