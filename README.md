@@ -93,6 +93,10 @@ If you like this plugin and are considering donating to support continued develo
 
 ## Contributors
 
+Please read the [Contributing Guide](./CONTRIBUTING.md) before contributing
+
+Thanks to everyone who contributed!
+
 <div align="center">
 <a href="https://github.com/soberhacker/obsidian-telegram-sync/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=soberhacker/obsidian-telegram-sync" />
