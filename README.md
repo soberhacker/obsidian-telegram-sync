@@ -20,7 +20,7 @@ Transfer messages and files from Telegram to your Obsidian vault. You can easily
 
 - Synchronize text messages and files
 - Save messages as individual notes or append to an existing note
-- Transcipt voices and video notes (for Telegram Premium subscibers only)
+- Transcript voices and video notes (for Telegram Premium subscribers only)
 - Use customizable templates for new notes
 - Set folders for new notes and files
 - Automatically format text messages with markdown
@@ -34,7 +34,7 @@ Transfer messages and files from Telegram to your Obsidian vault. You can easily
 4. Search for **Telegram Sync** in the search bar
 5. Click the Install button, then enable the plugin by toggling the switch
 
-## Manuall Installation
+## Manual Installation
 
 1. Download main.js, styles.css, manifest.json from the [latest release](https://github.com/soberhacker/obsidian-telegram-sync/releases//latest)
 2. Copy the downloaded files to <pathToYourVault>/.obsidian/plugins/telegram-sync/
@@ -48,12 +48,12 @@ Transfer messages and files from Telegram to your Obsidian vault. You can easily
 4. Paste your bot token to **Bot > Connect > Bot Token** field
 5. Configure the remaining settings according to your preferences
 6. Start sending messages and files to your Telegram bot
-7. When the Obsidian app is running on your lapton or PC, it syncs all your messages
+7. When the Obsidian app is running on your laptop or PC, it syncs all your messages
 8. You can optionally add your bot to any chats that you want to sync (the bot needs admin rights)
 
 ## Tips
 
-1. For syncing your notes between different devices should use Obsidian Sync, Syncthing, ICloud, Google Drive etc. 
+1. For syncing your notes between different devices should use Obsidian Sync, Syncthing, iCloud, Google Drive, etc. 
 2. If you use Obsidian only on your cellphone, use "share" to transfer data between mobile applications.
 
 ## Patrons & Supporters
