@@ -27,7 +27,6 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: Merge main into develop
-          branch: main
           delete-branch: false
           title: Merge main into develop
           body: Merge main into develop
