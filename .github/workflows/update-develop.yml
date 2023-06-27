@@ -15,6 +15,12 @@ jobs:
       - name: Print github
         run: echo '${{ toJson(github) }}'
 
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: main
+
       - name: Create and merge pull request
         run: |
           gh pr create -B develop -H main --title 'Merge main into develop' --body 'Merge main into develop'
