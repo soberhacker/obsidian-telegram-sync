@@ -90,3 +90,11 @@ If you like this plugin and are considering donating to support continued develo
 <img src="https://www.paypalobjects.com/digitalassets/c/website/logo/full-text/pp_fc_hl.svg" width=140 height=40>
 </a>
 </div>
+
+## Contributors
+
+<div align="center">
+<a href="https://github.com/soberhacker/obsidian-telegram-sync/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=soberhacker/obsidian-telegram-sync" />
+</a>
+</div>
