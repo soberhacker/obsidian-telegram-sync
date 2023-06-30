@@ -1,6 +1,6 @@
 export const version = "1.7.1";
-// TODO in github actions creating an archive with 3 main files for easy installing
-// TODO Add Demo gif and screenshots to readme.md
+// TODO add Demo gif and screenshots to readme.md
+// TODO add thanks for last patrons in donation section
 // ## Demo
 //![](https://raw.githubusercontent.com/vslinko/obsidian-outliner/main/demos/demo1.gif)<br>
 export const showInTelegram = false;
@@ -37,17 +37,8 @@ export const bugFixes = `
 - ignoring Obsidian File & Link settings
 `;
 export const possibleRoadMap = `
-- add setting Note Path Template to make notes creation more flexible: 
-    * setting any note names 
-    * using conditions for organizing notes by days, topics etc.
-  For example:
-    * myNotes/daily/{{messageDate}}.md
-    * myNotes/{{chat:Recipies}}/{content:30}.md
-    * myNotes/{{chat:Ideas}}/{{content:firstLine}}.md
-- send notes (as files) and files from Obsidian to one chat with bot
-- don't mark messages as processed and don't delete them (sending of errors will remain)
-
-You can "like" one of the possible feature <a href='https://t.me/ObsidianTelegramSync/5'>in Telegram chat</a> to increase its chances of being implemented.
+You can find the list of possible new features in <a href='https://t.me/ObsidianTelegramSync/5'>this message</a>.
+Use a specific emoji to "like" a feature and increase its chances of being implemented first.
 `;
 
 const check = process.argv[2] === "check";

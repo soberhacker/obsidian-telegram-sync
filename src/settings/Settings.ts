@@ -8,6 +8,7 @@ import { createProgressBar, updateProgressBar, deleteProgressBar } from "src/tel
 import * as GramJs from "src/telegram/GramJs/client";
 import { BotSettingsModal } from "./BotSettingsModal";
 import { UserLogInModal } from "./UserLogInModal";
+import { version } from "release-notes.mjs";
 
 export interface TopicName {
 	name: string;
@@ -60,10 +61,12 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 
 		this.addBot();
 		this.addUser();
+		this.containerEl.createEl("br");
 		this.containerEl.createEl("h2", { text: "Locations" });
 		this.addNewNotesLocation();
 		this.addNewFilesLocation();
 		this.addTemplateFileLocation();
+		this.containerEl.createEl("br");
 		this.containerEl.createEl("h2", { text: "Behavior settings" });
 		this.addAppendAllToTelegramMd();
 		this.addDeleteMessagesFromTelegram();
@@ -71,11 +74,12 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 	}
 
 	addSettingsHeader() {
-		this.containerEl.createEl("h1", { text: "Telegram Sync" });
+		this.containerEl.createEl("h1", { text: `Telegram Sync ${version}` });
 		this.containerEl.createEl("p", { text: "Created by " }).createEl("a", {
 			text: "soberhacker🍃🧘💻",
 			href: "https://github.com/soberhacker",
 		});
+		this.containerEl.createEl("br");
 	}
 
 	addBot() {
