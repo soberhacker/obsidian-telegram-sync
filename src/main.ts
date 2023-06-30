@@ -15,6 +15,7 @@ export default class TelegramSyncPlugin extends Plugin {
 	settingsTab: TelegramSyncSettingTab;
 	botConnected = false;
 	userConnected = false;
+	checkingBotConnection = false;
 	bot?: TelegramBot;
 	botUser?: TelegramBot.User;
 	messageQueueToTelegramMd: async.QueueObject<unknown>;
@@ -94,8 +95,10 @@ export default class TelegramSyncPlugin extends Plugin {
 		}
 
 		this.bot.on("message", async (msg) => {
-			this.botConnected = true;
-			this.lastPollingErrors = [];
+			if (!this.botConnected) {
+				this.botConnected = true;
+				this.lastPollingErrors = [];
+			}
 			displayAndLog(this, `Got a message from Telegram Bot: ${msg.text || "binary"}`, 0);
 
 			// Skip processing if the message is a "/start" command
@@ -192,15 +195,34 @@ export default class TelegramSyncPlugin extends Plugin {
 			this.lastPollingErrors.push(pollingError);
 			if (!(pollingError == "twoBotInstances")) {
 				this.botConnected = false;
-				await displayAndLogError(this, error);
+				await displayAndLogError(this, `${error} \n\nTelegram bot is disconnected!`, undefined, 30 * 60 * 1000);
 			}
 		}
+
+		if (!(pollingError == "twoBotInstances")) this.checkConnectionAfterError();
 	}
 
 	async getBotUser(msg: TelegramBot.Message): Promise<TelegramBot.User> {
 		this.botUser = this.botUser || (await this.bot?.getMe());
 		if (!this.botUser) throw new Error("Can't get access to bot info. Restart the Telegram Sync plugin");
 		return this.botUser;
+	}
+
+	async checkConnectionAfterError(intervalInSeconds = 30) {
+		if (this.checkingBotConnection || this.botConnected || !this.bot || !this.bot.isPolling()) return;
+		try {
+			this.checkingBotConnection = true;
+			await new Promise((resolve) => setTimeout(resolve, intervalInSeconds * 1000));
+			this.botUser = await this.bot.getMe();
+			this.botConnected = true;
+			this.lastPollingErrors = [];
+			this.checkingBotConnection = false;
+			displayAndLog(this, "Telegram bot is reconnected!", 30 * 60 * 1000);
+		} catch {
+			/* do nothing*/
+		} finally {
+			this.checkingBotConnection = false;
+		}
 	}
 
 	// Stop the bot polling

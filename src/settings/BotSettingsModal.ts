@@ -23,14 +23,18 @@ export class BotSettingsModal extends Modal {
 		new Setting(this.botSetingsDiv)
 			.setName("Bot token (required)")
 			.setDesc("Enter your Telegram bot token.")
-			.addText((text) =>
-				text
-					.setPlaceholder("example: 6123456784:AAX9mXnFE2q9WahQ")
+			.addText((text) => {
+				text.setPlaceholder("example: 6123456784:AAX9mXnFE2q9WahQ")
 					.setValue(this.plugin.settings.botToken)
 					.onChange(async (value: string) => {
+						if (!value) {
+							text.inputEl.style.borderColor = "red";
+							text.inputEl.style.borderWidth = "2px";
+							text.inputEl.style.borderStyle = "solid";
+						}
 						this.plugin.settings.botToken = value;
-					})
-			);
+					});
+			});
 	}
 
 	addAllowedChatFromUsernamesSetting() {
@@ -39,14 +43,14 @@ export class BotSettingsModal extends Modal {
 			.setDesc("Only messages from these usernames will be processed. At least your username must be entered.")
 			.addTextArea((text) => {
 				const textArea = text
-					.setPlaceholder("example: soberHacker,soberHackerBot")
-					.setValue(this.plugin.settings.allowedChatFromUsernames.join(","))
+					.setPlaceholder("example: soberhacker,username")
+					.setValue(this.plugin.settings.allowedChatFromUsernames.join(", "))
 					.onChange(async (value: string) => {
-						if (!value.trim()) {
+						value = value.replace(/\s/g, "");
+						if (!value) {
 							textArea.inputEl.style.borderColor = "red";
 							textArea.inputEl.style.borderWidth = "2px";
 							textArea.inputEl.style.borderStyle = "solid";
-							return;
 						}
 						this.plugin.settings.allowedChatFromUsernames = value.split(",");
 					});
