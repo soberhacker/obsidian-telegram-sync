@@ -6,7 +6,7 @@ import { TFile, normalizePath } from "obsidian";
 import { formatDateTime } from "../../utils/dateUtils";
 import { displayAndLog, displayAndLogError } from "src/utils/logUtils";
 import { createProgressBar, deleteProgressBar, updateProgressBar } from "../progressBar";
-import { escapeRegExp, convertMessageTextToMarkdown } from "./convertToMarkdown";
+import { convertMessageTextToMarkdown, escapeRegExp } from "./convertToMarkdown";
 import * as GramJs from "../GramJs/client";
 
 // Delete a message or send a confirmation reply based on settings and message age
@@ -170,11 +170,11 @@ export async function applyNoteContentTemplate(
 			return "";
 		});
 
-	itemsForReplacing.forEach(
-		// TODO add replacing new lines "\n"
-		([replaceThis, replaceWith]) =>
-			(proccessedContent = proccessedContent.replace(new RegExp(escapeRegExp(replaceThis), "g"), replaceWith))
-	);
+	itemsForReplacing.forEach(([replaceThis, replaceWith]) => {
+		const beautyReplaceThis = escapeRegExp(replaceThis).replace(/\\\\n/g, "\\n");
+		const beautyReplaceWith = replaceWith.replace(/\\n/g, "\n");
+		proccessedContent = proccessedContent.replace(new RegExp(beautyReplaceThis, "g"), beautyReplaceWith);
+	});
 	return proccessedContent;
 }
 // TODO Tests
@@ -210,7 +210,7 @@ function pasteText(
 	const leadingRE = new RegExp(`^([>\\s]+){{${pasteType}}}`);
 	const leadingAndPropertyRE = new RegExp(`^([>\\s]+){{${pasteType}:(.*?)}}`);
 	const propertyRE = new RegExp(`{{${pasteType}:(.*?)}}`, "g");
-	const simpleReplace = `{{${pasteType}}}`;
+	const allRE = new RegExp(`{{${pasteType}}}`, "g");
 	return pasteHere
 		.replace(leadingRE, (_, leadingChars) => processText(pasteContent, leadingChars))
 		.replace(leadingAndPropertyRE, (_, leadingChars, property) => {
@@ -224,6 +224,6 @@ function pasteText(
 			}
 			return processedText;
 		})
-		.replace(simpleReplace, pasteContent)
+		.replace(allRE, pasteContent)
 		.replace(propertyRE, (_, property: string) => processText(pasteText, undefined, property));
 }
