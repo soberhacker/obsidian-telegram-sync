@@ -112,38 +112,23 @@ export async function applyNoteContentTemplate(
 	const dateTimeNow = new Date();
 	const itemsForReplacing: [string, string][] = [];
 
-	let proccessedContent = templateContent
-		// TODO Copy tab and blockquotes to every new line of {{content*}} or {{voiceTranscript*}} if they are placed in front of this variables.
-		.replace("{{content}}", fullContentMd)
-		.replace(/{{content:(.*?)}}/g, (_, property: string) => {
-			let subContent = "";
-			if (property.toLowerCase() == "firstline") {
-				subContent = textContentMd.split("\n")[0];
-			} else if (property.toLowerCase() == "text") {
-				subContent = textContentMd;
-			} else if (Number.isInteger(parseFloat(property))) {
-				// property is length
-				subContent = textContentMd.substring(0, Number(property));
-			} else {
-				displayAndLog(plugin, `Template variable {{content:${property}}} isn't supported!`, 15 * 1000);
-			}
-			return subContent;
-		}) // message text of specified length
+	const lines = templateContent.split("\n");
+	for (let i = 0; i < lines.length; i++) {
+		const line = lines[i];
+
+		if (line.includes("{{content")) {
+			lines[i] = pasteText(plugin, "content", line, fullContentMd, textContentMd);
+		}
+
+		if (line.includes("{{voiceTranscript")) {
+			lines[i] = pasteText(plugin, "voiceTranscript", line, voiceTranscript, voiceTranscript);
+		}
+	}
+	let proccessedContent = lines.join("\n");
+
+	proccessedContent = proccessedContent
 		.replace(/{{file}}/g, fileLink || "")
 		.replace(/{{file:link}}/g, fileLink?.startsWith("!") ? fileLink.slice(1) : fileLink || "")
-		.replace(/{{voiceTranscript}}/g, voiceTranscript)
-		.replace(/{{voiceTranscript:(.*?)}}/g, (_, property: string) => {
-			let subContent = "";
-			if (property.toLowerCase() == "firstline") {
-				subContent = voiceTranscript.split("\n")[0];
-			} else if (Number.isInteger(parseFloat(property))) {
-				// property is length
-				subContent = voiceTranscript.substring(0, Number(property));
-			} else {
-				displayAndLog(plugin, `Template variable {{voiceTranscript:${property}}} isn't supported!`, 15 * 1000);
-			}
-			return subContent;
-		})
 		.replace(/{{messageDate:(.*?)}}/g, (_, format) => formatDateTime(messageDateTime, format))
 		.replace(/{{messageTime:(.*?)}}/g, (_, format) => formatDateTime(messageDateTime, format))
 		.replace(/{{date:(.*?)}}/g, (_, format) => formatDateTime(dateTimeNow, format))
@@ -191,4 +176,54 @@ export async function applyNoteContentTemplate(
 			(proccessedContent = proccessedContent.replace(new RegExp(escapeRegExp(replaceThis), "g"), replaceWith))
 	);
 	return proccessedContent;
+}
+
+// Copy tab and blockquotes to every new line of {{content*}} or {{voiceTranscript*}} if they are placed in front of this variables.
+// https://github.com/soberhacker/obsidian-telegram-sync/issues/131
+function addLeadingForEveryLine(text: string, leadingChars?: string): string {
+	if (!leadingChars) return text;
+	return text
+		.split("\n")
+		.map((line) => leadingChars + line)
+		.join("\n");
+}
+
+function processText(text: string, leadingChars?: string, property?: string): string {
+	if (!property || property.toLowerCase() == "text") return addLeadingForEveryLine(text, leadingChars);
+	if (property.toLowerCase() == "firstline") {
+		return leadingChars + text.split("\n")[0];
+	} else if (Number.isInteger(parseFloat(property))) {
+		// if property is length
+		return addLeadingForEveryLine(text.substring(0, Number(property)), leadingChars);
+	} else {
+		return "";
+	}
+}
+
+function pasteText(
+	plugin: TelegramSyncPlugin,
+	pasteType: "content" | "voiceTranscript",
+	pasteHere: string,
+	pasteContent: string,
+	pasteText: string
+) {
+	const leadingRE = new RegExp(`^([>\\s]+){{${pasteType}}}`);
+	const leadingAndPropertyRE = new RegExp(`^([>\\s]+){{${pasteType}:(.*?)}}`);
+	const propertyRE = new RegExp(`{{${pasteType}:(.*?)}}`, "g");
+	const simpleReplace = `{{${pasteType}}}`;
+	return pasteHere
+		.replace(leadingRE, (_, leadingChars) => processText(pasteContent, leadingChars))
+		.replace(leadingAndPropertyRE, (_, leadingChars, property) => {
+			const processedText = processText(pasteText, leadingChars, property);
+			if (!processedText && property && pasteText) {
+				displayAndLog(
+					plugin,
+					`Template variable {{${pasteType}}:${property}}} isn't supported!`,
+					5 * 60 * 1000
+				);
+			}
+			return processedText;
+		})
+		.replace(simpleReplace, pasteContent)
+		.replace(propertyRE, (_, property: string) => processText(pasteText, undefined, property));
 }
