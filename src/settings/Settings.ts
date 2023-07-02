@@ -98,7 +98,8 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 		};
 
 		const botSettingsConstructor = (botSettingsButton: ButtonComponent) => {
-			if ((this.plugin.settings.botToken && this.plugin.botConnected) || this.plugin.checkingBotConnection)
+			if (this.plugin.checkingBotConnection) botSettingsButton.setButtonText("Restart");
+			else if (this.plugin.settings.botToken && this.plugin.botConnected)
 				botSettingsButton.setButtonText("Settings");
 			else botSettingsButton.setButtonText("Connect");
 			botSettingsButton.onClick(async () => {
@@ -121,11 +122,10 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 				botSettingsModal.open();
 			});
 			if (this.plugin.checkingBotConnection) {
-				botSettingsButton.setDisabled(true);
 				new Promise((resolve) => {
 					setTimeout(() => resolve(botSettingsConstructor.call(this, botSettingsButton)), 5 * 1000);
 				});
-			} else botSettingsButton.setDisabled(false);
+			}
 		};
 		const botSettings = new Setting(this.containerEl)
 			.setName("Bot (required)")
