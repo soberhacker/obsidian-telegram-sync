@@ -4,7 +4,7 @@ import { getChatLink, getForwardFromLink, getReplyMessageId, getTopicLink, getUr
 import { createFolderIfNotExist } from "src/utils/fsUtils";
 import { TFile, normalizePath } from "obsidian";
 import { formatDateTime } from "../../utils/dateUtils";
-import { displayAndLog, displayAndLogError } from "src/utils/logUtils";
+import { _5sec, displayAndLog, displayAndLogError } from "src/utils/logUtils";
 import { createProgressBar, deleteProgressBar, updateProgressBar } from "../progressBar";
 import { convertMessageTextToMarkdown, escapeRegExp } from "./convertToMarkdown";
 import * as GramJs from "../GramJs/client";
@@ -12,7 +12,7 @@ import * as GramJs from "../GramJs/client";
 // Delete a message or send a confirmation reply based on settings and message age
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function finalizeMessageProcessing(plugin: TelegramSyncPlugin, msg: TelegramBot.Message, error?: any) {
-	if (error) await displayAndLogError(plugin, error, msg);
+	if (error) await displayAndLogError(plugin, error, msg, _5sec);
 	if (error || !plugin.bot) {
 		return;
 	}
@@ -37,16 +37,17 @@ export async function finalizeMessageProcessing(plugin: TelegramSyncPlugin, msg:
 		await deleteProgressBar(plugin.bot, msg, progressBarMessage);
 	} else {
 		let needReply = true;
+		let error = "";
 		try {
 			if (plugin.userConnected && plugin.botUser) {
 				await GramJs.sendReaction(plugin.botUser, msg);
 				needReply = false;
 			}
 		} catch (e) {
-			displayAndLog(plugin, `Can't use reaction to mark message as processed, because ${e}`);
+			error = `\n\nCan't "like" the message, because ${e}`;
 		}
 		if (needReply) {
-			await plugin.bot?.sendMessage(msg.chat.id, "...✅...", { reply_to_message_id: msg.message_id });
+			await plugin.bot?.sendMessage(msg.chat.id, "...✅..." + error, { reply_to_message_id: msg.message_id });
 		}
 	}
 }
@@ -222,11 +223,7 @@ function pasteText(
 		.replace(leadingAndPropertyRE, (_, leadingChars, property) => {
 			const processedText = processText(pasteText, leadingChars, property);
 			if (!processedText && property && pasteText) {
-				displayAndLog(
-					plugin,
-					`Template variable {{${pasteType}}:${property}}} isn't supported!`,
-					5 * 60 * 1000
-				);
+				displayAndLog(plugin, `Template variable {{${pasteType}}:${property}}} isn't supported!`, _5sec);
 			}
 			return processedText;
 		})

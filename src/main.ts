@@ -4,7 +4,7 @@ import TelegramBot from "node-telegram-bot-api";
 import * as async from "async";
 import { handleMessage, ifNewRelaseThenShowChanges } from "./telegram/message/handlers";
 import { machineIdSync } from "node-machine-id";
-import { displayAndLog } from "./utils/logUtils";
+import { _15sec, displayAndLog } from "./utils/logUtils";
 import { displayAndLogError } from "./utils/logUtils";
 import { appendMessageToTelegramMd } from "./telegram/message/processors";
 import * as GramJs from "./telegram/GramJs/client";
@@ -75,7 +75,7 @@ export default class TelegramSyncPlugin extends Plugin {
 		}
 
 		if (!this.settings.botToken) {
-			displayAndLog(this, "Telegram bot token is empty. Exit.");
+			displayAndLog(this, "Telegram bot token is empty.\n\nSyncing is disabled.");
 			return;
 		}
 
@@ -110,7 +110,7 @@ export default class TelegramSyncPlugin extends Plugin {
 				await handleMessage(this, msg);
 				await ifNewRelaseThenShowChanges(this, msg);
 			} catch (error) {
-				await displayAndLogError(this, error, msg);
+				await displayAndLogError(this, error, msg, _15sec);
 			}
 		});
 
@@ -120,7 +120,7 @@ export default class TelegramSyncPlugin extends Plugin {
 			await this.bot.startPolling();
 			this.botConnected = true;
 		} catch (e) {
-			displayAndLog(this, `Telegram Bot disconnected! ${e}`, undefined);
+			displayAndLog(this, `${e}\n\nTelegram Bot is disconnected!`);
 		}
 	}
 
@@ -168,7 +168,7 @@ export default class TelegramSyncPlugin extends Plugin {
 					this.settings.telegramSessionType = initialSessionType;
 					this.saveSettings();
 				}
-				await displayAndLogError(this, e, undefined, undefined);
+				await displayAndLogError(this, e, undefined, _15sec);
 			}
 		}
 	}
@@ -200,7 +200,7 @@ export default class TelegramSyncPlugin extends Plugin {
 			this.lastPollingErrors.push(pollingError);
 			if (!(pollingError == "twoBotInstances")) {
 				this.botConnected = false;
-				await displayAndLogError(this, `${error} \n\nTelegram bot is disconnected!`, undefined, 30 * 60 * 1000);
+				await displayAndLogError(this, `${error} \n\nTelegram bot is disconnected!`);
 			}
 		}
 

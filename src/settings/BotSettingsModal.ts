@@ -1,6 +1,6 @@
 import { Modal, Setting } from "obsidian";
 import TelegramSyncPlugin from "src/main";
-import { displayAndLog } from "src/utils/logUtils";
+import { _5sec, displayAndLog } from "src/utils/logUtils";
 
 export class BotSettingsModal extends Modal {
 	botSetingsDiv: HTMLDivElement;
@@ -94,7 +94,7 @@ export class BotSettingsModal extends Modal {
 					inputDeviceId = deviceIdSetting.controlEl.firstElementChild;
 					inputDeviceId.value = this.plugin.currentDeviceId;
 				} catch (error) {
-					displayAndLog(this.plugin, `Try to copy and paste device id manually. Error: ${error}`);
+					displayAndLog(this.plugin, `Try to copy and paste device id manually. Error: ${error}`, _5sec);
 				}
 				if (inputDeviceId && inputDeviceId.value)
 					this.plugin.settings.mainDeviceId = this.plugin.currentDeviceId;

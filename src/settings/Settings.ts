@@ -90,11 +90,11 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 			botStatus.setDisabled(true);
 			if (this.plugin.checkingBotConnection) {
 				botStatus.setValue("⏳ connecting...");
-				new Promise((resolve) => {
-					setTimeout(() => resolve(botStatusConstructor.call(this, botStatus)), 5 * 1000);
-				});
 			} else if (this.plugin.settings.botToken && this.plugin.botConnected) botStatus.setValue("🤖 connected");
 			else botStatus.setValue("❌ disconnected");
+			new Promise((resolve) => {
+				setTimeout(() => resolve(botStatusConstructor.call(this, botStatus)), 5 * 1000);
+			});
 		};
 
 		const botSettingsConstructor = (botSettingsButton: ButtonComponent) => {
@@ -121,11 +121,10 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 				};
 				botSettingsModal.open();
 			});
-			if (this.plugin.checkingBotConnection) {
-				new Promise((resolve) => {
-					setTimeout(() => resolve(botSettingsConstructor.call(this, botSettingsButton)), 5 * 1000);
-				});
-			}
+
+			new Promise((resolve) => {
+				setTimeout(() => resolve(botSettingsConstructor.call(this, botSettingsButton)), 5 * 1000);
+			});
 		};
 		const botSettings = new Setting(this.containerEl)
 			.setName("Bot (required)")

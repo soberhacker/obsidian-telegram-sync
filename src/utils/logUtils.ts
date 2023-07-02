@@ -2,8 +2,13 @@ import TelegramBot from "node-telegram-bot-api";
 import { Notice } from "obsidian";
 import TelegramSyncPlugin from "src/main";
 
+export const _5sec = 5 * 1000;
+export const _15sec = 15 * 1000;
+export const _5min = 5 * 60 * 1000;
+export const _30min = 30 * 60 * 1000;
+
 // Show notification and log message into console.
-export function displayAndLog(plugin: TelegramSyncPlugin, message: string, timeout = 5 * 1000) {
+export function displayAndLog(plugin: TelegramSyncPlugin, message: string, timeout?: number) {
 	const beautyMessage = message.replace(/^Error:\s*/, "");
 	if (timeout !== 0) {
 		new Notice(beautyMessage, timeout);
@@ -17,7 +22,7 @@ export async function displayAndLogError(
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	error: any,
 	msg?: TelegramBot.Message,
-	timeout = 5 * 1000
+	timeout?: number
 ) {
 	const beautyError = `Error: ${error}`.replace(/^Error:\s*/, "");
 	displayAndLog(plugin, beautyError, timeout);
