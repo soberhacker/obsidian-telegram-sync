@@ -220,8 +220,8 @@ export async function sendReaction(botUser: TelegramBot.User, botMsg: TelegramBo
 export async function transcribeAudio(
 	botMsg: TelegramBot.Message,
 	botUser?: TelegramBot.User,
-	mediaId?: number,
-	limit = 15 // minutes for waiting transcribing (not of the audio)
+	mediaId?: string,
+	limit = 15 // minutes for waiting transcribing (not for the audio)
 ): Promise<string> {
 	if (botMsg.text || !(botMsg.voice || botMsg.video_note)) {
 		return "";

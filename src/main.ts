@@ -40,10 +40,8 @@ export default class TelegramSyncPlugin extends Plugin {
 
 		// Initialize the Telegram bot when Obsidian layout is fully loaded
 		this.app.workspace.onLayoutReady(async () => {
+			await this.initTelegramClient(this.settings.telegramSessionType, this.settings.telegramSessionId);
 			await this.initTelegramBot();
-			if (this.botConnected) {
-				await this.initTelegramClient(this.settings.telegramSessionType, this.settings.telegramSessionId);
-			}
 		});
 
 		this.register(async () => {
@@ -77,22 +75,12 @@ export default class TelegramSyncPlugin extends Plugin {
 		}
 
 		// Create a new bot instance and start polling
-		this.bot = new TelegramBot(this.settings.botToken, { polling: true });
+		this.bot = new TelegramBot(this.settings.botToken);
 
 		// Set connected flag to false and log errors when a polling error occurs
 		this.bot.on("polling_error", async (error: unknown) => {
 			this.handlePollingError(error);
 		});
-
-		// Check if the bot is connected and set the connected flag accordingly
-		if (this.bot.isPolling()) {
-			try {
-				this.botUser = await this.bot.getMe();
-				this.botConnected = true;
-			} catch (e) {
-				this.handlePollingError(e);
-			}
-		}
 
 		this.bot.on("message", async (msg) => {
 			if (!this.botConnected) {
@@ -120,50 +108,62 @@ export default class TelegramSyncPlugin extends Plugin {
 				await displayAndLogError(this, error, msg);
 			}
 		});
+
+		try {
+			// Check if the bot is connected and set the connected flag accordingly
+			this.botUser = await this.bot.getMe();
+			await this.bot.startPolling();
+			this.botConnected = true;
+		} catch (e) {
+			displayAndLog(this, `Telegram Bot disconnected! ${e}`, undefined);
+		}
 	}
 
 	async initTelegramClient(sessionType: GramJs.SessionType, sessionId?: number) {
-		try {
-			if (
+		if (
+			!(
 				this.settings.appId !== "" &&
 				this.settings.apiHash !== "" &&
 				(sessionType == "user" || this.settings.botToken !== "")
+			)
+		)
+			return;
+
+		const initialSessionType = this.settings.telegramSessionType;
+		try {
+			if (!sessionId) {
+				this.settings.telegramSessionId = GramJs.getNewSessionId();
+				await this.saveSettings();
+			}
+
+			if (sessionType != this.settings.telegramSessionType) {
+				this.settings.telegramSessionType = sessionType;
+				await this.saveSettings();
+			}
+
+			await GramJs.init(
+				this.settings.telegramSessionId,
+				this.settings.telegramSessionType,
+				+this.settings.appId,
+				this.settings.apiHash,
+				this.currentDeviceId
+			);
+
+			this.userConnected = await GramJs.isAuthorizedAsUser();
+
+			if (
+				this.settings.telegramSessionType == "bot" ||
+				(this.settings.telegramSessionType == "user" && !this.userConnected)
 			) {
-				try {
-					if (!sessionId) {
-						this.settings.telegramSessionId = GramJs.getNewSessionId();
-						await this.saveSettings();
-					}
-
-					if (sessionType != this.settings.telegramSessionType) {
-						this.settings.telegramSessionType = sessionType;
-						await this.saveSettings();
-					}
-
-					await GramJs.init(
-						this.settings.telegramSessionId,
-						this.settings.telegramSessionType,
-						+this.settings.appId,
-						this.settings.apiHash,
-						this.currentDeviceId
-					);
-				} catch (e) {
-					if (this.settings.telegramSessionType == "user" && !(await GramJs.isAuthorizedAsUser())) {
-						this.settings.telegramSessionType = "bot";
-						await this.saveSettings();
-					}
-					throw e;
-				}
-
-				if (this.settings.telegramSessionType == "bot") {
-					await GramJs.signInAsBot(this.settings.botToken);
-				}
-
-				this.userConnected = await GramJs.isAuthorizedAsUser();
+				await GramJs.signInAsBot(this.settings.botToken);
 			}
 		} catch (e) {
 			if (!e.message.includes("API_ID_PUBLISHED_FLOOD")) {
-				await displayAndLogError(this, e, undefined, 60 * 1000);
+				if (sessionType == "user") {
+					this.settings.telegramSessionType = initialSessionType;
+					this.saveSettings();
+				}
+				await displayAndLogError(this, e, undefined, undefined);
 			}
 		}
 	}
@@ -217,7 +217,7 @@ export default class TelegramSyncPlugin extends Plugin {
 			this.botConnected = true;
 			this.lastPollingErrors = [];
 			this.checkingBotConnection = false;
-			displayAndLog(this, "Telegram bot is reconnected!", 30 * 60 * 1000);
+			displayAndLog(this, "Telegram bot is reconnected!", undefined);
 		} catch {
 			/* do nothing*/
 		} finally {
@@ -227,14 +227,12 @@ export default class TelegramSyncPlugin extends Plugin {
 
 	// Stop the bot polling
 	async stopTelegramBot() {
-		if (this.bot) {
-			try {
-				await this.bot.stopPolling();
-				this.bot = undefined;
-				this.botUser = undefined;
-			} finally {
-				this.botConnected = false;
-			}
+		try {
+			this.bot && (await this.bot.stopPolling());
+		} finally {
+			this.bot = undefined;
+			this.botUser = undefined;
+			this.botConnected = false;
 		}
 	}
 }

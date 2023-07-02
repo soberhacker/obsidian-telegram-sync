@@ -4,7 +4,7 @@ import { getFileObject } from "../message/getters";
 import { extractMediaId } from "./convertBotFileToMessageMedia";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function getMediaId(media: any): number | undefined {
+export function getMediaId(media: any): bigint | undefined {
 	if (!media) return undefined;
 	try {
 		return media.document.id;
@@ -43,7 +43,7 @@ export async function getMessage(
 	client: TelegramClient,
 	inputPeerUser: Api.TypeInputPeer,
 	botMsg: TelegramBot.Message,
-	mediaId?: number,
+	mediaId?: string,
 	limit = 50
 ): Promise<Api.Message> {
 	if (!botMsg.text && !mediaId) {
@@ -53,7 +53,10 @@ export async function getMessage(
 	}
 	const messages = await client.getMessages(inputPeerUser, { limit });
 	const clientMsg = messages.find(
-		(m) => (m.message && m.message == botMsg.text) || (!m.message && mediaId && getMediaId(m.media) == mediaId)
+		(m) =>
+			m.date == botMsg.date &&
+			m.message == (botMsg.text || botMsg.caption) &&
+			((mediaId && m.media && mediaId == getMediaId(m.media)?.toString()) || !(mediaId && m.media))
 	);
 	if (!clientMsg && limit <= 200) return await getMessage(client, inputPeerUser, botMsg, mediaId, limit + 50);
 	else if (!clientMsg) {

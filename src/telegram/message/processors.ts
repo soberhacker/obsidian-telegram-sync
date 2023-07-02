@@ -36,12 +36,18 @@ export async function finalizeMessageProcessing(plugin: TelegramSyncPlugin, msg:
 		await plugin.bot?.deleteMessage(msg.chat.id, msg.message_id);
 		await deleteProgressBar(plugin.bot, msg, progressBarMessage);
 	} else {
-		// Send a confirmation reply if the message is too old to be deleted
-		// TODO: needs deep testing and integration
-		// if (plugin.botUser) {
-		// 	await GramJs.sendReaction(plugin.botUser, msg);
-		// }
-		await plugin.bot?.sendMessage(msg.chat.id, "...✅...", { reply_to_message_id: msg.message_id });
+		let needReply = true;
+		try {
+			if (plugin.userConnected && plugin.botUser) {
+				await GramJs.sendReaction(plugin.botUser, msg);
+				needReply = false;
+			}
+		} catch (e) {
+			displayAndLog(plugin, `Can't use reaction to mark message as processed, because ${e}`);
+		}
+		if (needReply) {
+			await plugin.bot?.sendMessage(msg.chat.id, "...✅...", { reply_to_message_id: msg.message_id });
+		}
 	}
 }
 

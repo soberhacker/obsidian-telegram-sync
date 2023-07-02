@@ -100,9 +100,9 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 				botSettingsModal.onClose = async () => {
 					if (botSettingsModal.saved) {
 						// Initialize the bot with the new token
-						await this.plugin.initTelegramBot();
 						if (this.plugin.settings.telegramSessionType == "bot")
 							await this.plugin.initTelegramClient(this.plugin.settings.telegramSessionType);
+						await this.plugin.initTelegramBot();
 						botStatusConstructor.call(this, botStatusComponent);
 						botSettingsConstructor.call(this, botSettingsButton);
 					}
@@ -131,18 +131,16 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 		const userStatusConstructor = (userStatus: TextComponent) => {
 			userStatusComponent = userStatusComponent || userStatus;
 			userStatus.setDisabled(true);
-			if (this.plugin.settings.telegramSessionType == "user" && this.plugin.userConnected)
-				userStatus.setValue("👨🏽‍💻 connected");
+			if (this.plugin.userConnected) userStatus.setValue("👨🏽‍💻 connected");
 			else userStatus.setValue("❌ disconnected");
 		};
 
 		const userLogInConstructor = (userLogInButton: ButtonComponent) => {
-			if (this.plugin.settings.telegramSessionType == "user" && this.plugin.userConnected)
-				userLogInButton.setButtonText("Log out");
+			if (this.plugin.settings.telegramSessionType == "user") userLogInButton.setButtonText("Log out");
 			else userLogInButton.setButtonText("Log in");
 
 			userLogInButton.onClick(async () => {
-				if (this.plugin.settings.telegramSessionType == "user" && this.plugin.userConnected) {
+				if (this.plugin.settings.telegramSessionType == "user") {
 					// Log Out
 					await this.plugin.initTelegramClient("bot");
 					userStatusConstructor.call(this, userStatusComponent);
@@ -164,6 +162,18 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 			.setDesc("Connect your telegram user. It's required only for ")
 			.addText(userStatusConstructor)
 			.addButton(userLogInConstructor);
+
+		if (this.plugin.settings.telegramSessionType == "user" && !this.plugin.userConnected) {
+			userSettings.addExtraButton((refreshButton) => {
+				refreshButton.setTooltip("Refresh");
+				refreshButton.setIcon("refresh-ccw");
+				refreshButton.onClick(async () => {
+					await this.plugin.initTelegramClient("user", this.plugin.settings.telegramSessionId);
+					userStatusConstructor.call(this, userStatusComponent);
+					refreshButton.setDisabled(true);
+				});
+			});
+		}
 
 		// add link to authorized user features
 		userSettings.descEl.createEl("a", {

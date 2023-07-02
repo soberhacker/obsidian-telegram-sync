@@ -1,8 +1,6 @@
-import { TFile, normalizePath } from "obsidian";
 import TelegramSyncPlugin from "../../main";
 import TelegramBot from "node-telegram-bot-api";
-import { date2DateString, date2TimeString } from "src/utils/dateUtils";
-import { createFolderIfNotExist, sanitizeFileName } from "src/utils/fsUtils";
+import { createFolderIfNotExist, getUniqueFilePath } from "src/utils/fsUtils";
 import * as release from "../../../release-notes.mjs";
 import { buyMeACoffeeLink, cryptoDonationLink, kofiLink, paypalLink } from "../../settings/donation";
 import { SendMessageOptions } from "node-telegram-bot-api";
@@ -55,14 +53,6 @@ export async function handleMessage(plugin: TelegramSyncPlugin, msg: TelegramBot
 		return;
 	}
 
-	const rawText = msg.text;
-	const location = plugin.settings.newNotesLocation || "";
-	await createFolderIfNotExist(plugin.app.vault, location);
-
-	const messageDate = new Date(msg.date * 1000);
-	const messageDateString = date2DateString(messageDate);
-	const messageTimeString = date2TimeString(messageDate);
-
 	formattedContent = await applyNoteContentTemplate(plugin, plugin.settings.templateFileLocation, msg);
 
 	const appendAllToTelegramMd = plugin.settings.appendAllToTelegramMd;
@@ -71,18 +61,14 @@ export async function handleMessage(plugin: TelegramSyncPlugin, msg: TelegramBot
 		plugin.messageQueueToTelegramMd.push({ msg, formattedContent });
 		return;
 	} else {
-		const title = sanitizeFileName(rawText.slice(0, 30));
-		let fileName = `${title} - ${messageDateString}${messageTimeString}.md`;
-		let notePath = normalizePath(location ? `${location}/${fileName}` : fileName);
-		while (
-			plugin.listOfNotePaths.includes(notePath) ||
-			plugin.app.vault.getAbstractFileByPath(notePath) instanceof TFile
-		) {
-			const newMessageTimeString = date2TimeString(messageDate);
-			fileName = `${title} - ${messageDateString}${newMessageTimeString}.md`;
-			notePath = normalizePath(location ? `${location}/${fileName}` : fileName);
-		}
-		plugin.listOfNotePaths.push(notePath);
+		const notePath = await getUniqueFilePath(
+			plugin.app.vault,
+			plugin.listOfNotePaths,
+			plugin.settings.newNotesLocation,
+			msg.text,
+			"md",
+			msg.date
+		);
 		await plugin.app.vault.create(notePath, formattedContent);
 		await finalizeMessageProcessing(plugin, msg);
 	}
@@ -94,15 +80,10 @@ export async function handleFiles(plugin: TelegramSyncPlugin, msg: TelegramBot.M
 
 	const basePath = plugin.settings.newFilesLocation || plugin.settings.newNotesLocation || "";
 	await createFolderIfNotExist(plugin.app.vault, basePath);
-	let filePath = "";
 	let markdownLink = "";
 	let telegramFileName = "";
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	let error: any;
-
-	const messageDate = new Date(msg.date * 1000);
-	const messageDateString = date2DateString(messageDate);
-	const messageTimeString = date2TimeString(messageDate);
 
 	try {
 		// Iterate through each file type
@@ -165,11 +146,15 @@ export async function handleFiles(plugin: TelegramSyncPlugin, msg: TelegramBot.M
 
 		// Create a specific folder for each file type
 		const specificFolder = `${basePath}/${fileType}s`;
-		await createFolderIfNotExist(plugin.app.vault, specificFolder);
 		// Format the file name and path
-		const fileFullName = `${fileName} - ${messageDateString}${messageTimeString}${fileExtension}`;
-		filePath = `${specificFolder}/${fileFullName}`;
-
+		const filePath = await getUniqueFilePath(
+			plugin.app.vault,
+			plugin.listOfNotePaths,
+			specificFolder,
+			fileName,
+			fileExtension,
+			msg.date
+		);
 		const file = await plugin.app.vault.createBinary(filePath, fileByteArray);
 		markdownLink = plugin.app.fileManager.generateMarkdownLink(file, filePath);
 	} catch (e) {
@@ -190,21 +175,14 @@ export async function handleFiles(plugin: TelegramSyncPlugin, msg: TelegramBot.M
 		return;
 	} else if (msg.caption || telegramFileName) {
 		// Save caption as a separate note
-		const noteLocation = plugin.settings.newNotesLocation || "";
-		await createFolderIfNotExist(plugin.app.vault, noteLocation);
-		const title = sanitizeFileName((msg.caption || telegramFileName).slice(0, 30));
-		let noteFileName = `${title} - ${messageDateString}${messageTimeString}.md`;
-		let notePath = normalizePath(noteLocation ? `${noteLocation}/${noteFileName}` : noteFileName);
-
-		while (
-			plugin.listOfNotePaths.includes(notePath) ||
-			plugin.app.vault.getAbstractFileByPath(notePath) instanceof TFile
-		) {
-			const newMessageTimeString = date2TimeString(messageDate);
-			noteFileName = `${title} - ${messageDateString}${newMessageTimeString}.md`;
-			notePath = normalizePath(noteLocation ? `${noteLocation}/${noteFileName}` : noteFileName);
-		}
-		plugin.listOfNotePaths.push(notePath);
+		const notePath = await getUniqueFilePath(
+			plugin.app.vault,
+			plugin.listOfNotePaths,
+			plugin.settings.newNotesLocation,
+			msg.caption || telegramFileName,
+			"md",
+			msg.date
+		);
 		await plugin.app.vault.create(notePath, noteContent);
 	}
 

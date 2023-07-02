@@ -59,8 +59,6 @@ export class UserLogInModal extends Modal {
 						}
 					} catch (e) {
 						await displayAndLogError(this.plugin, e);
-						this.plugin.settings.telegramSessionType = "bot";
-						await this.plugin.saveSettings();
 					}
 				});
 			});
