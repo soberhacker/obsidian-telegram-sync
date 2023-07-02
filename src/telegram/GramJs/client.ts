@@ -74,7 +74,6 @@ export async function init(
 	}
 
 	if (!client) throw NotConnected;
-
 	if (!client.connected) {
 		try {
 			await client.connect();
@@ -89,6 +88,14 @@ export async function init(
 			} else throw e;
 		}
 	}
+}
+
+export async function reconnect(): Promise<boolean> {
+	if (!client) return false;
+	if (!client.connected) {
+		await client.connect();
+	}
+	return client.connected || false;
 }
 
 export async function isAuthorizedAsUser(): Promise<boolean> {

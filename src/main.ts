@@ -173,6 +173,21 @@ export default class TelegramSyncPlugin extends Plugin {
 		}
 	}
 
+	async reconnectTelegramClient() {
+		try {
+			await GramJs.reconnect();
+			this.userConnected = await GramJs.isAuthorizedAsUser();
+		} catch (e) {
+			this.userConnected = false;
+			if (this.settings.telegramSessionType == "user") {
+				displayAndLog(
+					this,
+					`Telegram user is disconnected.\n\nTry restore the connection manually by restarting Obsidian or by refresh button in the plugin settings!\n\n${e}`
+				);
+			}
+		}
+	}
+
 	async handlePollingError(error: unknown) {
 		let pollingError = "unknown";
 
@@ -222,7 +237,8 @@ export default class TelegramSyncPlugin extends Plugin {
 			this.botConnected = true;
 			this.lastPollingErrors = [];
 			this.checkingBotConnection = false;
-			displayAndLog(this, "Telegram bot is reconnected!", undefined);
+			displayAndLog(this, "Telegram bot is reconnected!");
+			await this.reconnectTelegramClient();
 		} catch {
 			/* do nothing*/
 		} finally {
