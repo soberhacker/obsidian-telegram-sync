@@ -85,30 +85,47 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 	addBot() {
 		let botStatusComponent: TextComponent;
 
-		const botStatusConstructor = (botStatus: TextComponent) => {
+		const botStatusConstructor = async (botStatus: TextComponent) => {
 			botStatusComponent = botStatusComponent || botStatus;
 			botStatus.setDisabled(true);
-			if (this.plugin.settings.botToken && this.plugin.botConnected) botStatus.setValue("🤖 connected");
+			if (this.plugin.checkingBotConnection) {
+				botStatus.setValue("⏳ connecting...");
+				new Promise((resolve) => {
+					setTimeout(() => resolve(botStatusConstructor.call(this, botStatus)), 5 * 1000);
+				});
+			} else if (this.plugin.settings.botToken && this.plugin.botConnected) botStatus.setValue("🤖 connected");
 			else botStatus.setValue("❌ disconnected");
 		};
 
 		const botSettingsConstructor = (botSettingsButton: ButtonComponent) => {
-			if (this.plugin.settings.botToken && this.plugin.botConnected) botSettingsButton.setButtonText("Settings");
+			if ((this.plugin.settings.botToken && this.plugin.botConnected) || this.plugin.checkingBotConnection)
+				botSettingsButton.setButtonText("Settings");
 			else botSettingsButton.setButtonText("Connect");
 			botSettingsButton.onClick(async () => {
 				const botSettingsModal = new BotSettingsModal(this.plugin);
 				botSettingsModal.onClose = async () => {
 					if (botSettingsModal.saved) {
 						// Initialize the bot with the new token
-						if (this.plugin.settings.telegramSessionType == "bot")
-							await this.plugin.initTelegramClient(this.plugin.settings.telegramSessionType);
-						await this.plugin.initTelegramBot();
-						botStatusConstructor.call(this, botStatusComponent);
-						botSettingsConstructor.call(this, botSettingsButton);
+						this.plugin.checkingBotConnection = true;
+						try {
+							botStatusConstructor.call(this, botStatusComponent);
+							botSettingsConstructor.call(this, botSettingsButton);
+							if (this.plugin.settings.telegramSessionType == "bot")
+								await this.plugin.initTelegramClient(this.plugin.settings.telegramSessionType);
+							await this.plugin.initTelegramBot();
+						} finally {
+							this.plugin.checkingBotConnection = false;
+						}
 					}
 				};
 				botSettingsModal.open();
 			});
+			if (this.plugin.checkingBotConnection) {
+				botSettingsButton.setDisabled(true);
+				new Promise((resolve) => {
+					setTimeout(() => resolve(botSettingsConstructor.call(this, botSettingsButton)), 5 * 1000);
+				});
+			} else botSettingsButton.setDisabled(false);
 		};
 		const botSettings = new Setting(this.containerEl)
 			.setName("Bot (required)")

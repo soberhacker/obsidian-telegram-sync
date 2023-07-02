@@ -40,8 +40,13 @@ export default class TelegramSyncPlugin extends Plugin {
 
 		// Initialize the Telegram bot when Obsidian layout is fully loaded
 		this.app.workspace.onLayoutReady(async () => {
-			await this.initTelegramClient(this.settings.telegramSessionType, this.settings.telegramSessionId);
-			await this.initTelegramBot();
+			this.checkingBotConnection = true;
+			try {
+				await this.initTelegramClient(this.settings.telegramSessionType, this.settings.telegramSessionId);
+				await this.initTelegramBot();
+			} finally {
+				this.checkingBotConnection = false;
+			}
 		});
 
 		this.register(async () => {
