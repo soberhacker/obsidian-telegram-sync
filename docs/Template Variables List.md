@@ -5,6 +5,7 @@
 {{content}} - forwarded from + file content + message text
 {{content:text}} - only message text
 {{content:firstLine}} - first line of the message text
+{{content:noFirstLine}} - the message text without the first line
 {{content:XX}} - XX characters of the message text
 {{file}} - file content ![]()
 {{file:link}} - link to the file []()
@@ -44,7 +45,7 @@ Created: {{creationDate:YYYY-DD-MM}} {{creationTime:HH:mm:ss}}
 
 
 
-#### Note Path Template (❌ not implemented)
+#### ❌ Note Path Template (*not implemented*)
 
 ###### Variables:
 ```json
@@ -56,7 +57,7 @@ Created: {{creationDate:YYYY-DD-MM}} {{creationTime:HH:mm:ss}}
 ❌{{forwardFrom:VALUE}} - only when message creator equal VALUE use this path
 ```
 
-###### Note Paths examples:
+###### ❌ Note Paths examples (*not implemented*):
 ```js
 // All news are written in one folder, other messages - in file Telegram.md
 myNotes/WorldNews/{{forwardFrom:Forbes}}.md
@@ -86,7 +87,7 @@ myNotes/{{creationDate:YYYY}}/{{creationDate:MM-DD}}.{{creationTime:HH:mm:ss(SSS
 
 
 
-#### File Path Template (❌ not implemented)
+#### ❌ File Path Template (*not implemented*)
 
 ###### Variables:
 ```json
@@ -95,7 +96,7 @@ myNotes/{{creationDate:YYYY}}/{{creationDate:MM-DD}}.{{creationTime:HH:mm:ss(SSS
 ❌{{fileName}} - unique file name assigned by Telegram (without extension)
 ```
 
-###### File Paths examples:
+###### ❌ File Paths examples (*not implemented*):
 ```js
 myFiles/{{fileType}}/{{fileName}}.{{fileExtension}}
 myFiles/{{forwardFrom}}_{{fileName}}.{{fileExtension}}
