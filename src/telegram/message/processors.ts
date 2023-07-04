@@ -197,14 +197,16 @@ function addLeadingForEveryLine(text: string, leadingChars?: string): string {
 
 function processText(text: string, leadingChars?: string, property?: string): string {
 	if (!property || property.toLowerCase() == "text") return addLeadingForEveryLine(text, leadingChars);
-	if (property.toLowerCase() == "firstline") {
-		return leadingChars + text.split("\n")[0];
-	} else if (Number.isInteger(parseFloat(property))) {
-		// if property is length
-		return addLeadingForEveryLine(text.substring(0, Number(property)), leadingChars);
-	} else {
-		return "";
+	if (property.toLowerCase() == "firstline") return leadingChars + text.split("\n")[0];
+	if (property.toLowerCase() == "nofirstline") {
+		let lines = text.split("\n");
+		lines = lines.slice(1);
+		return leadingChars + lines.join("\n");
 	}
+	// if property is length
+	if (Number.isInteger(parseFloat(property || "")))
+		return addLeadingForEveryLine(text.substring(0, Number(property)), leadingChars);
+	return "";
 }
 
 function pasteText(
