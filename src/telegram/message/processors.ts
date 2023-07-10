@@ -8,6 +8,7 @@ import { displayAndLog, displayAndLogError } from "src/utils/logUtils";
 import { createProgressBar, deleteProgressBar, updateProgressBar } from "../progressBar";
 import { escapeRegExp, convertMessageTextToMarkdown } from "./convertToMarkdown";
 import * as GramJs from "../GramJs/client";
+import exp from "constants";
 
 // Delete a message or send a confirmation reply based on settings and message age
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -45,6 +46,12 @@ export async function finalizeMessageProcessing(plugin: TelegramSyncPlugin, msg:
 	}
 }
 
+export function getTelegramMdPath(plugin: TelegramSyncPlugin) {
+	const location = plugin.settings.newNotesLocation || "";
+	const telegramMdPath = normalizePath(location ? `${location}/Telegram.md` : "Telegram.md");
+	return telegramMdPath;
+}
+
 export async function appendMessageToTelegramMd(
 	plugin: TelegramSyncPlugin,
 	msg: TelegramBot.Message,
@@ -59,7 +66,7 @@ export async function appendMessageToTelegramMd(
 	const location = plugin.settings.newNotesLocation || "";
 	createFolderIfNotExist(plugin.app.vault, location);
 
-	const telegramMdPath = normalizePath(location ? `${location}/Telegram.md` : "Telegram.md");
+	const telegramMdPath = getTelegramMdPath(plugin);
 	let telegramMdFile = plugin.app.vault.getAbstractFileByPath(telegramMdPath) as TFile;
 
 	// Create or modify the Telegram.md file
