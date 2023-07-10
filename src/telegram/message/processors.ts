@@ -8,7 +8,6 @@ import { displayAndLog, displayAndLogError } from "src/utils/logUtils";
 import { createProgressBar, deleteProgressBar, updateProgressBar } from "../progressBar";
 import { escapeRegExp, convertMessageTextToMarkdown } from "./convertToMarkdown";
 import * as GramJs from "../GramJs/client";
-import exp from "constants";
 
 // Delete a message or send a confirmation reply based on settings and message age
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
