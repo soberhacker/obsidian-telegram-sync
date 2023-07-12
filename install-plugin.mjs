@@ -42,4 +42,4 @@ if (!fs.existsSync(hotReloadFolder)) {
 	});
 }
 
-console.log("Plugin installed successfully!");
+console.log(`${new Date().toLocaleTimeString()} Plugin installed successfully!`);

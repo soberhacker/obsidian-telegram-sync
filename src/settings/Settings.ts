@@ -2,13 +2,14 @@ import TelegramSyncPlugin from "src/main";
 import { ButtonComponent, PluginSettingTab, Setting, TextComponent, normalizePath } from "obsidian";
 import { FileSuggest } from "./suggesters/FileSuggester";
 import { FolderSuggest } from "./suggesters/FolderSuggester";
-import { cryptoDonationButton, paypalButton, buyMeACoffeeButton, kofiButton } from "./donation";
+import { boostyButton, paypalButton, buyMeACoffeeButton, kofiButton } from "./donation";
 import TelegramBot from "node-telegram-bot-api";
-import { createProgressBar, updateProgressBar, deleteProgressBar } from "src/telegram/progressBar";
+import { createProgressBar, updateProgressBar, deleteProgressBar, ProgressBarType } from "src/telegram/progressBar";
 import * as GramJs from "src/telegram/GramJs/client";
 import { BotSettingsModal } from "./BotSettingsModal";
 import { UserLogInModal } from "./UserLogInModal";
 import { version } from "release-notes.mjs";
+import { _5sec } from "src/utils/logUtils";
 
 export interface TopicName {
 	name: string;
@@ -43,6 +44,7 @@ export const DEFAULT_SETTINGS: TelegramSyncSettings = {
 	allowedChatFromUsernames: [""],
 	mainDeviceId: "",
 	pluginVersion: "",
+	// TODO Check not public appId, apiHash for flood and download speed
 	appId: "17349", // public, ok to be here
 	apiHash: "344583e45741c457fe1862106095a5eb", // public, ok to be here
 	topicNames: [],
@@ -93,7 +95,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 			} else if (this.plugin.settings.botToken && this.plugin.botConnected) botStatus.setValue("🤖 connected");
 			else botStatus.setValue("❌ disconnected");
 			new Promise((resolve) => {
-				setTimeout(() => resolve(botStatusConstructor.call(this, botStatus)), 5 * 1000);
+				setTimeout(() => resolve(botStatusConstructor.call(this, botStatus)), _5sec);
 			});
 		};
 
@@ -123,7 +125,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 			});
 
 			new Promise((resolve) => {
-				setTimeout(() => resolve(botSettingsConstructor.call(this, botSettingsButton)), 5 * 1000);
+				setTimeout(() => resolve(botSettingsConstructor.call(this, botSettingsButton)), _5sec);
 			});
 		};
 		const botSettings = new Setting(this.containerEl)
@@ -294,8 +296,8 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 		);
 		donationDiv.appendChild(donationText);
 
-		cryptoDonationButton.style.marginRight = "20px";
-		donationDiv.appendChild(cryptoDonationButton);
+		boostyButton.style.marginRight = "20px";
+		donationDiv.appendChild(boostyButton);
 		buyMeACoffeeButton.style.marginRight = "20px";
 		donationDiv.appendChild(buyMeACoffeeButton);
 		donationDiv.appendChild(createEl("p"));
@@ -325,7 +327,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 			} else this.plugin.settings.topicNames.push(newTopicName);
 			await this.plugin.saveSettings();
 
-			const progressBarMessage = await createProgressBar(bot, msg, "stored");
+			const progressBarMessage = await createProgressBar(bot, msg, ProgressBarType.stored);
 
 			// Update the progress bar during the delay
 			let stage = 0;

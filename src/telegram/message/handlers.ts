@@ -2,13 +2,13 @@ import TelegramSyncPlugin from "../../main";
 import TelegramBot from "node-telegram-bot-api";
 import { createFolderIfNotExist, getUniqueFilePath } from "src/utils/fsUtils";
 import * as release from "../../../release-notes.mjs";
-import { buyMeACoffeeLink, cryptoDonationLink, kofiLink, paypalLink } from "../../settings/donation";
+import { buyMeACoffeeLink, boostyLink, kofiLink, paypalLink } from "../../settings/donation";
 import { SendMessageOptions } from "node-telegram-bot-api";
 import path from "path";
 import * as GramJs from "../GramJs/client";
 import { extension } from "mime-types";
 import { applyNoteContentTemplate, finalizeMessageProcessing } from "./processors";
-import { createProgressBar, deleteProgressBar, updateProgressBar } from "../progressBar";
+import { ProgressBarType, createProgressBar, deleteProgressBar, updateProgressBar } from "../progressBar";
 import { getFileObject } from "./getters";
 
 // handle all messages from Telegram
@@ -106,7 +106,7 @@ export async function handleFiles(plugin: TelegramSyncPlugin, msg: TelegramBot.M
 				return;
 			}
 
-			const progressBarMessage = await createProgressBar(plugin.bot, msg, "downloading");
+			const progressBarMessage = await createProgressBar(plugin.bot, msg, ProgressBarType.downloading);
 
 			const totalBytes = fileObjectToUse.file_size;
 			let receivedBytes = 0;
@@ -207,11 +207,11 @@ export async function ifNewRelaseThenShowChanges(plugin: TelegramSyncPlugin, msg
 			reply_markup: {
 				inline_keyboard: [
 					[
-						{ text: "🚀  Ð⟠na₮e crypto", url: cryptoDonationLink },
-						{ text: "📖  Buy me a book", url: buyMeACoffeeLink },
+						{ text: "⚡  Boosty", url: boostyLink },
+						{ text: "☕  Buy me a coffee", url: buyMeACoffeeLink },
 					],
 					[
-						{ text: "☕  Ko-fi Donation", url: kofiLink },
+						{ text: "💰  Ko-fi Donation", url: kofiLink },
 						{ text: "💳  PayPal Donation", url: paypalLink },
 					],
 				],

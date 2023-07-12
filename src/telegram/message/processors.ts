@@ -4,8 +4,8 @@ import { getChatLink, getForwardFromLink, getReplyMessageId, getTopicLink, getUr
 import { createFolderIfNotExist } from "src/utils/fsUtils";
 import { TFile, normalizePath } from "obsidian";
 import { formatDateTime } from "../../utils/dateUtils";
-import { _5sec, displayAndLog, displayAndLogError } from "src/utils/logUtils";
-import { createProgressBar, deleteProgressBar, updateProgressBar } from "../progressBar";
+import { _15sec, _1h, _5sec, displayAndLog, displayAndLogError } from "src/utils/logUtils";
+import { ProgressBarType, createProgressBar, deleteProgressBar, updateProgressBar } from "../progressBar";
 import { convertMessageTextToMarkdown, escapeRegExp } from "./convertToMarkdown";
 import * as GramJs from "../GramJs/client";
 
@@ -20,11 +20,11 @@ export async function finalizeMessageProcessing(plugin: TelegramSyncPlugin, msg:
 	const currentTime = new Date();
 	const messageTime = new Date(msg.date * 1000);
 	const timeDifference = currentTime.getTime() - messageTime.getTime();
-	const hoursDifference = timeDifference / (1000 * 60 * 60);
+	const hoursDifference = timeDifference / _1h;
 
 	if (plugin.settings.deleteMessagesFromTelegram && hoursDifference <= 48) {
 		// Send the initial progress bar
-		const progressBarMessage = await createProgressBar(plugin.bot, msg, "deleting");
+		const progressBarMessage = await createProgressBar(plugin.bot, msg, ProgressBarType.deleting);
 
 		// Update the progress bar during the delay
 		let stage = 0;
@@ -40,7 +40,7 @@ export async function finalizeMessageProcessing(plugin: TelegramSyncPlugin, msg:
 		let error = "";
 		try {
 			if (plugin.userConnected && plugin.botUser) {
-				await GramJs.sendReaction(plugin.botUser, msg);
+				await GramJs.syncSendReaction(plugin.botUser, msg);
 				needReply = false;
 			}
 		} catch (e) {
@@ -161,7 +161,7 @@ export async function applyNoteContentTemplate(
 				if (!height || Number.isInteger(parseFloat(height))) {
 					linkPreview = `<iframe width="100%" height="${height || 250}" src="${url1}"></iframe>`;
 				} else {
-					displayAndLog(plugin, `Template variable {{url1:preview${height}}} isn't supported!`, 15 * 1000);
+					displayAndLog(plugin, `Template variable {{url1:preview${height}}} isn't supported!`, _15sec);
 				}
 			}
 			return linkPreview;

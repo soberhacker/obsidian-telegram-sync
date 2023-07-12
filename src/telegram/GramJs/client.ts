@@ -6,10 +6,11 @@ import TelegramBot from "node-telegram-bot-api";
 import QRCode from "qrcode";
 import os from "os";
 import { convertBotFileToMessageMedia } from "./convertBotFileToMessageMedia";
-import { createProgressBar, deleteProgressBar, updateProgressBar } from "../progressBar";
-import { getInputPeerUser, getMessage } from "./convertors";
+import { ProgressBarType, createProgressBar, deleteProgressBar, updateProgressBar } from "../progressBar";
+import { getInputPeer, getMessage } from "./convertors";
 import { formatDateTime } from "src/utils/dateUtils";
 import { LogLevel, Logger } from "telegram/extensions/Logger";
+import { _5sec } from "src/utils/logUtils";
 
 export type SessionType = "bot" | "user";
 
@@ -184,11 +185,11 @@ export async function downloadMedia(
 	let stage = 0;
 	let message: Api.Message | undefined = undefined;
 	if (_clientUser && botUser && (await isAuthorizedAsUser())) {
-		const inputPeerUser = await getInputPeerUser(client, _clientUser, botUser, botMsg);
-		message = await getMessage(client, inputPeerUser, botMsg);
+		const inputPeer = await getInputPeer(client, _clientUser, botUser, botMsg);
+		message = await getMessage(client, inputPeer, botMsg);
 	}
 
-	const progressBarMessage = await createProgressBar(bot, botMsg, "downloading");
+	const progressBarMessage = await createProgressBar(bot, botMsg, ProgressBarType.downloading);
 	return await client
 		.downloadMedia(message || convertBotFileToMessageMedia(fileId || "", fileSize), {
 			progressCallback: async (receivedBytes, totalBytes) => {
@@ -213,17 +214,32 @@ export async function downloadMedia(
 export async function sendReaction(botUser: TelegramBot.User, botMsg: TelegramBot.Message) {
 	if (!client || !(await client.checkAuthorization())) throw NotConnected;
 	if ((await client.isBot()) || !_clientUser) throw NotAuthorizedAsUser;
-	const inputPeerUser = await getInputPeerUser(client, _clientUser, botUser, botMsg);
-	const message = await getMessage(client, inputPeerUser, botMsg);
+	const inputPeer = await getInputPeer(client, _clientUser, botUser, botMsg);
+	const message = await getMessage(client, inputPeer, botMsg);
 	await client.invoke(
 		new Api.messages.SendReaction({
-			peer: inputPeerUser,
+			peer: inputPeer,
 			msgId: message.id,
 			reaction: [new Api.ReactionEmoji({ emoticon: "👍" })],
 		})
 	);
 }
 
+let sendReactionQueue = Promise.resolve();
+
+export const syncSendReaction = async (botUser: TelegramBot.User, botMsg: TelegramBot.Message) => {
+	let error: Error | undefined;
+	sendReactionQueue = sendReactionQueue
+		.then(async () => await sendReaction(botUser, botMsg))
+		.catch((e) => {
+			error = e;
+		});
+	const result = await sendReactionQueue;
+	if (error) throw error;
+	return result;
+};
+
+// TODO check 10 messages parallel transcribing
 export async function transcribeAudio(
 	botMsg: TelegramBot.Message,
 	botUser?: TelegramBot.User,
@@ -246,20 +262,20 @@ export async function transcribeAudio(
 		);
 	}
 	if (!botUser) return "";
-	const inputPeerUser = await getInputPeerUser(client, _clientUser, botUser, botMsg);
-	const message = await getMessage(client, inputPeerUser, botMsg, mediaId);
+	const inputPeer = await getInputPeer(client, _clientUser, botUser, botMsg);
+	const message = await getMessage(client, inputPeer, botMsg, mediaId);
 	let transcribedAudio: Api.messages.TranscribedAudio | undefined;
 	// to avoid endless loop, limited waiting
 	for (let i = 1; i <= limit * 14; i++) {
 		transcribedAudio = await client.invoke(
 			new Api.messages.TranscribeAudio({
-				peer: inputPeerUser,
+				peer: inputPeer,
 				msgId: message.id,
 			})
 		);
 		if (transcribedAudio.pending)
-			await new Promise((resolve) => setTimeout(resolve, 5000)); // 5 sec delay between updates
-		else if (i == limit * 14) throw new Error("Very long audio. Transcribing audio is limited with 15 min.");
+			await new Promise((resolve) => setTimeout(resolve, _5sec)); // 5 sec delay between updates
+		else if (i == limit * 14) throw new Error("Very long audio. Transcribing can't be longer then 15 min lasting.");
 		else break;
 	}
 	if (!transcribedAudio) throw new Error("Can't transcribe the audio");

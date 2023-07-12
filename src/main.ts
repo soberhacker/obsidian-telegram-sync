@@ -4,7 +4,7 @@ import TelegramBot from "node-telegram-bot-api";
 import * as async from "async";
 import { handleMessage, ifNewRelaseThenShowChanges } from "./telegram/message/handlers";
 import { machineIdSync } from "node-machine-id";
-import { _15sec, displayAndLog } from "./utils/logUtils";
+import { _15sec, _1sec, displayAndLog } from "./utils/logUtils";
 import { displayAndLogError } from "./utils/logUtils";
 import { appendMessageToTelegramMd } from "./telegram/message/processors";
 import * as GramJs from "./telegram/GramJs/client";
@@ -193,13 +193,13 @@ export default class TelegramSyncPlugin extends Plugin {
 
 		try {
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			const error_code = (error as any).response.body.error_code;
+			const errorCode = (error as any).response.body.error_code;
 
-			if (error_code === 409) {
+			if (errorCode === 409) {
 				pollingError = "twoBotInstances";
 			}
 
-			if (error_code === 401) {
+			if (errorCode === 401) {
 				pollingError = "unAuthorized";
 			}
 		} catch {
@@ -232,7 +232,7 @@ export default class TelegramSyncPlugin extends Plugin {
 		if (this.checkingBotConnection || this.botConnected || !this.bot || !this.bot.isPolling()) return;
 		try {
 			this.checkingBotConnection = true;
-			await new Promise((resolve) => setTimeout(resolve, intervalInSeconds * 1000));
+			await new Promise((resolve) => setTimeout(resolve, intervalInSeconds * _1sec));
 			this.botUser = await this.bot.getMe();
 			this.botConnected = true;
 			this.lastPollingErrors = [];
