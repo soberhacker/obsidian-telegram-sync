@@ -101,71 +101,63 @@ export async function getMessage(
 	limit = 50
 ): Promise<Api.Message> {
 	let messageCouple = cachedMessageCouples.find((msgCouple) => msgCouple.botMsgId == botMsg.message_id);
-	try {
-		if (messageCouple?.clientMsg) return messageCouple.clientMsg;
+	if (messageCouple?.clientMsg) return messageCouple.clientMsg;
 
-		const messagesRequests = cachedMessagesRequests.filter(
-			(rq) =>
-				rq.botChatId == botMsg.chat.id &&
-				rq.msgDate <= botMsg.date &&
-				(rq.messages.last()?.date || botMsg.date - 1) >= botMsg.date
-		);
-		if (!messagesRequests.find((rq) => rq.limit == limit)) {
-			// wait 1 sec for history updates in Telegram
-			if (new Date().getTime() - new Date(botMsg.date * 1000).getTime() < _1sec)
-				await new Promise((resolve) => setTimeout(resolve, _2sec));
-			let messages = await client.getMessages(inputPeer, { limit, reverse: true, offsetDate: botMsg.date - 2 });
-			// remove bot messages (fromId != undefined)
-			messages = messages.filter((m) => m.fromId) || [];
-			messagesRequests.push({ botChatId: botMsg.chat.id, msgDate: botMsg.date, messages, limit });
-			cachedMessagesRequests.push(messagesRequests[0]);
-		}
-
-		if (!botMsg.text && !mediaId) {
-			const { fileObject } = getFileObject(botMsg);
-			const fileObjectToUse = fileObject instanceof Array ? fileObject.pop() : fileObject;
-			mediaId = extractMediaId(fileObjectToUse.file_id);
-		}
-		const skipMsgIds = cachedMessageCouples
-			.filter(
-				(msgCouple) =>
-					(msgCouple.date == botMsg.date || msgCouple.date + 1 == botMsg.date) &&
-					msgCouple.botMsgId != botMsg.message_id
-			)
-			.map((msgCouple) => msgCouple.clientMsg && msgCouple.clientMsg.id);
-
-		const messages = messagesRequests
-			.map((rq) => rq.messages)
-			.reduce((accumulator, msgs) => accumulator.concat(msgs));
-		const unprocessedMessages = messages.filter((msg) => !skipMsgIds.contains(msg.id));
-		const clientMsg = unprocessedMessages.find(
-			(m) =>
-				(m.date == botMsg.date || m.date + 1 /*different rounding for some reason*/ == botMsg.date) &&
-				(m.message || "") == (botMsg.text || botMsg.caption || "") &&
-				((mediaId && m.media && mediaId == getMediaId(m.media)?.toString()) || !(mediaId && m.media))
-		);
-		if (
-			!clientMsg &&
-			limit < 200 &&
-			messages.length > 0 &&
-			botMsg.date >= (messages.last()?.date || botMsg.date + 1)
-		)
-			return await getMessage(client, inputPeer, botMsg, mediaId, limit + 150);
-		else if (!clientMsg) {
-			console.log(`${cantFindTheMessage}\n\n botMsg=\n${botMsg}\n\nmessagesRequest=\n${messagesRequests}`);
-			throw new Error(cantFindTheMessage);
-		}
-		// TODO throw error if clientMsg.id already exists
-		messageCouple = {
-			date: botMsg.date,
-			creationTime: new Date(),
-			botMsgId: botMsg.message_id,
-			clientMsg: clientMsg,
-		};
-		cachedMessageCouples.push(messageCouple);
-		return clientMsg;
-	} catch (e) {
-		if (messageCouple) cachedMessageCouples.remove(messageCouple);
-		throw e;
+	const messagesRequests = cachedMessagesRequests.filter(
+		(rq) =>
+			rq.botChatId == botMsg.chat.id &&
+			rq.msgDate <= botMsg.date &&
+			(rq.messages.last()?.date || botMsg.date - 1) >= botMsg.date
+	);
+	if (!messagesRequests.find((rq) => rq.limit == limit)) {
+		// wait 1 sec for history updates in Telegram
+		if (new Date().getTime() - new Date(botMsg.date * 1000).getTime() < _1sec)
+			await new Promise((resolve) => setTimeout(resolve, _2sec));
+		let messages = await client.getMessages(inputPeer, { limit, reverse: true, offsetDate: botMsg.date - 2 });
+		// remove bot messages (fromId != undefined)
+		messages = messages.filter((m) => m.fromId) || [];
+		messagesRequests.push({ botChatId: botMsg.chat.id, msgDate: botMsg.date, messages, limit });
+		cachedMessagesRequests.push(messagesRequests[0]);
 	}
+
+	if (!botMsg.text && !mediaId) {
+		const { fileObject } = getFileObject(botMsg);
+		const fileObjectToUse = fileObject instanceof Array ? fileObject.pop() : fileObject;
+		mediaId = extractMediaId(fileObjectToUse.file_id);
+	}
+	const skipMsgIds = cachedMessageCouples
+		.filter(
+			(msgCouple) =>
+				(msgCouple.date == botMsg.date || msgCouple.date + 1 == botMsg.date) &&
+				msgCouple.botMsgId != botMsg.message_id
+		)
+		.map((msgCouple) => msgCouple.clientMsg && msgCouple.clientMsg.id);
+
+	const messages = messagesRequests.map((rq) => rq.messages).reduce((accumulator, msgs) => accumulator.concat(msgs));
+	const unprocessedMessages = messages.filter((msg) => !skipMsgIds.contains(msg.id));
+	const clientMsg = unprocessedMessages.find(
+		(m) =>
+			(m.date == botMsg.date || m.date + 1 /*different rounding for some reason*/ == botMsg.date) &&
+			(m.message || "") == (botMsg.text || botMsg.caption || "") &&
+			((mediaId && m.media && mediaId == getMediaId(m.media)?.toString()) || !(mediaId && m.media))
+	);
+	if (!clientMsg && limit < 200 && messages.length > 0 && botMsg.date >= (messages.last()?.date || botMsg.date + 1))
+		return await getMessage(client, inputPeer, botMsg, mediaId, limit + 150);
+	else if (!clientMsg) {
+		console.log(`${cantFindTheMessage}\n\n botMsg=\n${botMsg}\n\nmessagesRequest=\n${messagesRequests}`);
+		throw new Error(cantFindTheMessage);
+	}
+	if (cachedMessageCouples.find((mc) => mc.clientMsg.id == clientMsg.id)) {
+		throw new Error(
+			"Because there may be several identical messages, it is not possible to pinpoint which message is needed."
+		);
+	}
+	messageCouple = {
+		date: botMsg.date,
+		creationTime: new Date(),
+		botMsgId: botMsg.message_id,
+		clientMsg: clientMsg,
+	};
+	cachedMessageCouples.push(messageCouple);
+	return clientMsg;
 }

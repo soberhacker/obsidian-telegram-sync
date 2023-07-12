@@ -44,7 +44,7 @@ export const DEFAULT_SETTINGS: TelegramSyncSettings = {
 	allowedChatFromUsernames: [""],
 	mainDeviceId: "",
 	pluginVersion: "",
-	// TODO Check not public appId, apiHash for flood and download speed
+	// TODO Check for not public appId, apiHash how are often flood wait blocks and the level of downloading speed
 	appId: "17349", // public, ok to be here
 	apiHash: "344583e45741c457fe1862106095a5eb", // public, ok to be here
 	topicNames: [],

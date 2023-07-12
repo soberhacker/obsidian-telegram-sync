@@ -109,7 +109,7 @@ export async function applyNoteContentTemplate(
 	}
 
 	let voiceTranscript = "";
-	if (!templateContent || templateContent.includes("{{voiceTranscript")) {
+	if (templateContent.includes("{{voiceTranscript")) {
 		voiceTranscript = await GramJs.transcribeAudio(msg, await plugin.getBotUser(msg));
 	}
 
@@ -184,7 +184,7 @@ export async function applyNoteContentTemplate(
 	});
 	return proccessedContent;
 }
-// TODO Tests
+
 // Copy tab and blockquotes to every new line of {{content*}} or {{voiceTranscript*}} if they are placed in front of this variables.
 // https://github.com/soberhacker/obsidian-telegram-sync/issues/131
 function addLeadingForEveryLine(text: string, leadingChars?: string): string {
