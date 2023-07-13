@@ -75,7 +75,14 @@ export async function handleMessage(plugin: TelegramSyncPlugin, msg: TelegramBot
 	}
 }
 
-async function createNoteContent(plugin: TelegramSyncPlugin, filePath: string, notePath: string, error: any, msg: TelegramBot.Message) {
+async function createNoteContent(
+	plugin: TelegramSyncPlugin,
+	filePath: string,
+	notePath: string,
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	error: any,
+	msg: TelegramBot.Message
+) {
 	let fileLink: string;
 
 	if (!error) {

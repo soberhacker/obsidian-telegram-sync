@@ -62,10 +62,6 @@ export async function appendMessageToTelegramMd(
 	// Do not append messages if not connected
 	if (!plugin.botConnected) return;
 
-	// Determine the location for the Telegram.md file
-	const location = plugin.settings.newNotesLocation || "";
-	createFolderIfNotExist(plugin.app.vault, location);
-
 	const telegramMdPath = getTelegramMdPath(plugin);
 	let telegramMdFile = plugin.app.vault.getAbstractFileByPath(telegramMdPath) as TFile;
 
@@ -234,7 +230,9 @@ function pasteText(
 }
 
 export function getTelegramMdPath(plugin: TelegramSyncPlugin) {
+	// Determine the location for the Telegram.md file
 	const location = plugin.settings.newNotesLocation || "";
+	createFolderIfNotExist(plugin.app.vault, location);
 	const telegramMdPath = normalizePath(location ? `${location}/Telegram.md` : "Telegram.md");
 	return telegramMdPath;
 }
