@@ -66,7 +66,7 @@ export async function appendMessageToTelegramMd(
 	const location = plugin.settings.newNotesLocation || "";
 	createFolderIfNotExist(plugin.app.vault, location);
 
-	const telegramMdPath = normalizePath(location ? `${location}/Telegram.md` : "Telegram.md");
+	const telegramMdPath = getTelegramMdPath(plugin);
 	let telegramMdFile = plugin.app.vault.getAbstractFileByPath(telegramMdPath) as TFile;
 
 	// Create or modify the Telegram.md file
@@ -231,4 +231,10 @@ function pasteText(
 		})
 		.replace(allRE, pasteContent)
 		.replace(propertyRE, (_, property: string) => processText(pasteText, undefined, property));
+}
+
+export function getTelegramMdPath(plugin: TelegramSyncPlugin) {
+	const location = plugin.settings.newNotesLocation || "";
+	const telegramMdPath = normalizePath(location ? `${location}/Telegram.md` : "Telegram.md");
+	return telegramMdPath;
 }

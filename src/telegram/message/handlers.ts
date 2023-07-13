@@ -7,9 +7,10 @@ import { SendMessageOptions } from "node-telegram-bot-api";
 import path from "path";
 import * as GramJs from "../GramJs/client";
 import { extension } from "mime-types";
-import { applyNoteContentTemplate, finalizeMessageProcessing } from "./processors";
+import { applyNoteContentTemplate, finalizeMessageProcessing, getTelegramMdPath } from "./processors";
 import { ProgressBarType, createProgressBar, deleteProgressBar, updateProgressBar } from "../progressBar";
 import { getFileObject } from "./getters";
+import { TFile } from "obsidian";
 
 // handle all messages from Telegram
 export async function handleMessage(plugin: TelegramSyncPlugin, msg: TelegramBot.Message) {
@@ -74,13 +75,26 @@ export async function handleMessage(plugin: TelegramSyncPlugin, msg: TelegramBot
 	}
 }
 
+async function createNoteContent(plugin: TelegramSyncPlugin, filePath: string, notePath: string, error: any, msg: TelegramBot.Message) {
+	let fileLink: string;
+
+	if (!error) {
+		const file = plugin.app.vault.getAbstractFileByPath(filePath) as TFile;
+		fileLink = plugin.app.fileManager.generateMarkdownLink(file, notePath);
+	} else {
+		fileLink = `[❌ error while handling file](${error})`;
+	}
+
+	return await applyNoteContentTemplate(plugin, plugin.settings.templateFileLocation, msg, fileLink);
+}
+
 // Handle files received in messages
 export async function handleFiles(plugin: TelegramSyncPlugin, msg: TelegramBot.Message) {
 	if (!plugin.bot) return;
 
 	const basePath = plugin.settings.newFilesLocation || plugin.settings.newNotesLocation || "";
 	await createFolderIfNotExist(plugin.app.vault, basePath);
-	let markdownLink = "";
+	let filePath = "";
 	let telegramFileName = "";
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	let error: any;
@@ -147,7 +161,7 @@ export async function handleFiles(plugin: TelegramSyncPlugin, msg: TelegramBot.M
 		// Create a specific folder for each file type
 		const specificFolder = `${basePath}/${fileType}s`;
 		// Format the file name and path
-		const filePath = await getUniqueFilePath(
+		filePath = await getUniqueFilePath(
 			plugin.app.vault,
 			plugin.listOfNotePaths,
 			specificFolder,
@@ -155,8 +169,7 @@ export async function handleFiles(plugin: TelegramSyncPlugin, msg: TelegramBot.M
 			fileExtension,
 			msg.date
 		);
-		const file = await plugin.app.vault.createBinary(filePath, fileByteArray);
-		markdownLink = plugin.app.fileManager.generateMarkdownLink(file, filePath);
+		await plugin.app.vault.createBinary(filePath, fileByteArray);
 	} catch (e) {
 		error = e;
 	}
@@ -167,10 +180,8 @@ export async function handleFiles(plugin: TelegramSyncPlugin, msg: TelegramBot.M
 		return;
 	}
 
-	const fileLink = !error ? markdownLink : `[❌ error while handling file](${error})`;
-
-	const noteContent = await applyNoteContentTemplate(plugin, plugin.settings.templateFileLocation, msg, fileLink);
 	if (plugin.settings.appendAllToTelegramMd) {
+		const noteContent = await createNoteContent(plugin, filePath, getTelegramMdPath(plugin), error, msg);
 		plugin.messageQueueToTelegramMd.push({ msg, formattedContent: noteContent, error });
 		return;
 	} else if (msg.caption || telegramFileName) {
@@ -183,6 +194,8 @@ export async function handleFiles(plugin: TelegramSyncPlugin, msg: TelegramBot.M
 			"md",
 			msg.date
 		);
+
+		const noteContent = await createNoteContent(plugin, filePath, notePath, error, msg);
 		await plugin.app.vault.create(notePath, noteContent);
 	}
 
