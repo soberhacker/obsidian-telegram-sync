@@ -1,4 +1,4 @@
-name: Forbid PRs to the main branch
+name: Prevent contributors from making PRs to the main branch
 on:
   pull_request_target:
     branches:
