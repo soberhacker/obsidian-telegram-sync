@@ -1,0 +1,29 @@
+name: Check release notes
+on:
+  pull_request_target:
+    branches:
+      - main
+    types:
+      - opened
+
+jobs:
+  check_pr_to_main:
+    runs-on: ubuntu-latest
+    if: ${{ github.head_ref == 'develop' && github.event.pull_request.author_association == 'OWNER' }}
+    steps:
+      - name: Print github
+        run: echo '${{ toJson(github) }}'
+
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18.x"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check release notes
+        run: npm run release-notes-check

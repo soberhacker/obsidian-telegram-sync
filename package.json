@@ -10,8 +10,7 @@
         "version": "node version-bump.mjs && git add manifest.json versions.json",
         "test": "node esbuild.config.mjs test && node install-plugin.mjs",
 		"release-notes-check": "node release-notes.mjs check",
-        "checks": "npm run lint && npm run release-notes-check",
-        "build": "tsc -noEmit -skipLibCheck && npm run checks && node esbuild.config.mjs production"
+        "build": "tsc -noEmit -skipLibCheck && npm run lint && node esbuild.config.mjs production"
     },
     "keywords": [
         "Telegram",
