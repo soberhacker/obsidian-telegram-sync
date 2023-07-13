@@ -194,13 +194,6 @@ export async function ifNewRelaseThenShowChanges(plugin: TelegramSyncPlugin, msg
 	if (plugin.settings.pluginVersion && plugin.settings.pluginVersion !== release.version && release.showInTelegram) {
 		plugin.settings.pluginVersion = release.version;
 		await plugin.saveSettings();
-		const announcing = `<b>Telegrm Sync ${release.version}</b>\n\n`;
-		const newFeatures_ = `<u>New Features</u>${release.newFeatures}\n`;
-		const bugsFixes_ = `<u>Bug Fixes</u>${release.bugFixes}\n`;
-		const possibleRoadMap_ = `<u>Possible Road Map</u>${release.possibleRoadMap}\n`;
-		const donation =
-			"<b>If you like this plugin and are considering donating to support continued development, use the buttons below!</b>";
-		const releaseNotes = announcing + newFeatures_ + bugsFixes_ + possibleRoadMap_ + donation;
 
 		const options: SendMessageOptions = {
 			parse_mode: "HTML",
@@ -218,7 +211,7 @@ export async function ifNewRelaseThenShowChanges(plugin: TelegramSyncPlugin, msg
 			},
 		};
 
-		await plugin.bot?.sendMessage(msg.chat.id, releaseNotes, options);
+		await plugin.bot?.sendMessage(msg.chat.id, release.releaseNotes, options);
 	} else if (!plugin.settings.pluginVersion) {
 		plugin.settings.pluginVersion = release.version;
 		await plugin.saveSettings();

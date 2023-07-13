@@ -239,7 +239,6 @@ export const syncSendReaction = async (botUser: TelegramBot.User, botMsg: Telegr
 	return result;
 };
 
-// TODO check 10 messages parallel transcribing
 export async function transcribeAudio(
 	botMsg: TelegramBot.Message,
 	botUser?: TelegramBot.User,
@@ -258,7 +257,7 @@ export async function transcribeAudio(
 	if ((await client.isBot()) || !_clientUser) throw NotAuthorizedAsUser;
 	if (!_clientUser.premium) {
 		throw new Error(
-			"Transcribing voices available only for Telegram Premium subscribers! Remove {{voice:transcript}} from current template or log in with a premium user."
+			"Transcribing voices available only for Telegram Premium subscribers! Remove {{voiceTranscript}} from current template or log in with a premium user."
 		);
 	}
 	if (!botUser) return "";
