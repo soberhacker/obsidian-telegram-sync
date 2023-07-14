@@ -1,7 +1,6 @@
 export const version = "1.8.0";
 // TODO add Demo gif and screenshots to readme.md
 // TODO add thanks for last patrons in donation section
-// TODO improve github workflow: add checks(lint, etc) when pull request is opened
 // ## Demo
 //![](https://raw.githubusercontent.com/vslinko/obsidian-outliner/main/demos/demo1.gif)<br>
 export const showInTelegram = true;

@@ -145,7 +145,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 
 	addUser() {
 		let userStatusComponent: TextComponent;
-		// TODO add connecting state the same as for bot
+		// TODO add refreshing connecting state as for bot
 		const userStatusConstructor = (userStatus: TextComponent) => {
 			userStatusComponent = userStatusComponent || userStatus;
 			userStatus.setDisabled(true);
