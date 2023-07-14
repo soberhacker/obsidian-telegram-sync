@@ -30,7 +30,7 @@ interface UserCouple {
 
 let cachedMessageCouples: MessageCouple[] = [];
 let cachedMessagesRequests: MessagesRequests[] = [];
-const userCouples: UserCouple[] = [];
+const cachedUserCouples: UserCouple[] = [];
 
 // clean every 2 hours message request and couples if needed
 setInterval(() => {
@@ -63,7 +63,7 @@ export async function getInputPeer(
 	botMsg: TelegramBot.Message,
 	limit = 10
 ): Promise<Api.TypeInputPeer> {
-	let userCouple = userCouples.find(
+	let userCouple = cachedUserCouples.find(
 		(usrCouple) =>
 			usrCouple.botChatId == botMsg.chat.id &&
 			usrCouple.botUserId == botUser.id &&
@@ -89,7 +89,7 @@ export async function getInputPeer(
 		clientUserId: clientUser.id.toJSNumber(),
 		clientChat: dialog.inputEntity,
 	};
-	userCouples.push(userCouple);
+	cachedUserCouples.push(userCouple);
 	return dialog.inputEntity;
 }
 
