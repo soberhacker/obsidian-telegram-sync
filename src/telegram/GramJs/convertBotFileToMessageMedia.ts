@@ -131,7 +131,7 @@ export function convertBotFileToMessageMedia(fileId: string, fileSize: number): 
 }
 
 // converting Telegram Bot Api file_id to Telegram Client Api media object
-export function extractMediaId(fileId: string): number {
+export function extractMediaId(fileId: string): string {
 	const decoded = rle_decode(b64_decode(fileId));
 	const major = decoded[decoded.length - 1];
 	const buffer = major < 4 ? decoded.slice(0, -1) : decoded.slice(0, -2);
@@ -156,8 +156,8 @@ export function extractMediaId(fileId: string): number {
 		bufferPosition = newPosition;
 	}
 
-	const mediaId = Number(buffer.readBigInt64LE(bufferPosition).toString());
-	return mediaId;
+	const mediaId = buffer.readBigInt64LE(bufferPosition);
+	return mediaId.toString();
 }
 
 function b64_decode(s: string): Buffer {

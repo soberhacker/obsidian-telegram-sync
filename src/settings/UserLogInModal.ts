@@ -1,7 +1,7 @@
 import { Modal, Setting } from "obsidian";
 import TelegramSyncPlugin from "src/main";
 import * as GramJs from "src/telegram/GramJs/client";
-import { displayAndLog, displayAndLogError } from "src/utils/logUtils";
+import { _15sec, _5sec, displayAndLog, displayAndLogError } from "src/utils/logUtils";
 
 export class UserLogInModal extends Modal {
 	botSetingsDiv: HTMLDivElement;
@@ -55,12 +55,10 @@ export class UserLogInModal extends Modal {
 						await GramJs.signInAsUserWithQrCode(this.qrCodeContainer, this.password);
 						if (await GramJs.isAuthorizedAsUser()) {
 							this.plugin.userConnected = true;
-							displayAndLog(this.plugin, "Successfully logged in");
+							displayAndLog(this.plugin, "Successfully logged in", _5sec);
 						}
 					} catch (e) {
-						await displayAndLogError(this.plugin, e);
-						this.plugin.settings.telegramSessionType = "bot";
-						await this.plugin.saveSettings();
+						await displayAndLogError(this.plugin, e, undefined, _15sec);
 					}
 				});
 			});

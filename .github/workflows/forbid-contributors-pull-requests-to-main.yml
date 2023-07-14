@@ -1,0 +1,24 @@
+name: Prevent contributors from making PRs to the main branch
+on:
+  pull_request_target:
+    branches:
+      - main
+    types:
+      - opened
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  close_pull_request:
+    runs-on: ubuntu-latest
+    if: ${{ github.head_ref != 'develop' || github.event.pull_request.author_association != 'OWNER' }}
+    steps:
+      - name: Print github
+        run: echo '${{ toJson(github) }}'
+      - name: Closing pull request with comment
+        run: |
+          echo "All PRs from contributors should be based on, and directed towards, the develop branch. Closing this PR..."
+          gh pr close ${{ github.event.pull_request.number }} -c "Auto-closing: all PRs from contributors should be based on, and directed towards, the develop branch."
+        

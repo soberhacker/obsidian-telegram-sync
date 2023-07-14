@@ -1,6 +1,24 @@
 # Changelog
 
 
+## [1.8.0](https://github.com/soberhacker/obsidian-telegram-sync/compare/1.7.1...1.8.0) (2023-07-14)
+
+
+### Features
+
+* add reaction👍 to processed messages ([39bdac1](https://github.com/soberhacker/obsidian-telegram-sync/commit/39bdac1ca9f88204a5905af5fdaf21675af3b417))
+* add variable {{content:noFirstLine}} ([c94d761](https://github.com/soberhacker/obsidian-telegram-sync/commit/c94d761ea1408a70fc24d8205516d1f4c4d37c24))
+
+
+### Bug Fixes
+
+* displaying when bot connects ([24aeb8a](https://github.com/soberhacker/obsidian-telegram-sync/commit/24aeb8a968f918d57a69dc831b6c00d9e70c677d))
+* Generate proper relative path based on the actual note path ([ff5d328](https://github.com/soberhacker/obsidian-telegram-sync/commit/ff5d3284a639e569c892579daad930f3f1e49802))
+* losing tabs and "&gt;" before content ([6c3743b](https://github.com/soberhacker/obsidian-telegram-sync/commit/6c3743bf7e5bd9dbb4ddec661e09716a79ad9e5b))
+* missing bot restarting if no internet at run ([dccd707](https://github.com/soberhacker/obsidian-telegram-sync/commit/dccd70702e469ece1d3bbdadb28e9c4a5eba5f61))
+* missing of Telegram user reconnects ([658dbb2](https://github.com/soberhacker/obsidian-telegram-sync/commit/658dbb2f6cc4e4f99133d327c45a508b2c4a35a6))
+* template variable "replace" skiping new lines ([600cf4c](https://github.com/soberhacker/obsidian-telegram-sync/commit/600cf4c675e7f3bc316fc4fca54f69d447f3ce2e))
+
 ## [1.7.1](https://github.com/soberhacker/obsidian-telegram-sync/compare/1.7.0...1.7.1) (2023-06-27)
 
 

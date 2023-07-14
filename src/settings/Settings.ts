@@ -2,12 +2,14 @@ import TelegramSyncPlugin from "src/main";
 import { ButtonComponent, PluginSettingTab, Setting, TextComponent, normalizePath } from "obsidian";
 import { FileSuggest } from "./suggesters/FileSuggester";
 import { FolderSuggest } from "./suggesters/FolderSuggester";
-import { cryptoDonationButton, paypalButton, buyMeACoffeeButton, kofiButton } from "./donation";
+import { boostyButton, paypalButton, buyMeACoffeeButton, kofiButton } from "./donation";
 import TelegramBot from "node-telegram-bot-api";
-import { createProgressBar, updateProgressBar, deleteProgressBar } from "src/telegram/progressBar";
+import { createProgressBar, updateProgressBar, deleteProgressBar, ProgressBarType } from "src/telegram/progressBar";
 import * as GramJs from "src/telegram/GramJs/client";
 import { BotSettingsModal } from "./BotSettingsModal";
 import { UserLogInModal } from "./UserLogInModal";
+import { version } from "release-notes.mjs";
+import { _5sec } from "src/utils/logUtils";
 
 export interface TopicName {
 	name: string;
@@ -42,6 +44,7 @@ export const DEFAULT_SETTINGS: TelegramSyncSettings = {
 	allowedChatFromUsernames: [""],
 	mainDeviceId: "",
 	pluginVersion: "",
+	// TODO Check for not public appId, apiHash how are often flood wait blocks and the level of downloading speed
 	appId: "17349", // public, ok to be here
 	apiHash: "344583e45741c457fe1862106095a5eb", // public, ok to be here
 	topicNames: [],
@@ -60,10 +63,12 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 
 		this.addBot();
 		this.addUser();
+		this.containerEl.createEl("br");
 		this.containerEl.createEl("h2", { text: "Locations" });
 		this.addNewNotesLocation();
 		this.addNewFilesLocation();
 		this.addTemplateFileLocation();
+		this.containerEl.createEl("br");
 		this.containerEl.createEl("h2", { text: "Behavior settings" });
 		this.addAppendAllToTelegramMd();
 		this.addDeleteMessagesFromTelegram();
@@ -71,39 +76,56 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 	}
 
 	addSettingsHeader() {
-		this.containerEl.createEl("h1", { text: "Telegram Sync" });
+		this.containerEl.createEl("h1", { text: `Telegram Sync ${version}` });
 		this.containerEl.createEl("p", { text: "Created by " }).createEl("a", {
 			text: "soberhacker🍃🧘💻",
 			href: "https://github.com/soberhacker",
 		});
+		this.containerEl.createEl("br");
 	}
 
 	addBot() {
 		let botStatusComponent: TextComponent;
 
-		const botStatusConstructor = (botStatus: TextComponent) => {
+		const botStatusConstructor = async (botStatus: TextComponent) => {
 			botStatusComponent = botStatusComponent || botStatus;
 			botStatus.setDisabled(true);
-			if (this.plugin.settings.botToken && this.plugin.botConnected) botStatus.setValue("🤖 connected");
+			if (this.plugin.checkingBotConnection) {
+				botStatus.setValue("⏳ connecting...");
+			} else if (this.plugin.settings.botToken && this.plugin.botConnected) botStatus.setValue("🤖 connected");
 			else botStatus.setValue("❌ disconnected");
+			new Promise((resolve) => {
+				setTimeout(() => resolve(botStatusConstructor.call(this, botStatus)), _5sec);
+			});
 		};
 
 		const botSettingsConstructor = (botSettingsButton: ButtonComponent) => {
-			if (this.plugin.settings.botToken && this.plugin.botConnected) botSettingsButton.setButtonText("Settings");
+			if (this.plugin.checkingBotConnection) botSettingsButton.setButtonText("Restart");
+			else if (this.plugin.settings.botToken && this.plugin.botConnected)
+				botSettingsButton.setButtonText("Settings");
 			else botSettingsButton.setButtonText("Connect");
 			botSettingsButton.onClick(async () => {
 				const botSettingsModal = new BotSettingsModal(this.plugin);
 				botSettingsModal.onClose = async () => {
 					if (botSettingsModal.saved) {
 						// Initialize the bot with the new token
-						await this.plugin.initTelegramBot();
-						if (this.plugin.settings.telegramSessionType == "bot")
-							await this.plugin.initTelegramClient(this.plugin.settings.telegramSessionType);
-						botStatusConstructor.call(this, botStatusComponent);
-						botSettingsConstructor.call(this, botSettingsButton);
+						this.plugin.checkingBotConnection = true;
+						try {
+							botStatusConstructor.call(this, botStatusComponent);
+							botSettingsConstructor.call(this, botSettingsButton);
+							if (this.plugin.settings.telegramSessionType == "bot")
+								await this.plugin.initTelegramClient(this.plugin.settings.telegramSessionType);
+							await this.plugin.initTelegramBot();
+						} finally {
+							this.plugin.checkingBotConnection = false;
+						}
 					}
 				};
 				botSettingsModal.open();
+			});
+
+			new Promise((resolve) => {
+				setTimeout(() => resolve(botSettingsConstructor.call(this, botSettingsButton)), _5sec);
 			});
 		};
 		const botSettings = new Setting(this.containerEl)
@@ -123,22 +145,20 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 
 	addUser() {
 		let userStatusComponent: TextComponent;
-
+		// TODO add refreshing connecting state as for bot
 		const userStatusConstructor = (userStatus: TextComponent) => {
 			userStatusComponent = userStatusComponent || userStatus;
 			userStatus.setDisabled(true);
-			if (this.plugin.settings.telegramSessionType == "user" && this.plugin.userConnected)
-				userStatus.setValue("👨🏽‍💻 connected");
+			if (this.plugin.userConnected) userStatus.setValue("👨🏽‍💻 connected");
 			else userStatus.setValue("❌ disconnected");
 		};
 
 		const userLogInConstructor = (userLogInButton: ButtonComponent) => {
-			if (this.plugin.settings.telegramSessionType == "user" && this.plugin.userConnected)
-				userLogInButton.setButtonText("Log out");
+			if (this.plugin.settings.telegramSessionType == "user") userLogInButton.setButtonText("Log out");
 			else userLogInButton.setButtonText("Log in");
 
 			userLogInButton.onClick(async () => {
-				if (this.plugin.settings.telegramSessionType == "user" && this.plugin.userConnected) {
+				if (this.plugin.settings.telegramSessionType == "user") {
 					// Log Out
 					await this.plugin.initTelegramClient("bot");
 					userStatusConstructor.call(this, userStatusComponent);
@@ -160,6 +180,18 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 			.setDesc("Connect your telegram user. It's required only for ")
 			.addText(userStatusConstructor)
 			.addButton(userLogInConstructor);
+
+		if (this.plugin.settings.telegramSessionType == "user" && !this.plugin.userConnected) {
+			userSettings.addExtraButton((refreshButton) => {
+				refreshButton.setTooltip("Refresh");
+				refreshButton.setIcon("refresh-ccw");
+				refreshButton.onClick(async () => {
+					await this.plugin.initTelegramClient("user", this.plugin.settings.telegramSessionId);
+					userStatusConstructor.call(this, userStatusComponent);
+					refreshButton.setDisabled(true);
+				});
+			});
+		}
 
 		// add link to authorized user features
 		userSettings.descEl.createEl("a", {
@@ -264,8 +296,8 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 		);
 		donationDiv.appendChild(donationText);
 
-		cryptoDonationButton.style.marginRight = "20px";
-		donationDiv.appendChild(cryptoDonationButton);
+		boostyButton.style.marginRight = "20px";
+		donationDiv.appendChild(boostyButton);
 		buyMeACoffeeButton.style.marginRight = "20px";
 		donationDiv.appendChild(buyMeACoffeeButton);
 		donationDiv.appendChild(createEl("p"));
@@ -295,7 +327,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 			} else this.plugin.settings.topicNames.push(newTopicName);
 			await this.plugin.saveSettings();
 
-			const progressBarMessage = await createProgressBar(bot, msg, "stored");
+			const progressBarMessage = await createProgressBar(bot, msg, ProgressBarType.stored);
 
 			// Update the progress bar during the delay
 			let stage = 0;

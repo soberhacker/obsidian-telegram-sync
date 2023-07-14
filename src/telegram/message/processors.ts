@@ -4,15 +4,15 @@ import { getChatLink, getForwardFromLink, getReplyMessageId, getTopicLink, getUr
 import { createFolderIfNotExist } from "src/utils/fsUtils";
 import { TFile, normalizePath } from "obsidian";
 import { formatDateTime } from "../../utils/dateUtils";
-import { displayAndLog, displayAndLogError } from "src/utils/logUtils";
-import { createProgressBar, deleteProgressBar, updateProgressBar } from "../progressBar";
-import { escapeRegExp, convertMessageTextToMarkdown } from "./convertToMarkdown";
+import { _15sec, _1h, _5sec, displayAndLog, displayAndLogError } from "src/utils/logUtils";
+import { ProgressBarType, createProgressBar, deleteProgressBar, updateProgressBar } from "../progressBar";
+import { convertMessageTextToMarkdown, escapeRegExp } from "./convertToMarkdown";
 import * as GramJs from "../GramJs/client";
 
 // Delete a message or send a confirmation reply based on settings and message age
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function finalizeMessageProcessing(plugin: TelegramSyncPlugin, msg: TelegramBot.Message, error?: any) {
-	if (error) await displayAndLogError(plugin, error, msg);
+	if (error) await displayAndLogError(plugin, error, msg, _5sec);
 	if (error || !plugin.bot) {
 		return;
 	}
@@ -20,11 +20,11 @@ export async function finalizeMessageProcessing(plugin: TelegramSyncPlugin, msg:
 	const currentTime = new Date();
 	const messageTime = new Date(msg.date * 1000);
 	const timeDifference = currentTime.getTime() - messageTime.getTime();
-	const hoursDifference = timeDifference / (1000 * 60 * 60);
+	const hoursDifference = timeDifference / _1h;
 
 	if (plugin.settings.deleteMessagesFromTelegram && hoursDifference <= 48) {
 		// Send the initial progress bar
-		const progressBarMessage = await createProgressBar(plugin.bot, msg, "deleting");
+		const progressBarMessage = await createProgressBar(plugin.bot, msg, ProgressBarType.deleting);
 
 		// Update the progress bar during the delay
 		let stage = 0;
@@ -36,12 +36,19 @@ export async function finalizeMessageProcessing(plugin: TelegramSyncPlugin, msg:
 		await plugin.bot?.deleteMessage(msg.chat.id, msg.message_id);
 		await deleteProgressBar(plugin.bot, msg, progressBarMessage);
 	} else {
-		// Send a confirmation reply if the message is too old to be deleted
-		// TODO: needs deep testing and integration
-		// if (plugin.botUser) {
-		// 	await GramJs.sendReaction(plugin.botUser, msg);
-		// }
-		await plugin.bot?.sendMessage(msg.chat.id, "...✅...", { reply_to_message_id: msg.message_id });
+		let needReply = true;
+		let error = "";
+		try {
+			if (plugin.userConnected && plugin.botUser) {
+				await GramJs.syncSendReaction(plugin.botUser, msg);
+				needReply = false;
+			}
+		} catch (e) {
+			error = `\n\nCan't "like" the message, because ${e}`;
+		}
+		if (needReply) {
+			await plugin.bot?.sendMessage(msg.chat.id, "...✅..." + error, { reply_to_message_id: msg.message_id });
+		}
 	}
 }
 
@@ -55,11 +62,7 @@ export async function appendMessageToTelegramMd(
 	// Do not append messages if not connected
 	if (!plugin.botConnected) return;
 
-	// Determine the location for the Telegram.md file
-	const location = plugin.settings.newNotesLocation || "";
-	createFolderIfNotExist(plugin.app.vault, location);
-
-	const telegramMdPath = normalizePath(location ? `${location}/Telegram.md` : "Telegram.md");
+	const telegramMdPath = getTelegramMdPath(plugin);
 	let telegramMdFile = plugin.app.vault.getAbstractFileByPath(telegramMdPath) as TFile;
 
 	// Create or modify the Telegram.md file
@@ -102,7 +105,7 @@ export async function applyNoteContentTemplate(
 	}
 
 	let voiceTranscript = "";
-	if (!templateContent || templateContent.includes("{{voiceTranscript")) {
+	if (templateContent.includes("{{voiceTranscript")) {
 		voiceTranscript = await GramJs.transcribeAudio(msg, await plugin.getBotUser(msg));
 	}
 
@@ -112,38 +115,23 @@ export async function applyNoteContentTemplate(
 	const dateTimeNow = new Date();
 	const itemsForReplacing: [string, string][] = [];
 
-	let proccessedContent = templateContent
-		// TODO Copy tab and blockquotes to every new line of {{content*}} or {{voiceTranscript*}} if they are placed in front of this variables.
-		.replace("{{content}}", fullContentMd)
-		.replace(/{{content:(.*?)}}/g, (_, property: string) => {
-			let subContent = "";
-			if (property.toLowerCase() == "firstline") {
-				subContent = textContentMd.split("\n")[0];
-			} else if (property.toLowerCase() == "text") {
-				subContent = textContentMd;
-			} else if (Number.isInteger(parseFloat(property))) {
-				// property is length
-				subContent = textContentMd.substring(0, Number(property));
-			} else {
-				displayAndLog(plugin, `Template variable {{content:${property}}} isn't supported!`, 15 * 1000);
-			}
-			return subContent;
-		}) // message text of specified length
+	const lines = templateContent.split("\n");
+	for (let i = 0; i < lines.length; i++) {
+		const line = lines[i];
+
+		if (line.includes("{{content")) {
+			lines[i] = pasteText(plugin, "content", line, fullContentMd, textContentMd);
+		}
+
+		if (line.includes("{{voiceTranscript")) {
+			lines[i] = pasteText(plugin, "voiceTranscript", line, voiceTranscript, voiceTranscript);
+		}
+	}
+	let proccessedContent = lines.join("\n");
+
+	proccessedContent = proccessedContent
 		.replace(/{{file}}/g, fileLink || "")
 		.replace(/{{file:link}}/g, fileLink?.startsWith("!") ? fileLink.slice(1) : fileLink || "")
-		.replace(/{{voiceTranscript}}/g, voiceTranscript)
-		.replace(/{{voiceTranscript:(.*?)}}/g, (_, property: string) => {
-			let subContent = "";
-			if (property.toLowerCase() == "firstline") {
-				subContent = voiceTranscript.split("\n")[0];
-			} else if (Number.isInteger(parseFloat(property))) {
-				// property is length
-				subContent = voiceTranscript.substring(0, Number(property));
-			} else {
-				displayAndLog(plugin, `Template variable {{voiceTranscript:${property}}} isn't supported!`, 15 * 1000);
-			}
-			return subContent;
-		})
 		.replace(/{{messageDate:(.*?)}}/g, (_, format) => formatDateTime(messageDateTime, format))
 		.replace(/{{messageTime:(.*?)}}/g, (_, format) => formatDateTime(messageDateTime, format))
 		.replace(/{{date:(.*?)}}/g, (_, format) => formatDateTime(dateTimeNow, format))
@@ -169,7 +157,7 @@ export async function applyNoteContentTemplate(
 				if (!height || Number.isInteger(parseFloat(height))) {
 					linkPreview = `<iframe width="100%" height="${height || 250}" src="${url1}"></iframe>`;
 				} else {
-					displayAndLog(plugin, `Template variable {{url1:preview${height}}} isn't supported!`, 15 * 1000);
+					displayAndLog(plugin, `Template variable {{url1:preview${height}}} isn't supported!`, _15sec);
 				}
 			}
 			return linkPreview;
@@ -185,10 +173,66 @@ export async function applyNoteContentTemplate(
 			return "";
 		});
 
-	itemsForReplacing.forEach(
-		// TODO add replacing new lines "\n"
-		([replaceThis, replaceWith]) =>
-			(proccessedContent = proccessedContent.replace(new RegExp(escapeRegExp(replaceThis), "g"), replaceWith))
-	);
+	itemsForReplacing.forEach(([replaceThis, replaceWith]) => {
+		const beautyReplaceThis = escapeRegExp(replaceThis).replace(/\\\\n/g, "\\n");
+		const beautyReplaceWith = replaceWith.replace(/\\n/g, "\n");
+		proccessedContent = proccessedContent.replace(new RegExp(beautyReplaceThis, "g"), beautyReplaceWith);
+	});
 	return proccessedContent;
+}
+
+// Copy tab and blockquotes to every new line of {{content*}} or {{voiceTranscript*}} if they are placed in front of this variables.
+// https://github.com/soberhacker/obsidian-telegram-sync/issues/131
+function addLeadingForEveryLine(text: string, leadingChars?: string): string {
+	if (!leadingChars) return text;
+	return text
+		.split("\n")
+		.map((line) => leadingChars + line)
+		.join("\n");
+}
+
+function processText(text: string, leadingChars?: string, property?: string): string {
+	if (!property || property.toLowerCase() == "text") return addLeadingForEveryLine(text, leadingChars);
+	if (property.toLowerCase() == "firstline") return leadingChars + text.split("\n")[0];
+	if (property.toLowerCase() == "nofirstline") {
+		let lines = text.split("\n");
+		lines = lines.slice(1);
+		return leadingChars + lines.join("\n");
+	}
+	// if property is length
+	if (Number.isInteger(parseFloat(property || "")))
+		return addLeadingForEveryLine(text.substring(0, Number(property)), leadingChars);
+	return "";
+}
+
+function pasteText(
+	plugin: TelegramSyncPlugin,
+	pasteType: "content" | "voiceTranscript",
+	pasteHere: string,
+	pasteContent: string,
+	pasteText: string
+) {
+	const leadingRE = new RegExp(`^([>\\s]+){{${pasteType}}}`);
+	const leadingAndPropertyRE = new RegExp(`^([>\\s]+){{${pasteType}:(.*?)}}`);
+	const propertyRE = new RegExp(`{{${pasteType}:(.*?)}}`, "g");
+	const allRE = new RegExp(`{{${pasteType}}}`, "g");
+	return pasteHere
+		.replace(leadingRE, (_, leadingChars) => processText(pasteContent, leadingChars))
+		.replace(leadingAndPropertyRE, (_, leadingChars, property) => {
+			const processedText = processText(pasteText, leadingChars, property);
+			if (!processedText && property && pasteText) {
+				displayAndLog(plugin, `Template variable {{${pasteType}}:${property}}} isn't supported!`, _5sec);
+			}
+			return processedText;
+		})
+		.replace(allRE, pasteContent)
+		.replace(propertyRE, (_, property: string) => processText(pasteText, undefined, property));
+}
+
+export function getTelegramMdPath(plugin: TelegramSyncPlugin) {
+	// Determine the location for the Telegram.md file
+	const location = plugin.settings.newNotesLocation || "";
+	createFolderIfNotExist(plugin.app.vault, location);
+	const telegramMdPath = normalizePath(location ? `${location}/Telegram.md` : "Telegram.md");
+	return telegramMdPath;
 }

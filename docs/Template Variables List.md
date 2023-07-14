@@ -2,12 +2,13 @@
 
 ###### Variables:
 ```ts
-{{content}} - forwarded from + file content + message text
+{{content}} - forwarded from + file|image + message text
 {{content:text}} - only message text
 {{content:firstLine}} - first line of the message text
+{{content:noFirstLine}} - the message text without the first line
 {{content:XX}} - XX characters of the message text
-{{file}} - file content ![]()
-{{file:link}} - link to the file []()
+{{file}} - file|image content ![]()
+{{file:link}} - link to the file|image []()
 {{voiceTranscript}} - transcribing voice(video notes!) to text (same limits as for Telegram Premium subscribers)
 {{voiceTranscript:XX}} - XX symbols of transcribed voices (same limits as for Telegram Premium subscribers)
 {{chat}} - link to the chat (bot / group / channel)
@@ -44,7 +45,7 @@ Created: {{creationDate:YYYY-DD-MM}} {{creationTime:HH:mm:ss}}
 
 
 
-#### Note Path Template (❌ not implemented)
+#### ❌ Note Path Template (*not implemented*)
 
 ###### Variables:
 ```json
@@ -56,7 +57,7 @@ Created: {{creationDate:YYYY-DD-MM}} {{creationTime:HH:mm:ss}}
 ❌{{forwardFrom:VALUE}} - only when message creator equal VALUE use this path
 ```
 
-###### Note Paths examples:
+###### ❌ Note Paths examples (*not implemented*):
 ```js
 // All news are written in one folder, other messages - in file Telegram.md
 myNotes/WorldNews/{{forwardFrom:Forbes}}.md
@@ -86,7 +87,7 @@ myNotes/{{creationDate:YYYY}}/{{creationDate:MM-DD}}.{{creationTime:HH:mm:ss(SSS
 
 
 
-#### File Path Template (❌ not implemented)
+#### ❌ File Path Template (*not implemented*)
 
 ###### Variables:
 ```json
@@ -95,7 +96,7 @@ myNotes/{{creationDate:YYYY}}/{{creationDate:MM-DD}}.{{creationTime:HH:mm:ss(SSS
 ❌{{fileName}} - unique file name assigned by Telegram (without extension)
 ```
 
-###### File Paths examples:
+###### ❌ File Paths examples (*not implemented*):
 ```js
 myFiles/{{fileType}}/{{fileName}}.{{fileExtension}}
 myFiles/{{forwardFrom}}_{{fileName}}.{{fileExtension}}
@@ -115,9 +116,9 @@ Integrating these new features might prove challenging and time-consuming, so yo
 -  Donating to enhance my motivation
 -  Contributing to the development (branch "[develop](https://github.com/soberhacker/obsidian-telegram-sync/tree/develop)")
 
-[![Crypto Ð⟠na₮i⟠n](https://img.buymeacoffee.com/button-api/?text=Crypto%20Donation&emoji=🚀&slug=soberhacker&button_colour=5b5757&font_colour=ffffff&font_family=Lato&outline_colour=ffffff&coffee_colour=FFDD00)](https://oxapay.com/donate/5855474)
+[![boosty](https://img.buymeacoffee.com/button-api/?text=boosty&emoji=💰&slug=soberhacker&button_colour=f17d1e&font_colour=000000&font_family=Bree&outline_colour=000000&coffee_colour=FFDD00)](https://boosty.to/soberhacker/donate)
 
-[![Buy me a book](https://img.buymeacoffee.com/button-api/?text=Buy%20me%20a%20book&emoji=📖&slug=soberhacker&button_colour=FFDD00&font_colour=000000&font_family=Cookie&outline_colour=000000&coffee_colour=ffffff)](https://www.buymeacoffee.com/soberhacker)
+[![Buy me a coffee](https://img.buymeacoffee.com/button-api/?text=Buy%20me%20a%20coffee&emoji=%E2%98%95&slug=soberhacker&button_colour=5F7FFF&font_colour=ffffff&font_family=Cookie&outline_colour=000000&coffee_colour=FFFFFF)](https://www.buymeacoffee.com/soberhacker)
 
 [![Ko-fi Donation](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/soberhacker)
 

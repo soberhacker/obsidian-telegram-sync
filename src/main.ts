@@ -4,7 +4,7 @@ import TelegramBot from "node-telegram-bot-api";
 import * as async from "async";
 import { handleMessage, ifNewRelaseThenShowChanges } from "./telegram/message/handlers";
 import { machineIdSync } from "node-machine-id";
-import { displayAndLog } from "./utils/logUtils";
+import { _15sec, _1sec, displayAndLog } from "./utils/logUtils";
 import { displayAndLogError } from "./utils/logUtils";
 import { appendMessageToTelegramMd } from "./telegram/message/processors";
 import * as GramJs from "./telegram/GramJs/client";
@@ -15,6 +15,7 @@ export default class TelegramSyncPlugin extends Plugin {
 	settingsTab: TelegramSyncSettingTab;
 	botConnected = false;
 	userConnected = false;
+	checkingBotConnection = false;
 	bot?: TelegramBot;
 	botUser?: TelegramBot.User;
 	messageQueueToTelegramMd: async.QueueObject<unknown>;
@@ -39,9 +40,12 @@ export default class TelegramSyncPlugin extends Plugin {
 
 		// Initialize the Telegram bot when Obsidian layout is fully loaded
 		this.app.workspace.onLayoutReady(async () => {
-			await this.initTelegramBot();
-			if (this.botConnected) {
+			this.checkingBotConnection = true;
+			try {
 				await this.initTelegramClient(this.settings.telegramSessionType, this.settings.telegramSessionId);
+				await this.initTelegramBot();
+			} finally {
+				this.checkingBotConnection = false;
 			}
 		});
 
@@ -71,31 +75,23 @@ export default class TelegramSyncPlugin extends Plugin {
 		}
 
 		if (!this.settings.botToken) {
-			displayAndLog(this, "Telegram bot token is empty. Exit.");
+			displayAndLog(this, "Telegram bot token is empty.\n\nSyncing is disabled.");
 			return;
 		}
 
 		// Create a new bot instance and start polling
-		this.bot = new TelegramBot(this.settings.botToken, { polling: true });
+		this.bot = new TelegramBot(this.settings.botToken);
 
 		// Set connected flag to false and log errors when a polling error occurs
 		this.bot.on("polling_error", async (error: unknown) => {
 			this.handlePollingError(error);
 		});
 
-		// Check if the bot is connected and set the connected flag accordingly
-		if (this.bot.isPolling()) {
-			try {
-				this.botUser = await this.bot.getMe();
-				this.botConnected = true;
-			} catch (e) {
-				this.handlePollingError(e);
-			}
-		}
-
 		this.bot.on("message", async (msg) => {
-			this.botConnected = true;
-			this.lastPollingErrors = [];
+			if (!this.botConnected) {
+				this.botConnected = true;
+				this.lastPollingErrors = [];
+			}
 			displayAndLog(this, `Got a message from Telegram Bot: ${msg.text || "binary"}`, 0);
 
 			// Skip processing if the message is a "/start" command
@@ -114,53 +110,80 @@ export default class TelegramSyncPlugin extends Plugin {
 				await handleMessage(this, msg);
 				await ifNewRelaseThenShowChanges(this, msg);
 			} catch (error) {
-				await displayAndLogError(this, error, msg);
+				await displayAndLogError(this, error, msg, _15sec);
 			}
 		});
+
+		try {
+			// Check if the bot is connected and set the connected flag accordingly
+			this.botUser = await this.bot.getMe();
+			await this.bot.startPolling();
+			this.botConnected = true;
+		} catch (e) {
+			displayAndLog(this, `${e}\n\nTelegram Bot is disconnected!`);
+		}
 	}
 
 	async initTelegramClient(sessionType: GramJs.SessionType, sessionId?: number) {
-		try {
-			if (
+		if (
+			!(
 				this.settings.appId !== "" &&
 				this.settings.apiHash !== "" &&
 				(sessionType == "user" || this.settings.botToken !== "")
+			)
+		)
+			return;
+
+		const initialSessionType = this.settings.telegramSessionType;
+		try {
+			if (!sessionId) {
+				this.settings.telegramSessionId = GramJs.getNewSessionId();
+				await this.saveSettings();
+			}
+
+			if (sessionType != this.settings.telegramSessionType) {
+				this.settings.telegramSessionType = sessionType;
+				await this.saveSettings();
+			}
+
+			await GramJs.init(
+				this.settings.telegramSessionId,
+				this.settings.telegramSessionType,
+				+this.settings.appId,
+				this.settings.apiHash,
+				this.currentDeviceId
+			);
+
+			this.userConnected = await GramJs.isAuthorizedAsUser();
+
+			if (
+				this.settings.telegramSessionType == "bot" ||
+				(this.settings.telegramSessionType == "user" && !this.userConnected)
 			) {
-				try {
-					if (!sessionId) {
-						this.settings.telegramSessionId = GramJs.getNewSessionId();
-						await this.saveSettings();
-					}
-
-					if (sessionType != this.settings.telegramSessionType) {
-						this.settings.telegramSessionType = sessionType;
-						await this.saveSettings();
-					}
-
-					await GramJs.init(
-						this.settings.telegramSessionId,
-						this.settings.telegramSessionType,
-						+this.settings.appId,
-						this.settings.apiHash,
-						this.currentDeviceId
-					);
-				} catch (e) {
-					if (this.settings.telegramSessionType == "user" && !(await GramJs.isAuthorizedAsUser())) {
-						this.settings.telegramSessionType = "bot";
-						await this.saveSettings();
-					}
-					throw e;
-				}
-
-				if (this.settings.telegramSessionType == "bot") {
-					await GramJs.signInAsBot(this.settings.botToken);
-				}
-
-				this.userConnected = await GramJs.isAuthorizedAsUser();
+				await GramJs.signInAsBot(this.settings.botToken);
 			}
 		} catch (e) {
 			if (!e.message.includes("API_ID_PUBLISHED_FLOOD")) {
-				await displayAndLogError(this, e, undefined, 60 * 1000);
+				if (sessionType == "user") {
+					this.settings.telegramSessionType = initialSessionType;
+					this.saveSettings();
+				}
+				await displayAndLogError(this, e, undefined, _15sec);
+			}
+		}
+	}
+
+	async reconnectTelegramClient() {
+		try {
+			await GramJs.reconnect();
+			this.userConnected = await GramJs.isAuthorizedAsUser();
+		} catch (e) {
+			this.userConnected = false;
+			if (this.settings.telegramSessionType == "user") {
+				displayAndLog(
+					this,
+					`Telegram user is disconnected.\n\nTry restore the connection manually by restarting Obsidian or by refresh button in the plugin settings!\n\n${e}`
+				);
 			}
 		}
 	}
@@ -170,13 +193,13 @@ export default class TelegramSyncPlugin extends Plugin {
 
 		try {
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			const error_code = (error as any).response.body.error_code;
+			const errorCode = (error as any).response.body.error_code;
 
-			if (error_code === 409) {
+			if (errorCode === 409) {
 				pollingError = "twoBotInstances";
 			}
 
-			if (error_code === 401) {
+			if (errorCode === 401) {
 				pollingError = "unAuthorized";
 			}
 		} catch {
@@ -192,9 +215,11 @@ export default class TelegramSyncPlugin extends Plugin {
 			this.lastPollingErrors.push(pollingError);
 			if (!(pollingError == "twoBotInstances")) {
 				this.botConnected = false;
-				await displayAndLogError(this, error);
+				await displayAndLogError(this, `${error} \n\nTelegram bot is disconnected!`);
 			}
 		}
+
+		if (!(pollingError == "twoBotInstances")) this.checkConnectionAfterError();
 	}
 
 	async getBotUser(msg: TelegramBot.Message): Promise<TelegramBot.User> {
@@ -203,16 +228,32 @@ export default class TelegramSyncPlugin extends Plugin {
 		return this.botUser;
 	}
 
+	async checkConnectionAfterError(intervalInSeconds = 30) {
+		if (this.checkingBotConnection || this.botConnected || !this.bot || !this.bot.isPolling()) return;
+		try {
+			this.checkingBotConnection = true;
+			await new Promise((resolve) => setTimeout(resolve, intervalInSeconds * _1sec));
+			this.botUser = await this.bot.getMe();
+			this.botConnected = true;
+			this.lastPollingErrors = [];
+			this.checkingBotConnection = false;
+			displayAndLog(this, "Telegram bot is reconnected!");
+			await this.reconnectTelegramClient();
+		} catch {
+			/* do nothing*/
+		} finally {
+			this.checkingBotConnection = false;
+		}
+	}
+
 	// Stop the bot polling
 	async stopTelegramBot() {
-		if (this.bot) {
-			try {
-				await this.bot.stopPolling();
-				this.bot = undefined;
-				this.botUser = undefined;
-			} finally {
-				this.botConnected = false;
-			}
+		try {
+			this.bot && (await this.bot.stopPolling());
+		} finally {
+			this.bot = undefined;
+			this.botUser = undefined;
+			this.botConnected = false;
 		}
 	}
 }
