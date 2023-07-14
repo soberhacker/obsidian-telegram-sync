@@ -30,12 +30,6 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: "18.x"
-  
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Check release notes
-        run: npm run release-notes-check
 
       - name: Fetch all tags
         run: |
