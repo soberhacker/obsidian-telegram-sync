@@ -30,6 +30,12 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: "18.x"
+  
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check release notes
+        run: npm run release-notes-check
 
       - name: Fetch all tags
         run: |
@@ -78,6 +84,7 @@ jobs:
           git fetch origin
           git checkout develop
           npm ci
+          npm run release-notes-check
           npm run version
           TAG_NAME=$(node -p "require('./package.json').version")
           git commit -m "chore: update version of plugin to $TAG_NAME"
