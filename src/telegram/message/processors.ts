@@ -1,7 +1,7 @@
 import TelegramBot from "node-telegram-bot-api";
 import TelegramSyncPlugin from "../../main";
 import { getChatLink, getForwardFromLink, getReplyMessageId, getTopicLink, getUrl, getUserLink } from "./getters";
-import { createFolderIfNotExist } from "src/utils/fsUtils";
+import { getTelegramMdPath } from "src/utils/fsUtils";
 import { TFile, normalizePath } from "obsidian";
 import { formatDateTime } from "../../utils/dateUtils";
 import { _15sec, _1h, _5sec, displayAndLog, displayAndLogError } from "src/utils/logUtils";
@@ -10,8 +10,7 @@ import { convertMessageTextToMarkdown, escapeRegExp } from "./convertToMarkdown"
 import * as GramJs from "../GramJs/client";
 
 // Delete a message or send a confirmation reply based on settings and message age
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function finalizeMessageProcessing(plugin: TelegramSyncPlugin, msg: TelegramBot.Message, error?: any) {
+export async function finalizeMessageProcessing(plugin: TelegramSyncPlugin, msg: TelegramBot.Message, error?: Error) {
 	if (error) await displayAndLogError(plugin, error, msg, _5sec);
 	if (error || !plugin.bot) {
 		return;
@@ -37,17 +36,19 @@ export async function finalizeMessageProcessing(plugin: TelegramSyncPlugin, msg:
 		await deleteProgressBar(plugin.bot, msg, progressBarMessage);
 	} else {
 		let needReply = true;
-		let error = "";
+		let errorMessage = "";
 		try {
 			if (plugin.userConnected && plugin.botUser) {
 				await GramJs.syncSendReaction(plugin.botUser, msg);
 				needReply = false;
 			}
 		} catch (e) {
-			error = `\n\nCan't "like" the message, because ${e}`;
+			errorMessage = `\n\nCan't "like" the message, because ${e}`;
 		}
 		if (needReply) {
-			await plugin.bot?.sendMessage(msg.chat.id, "...✅..." + error, { reply_to_message_id: msg.message_id });
+			await plugin.bot?.sendMessage(msg.chat.id, "...✅..." + errorMessage, {
+				reply_to_message_id: msg.message_id,
+			});
 		}
 	}
 }
@@ -57,12 +58,12 @@ export async function appendMessageToTelegramMd(
 	msg: TelegramBot.Message,
 	formattedContent: string,
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	error?: any
+	error?: Error
 ) {
 	// Do not append messages if not connected
 	if (!plugin.botConnected) return;
 
-	const telegramMdPath = getTelegramMdPath(plugin);
+	const telegramMdPath = getTelegramMdPath(plugin.app.vault, plugin.settings.newNotesLocation);
 	let telegramMdFile = plugin.app.vault.getAbstractFileByPath(telegramMdPath) as TFile;
 
 	// Create or modify the Telegram.md file
@@ -192,17 +193,18 @@ function addLeadingForEveryLine(text: string, leadingChars?: string): string {
 }
 
 function processText(text: string, leadingChars?: string, property?: string): string {
-	if (!property || property.toLowerCase() == "text") return addLeadingForEveryLine(text, leadingChars);
-	if (property.toLowerCase() == "firstline") return leadingChars + text.split("\n")[0];
-	if (property.toLowerCase() == "nofirstline") {
+	let finalText = "";
+	const lowerCaseProperty = (property && property.toLowerCase()) || "text";
+	if (lowerCaseProperty == "text") finalText = text;
+	if (lowerCaseProperty == "firstline") finalText = text.split("\n")[0];
+	if (lowerCaseProperty == "nofirstline") {
 		let lines = text.split("\n");
 		lines = lines.slice(1);
-		return leadingChars + lines.join("\n");
+		finalText = lines.join("\n");
 	}
 	// if property is length
-	if (Number.isInteger(parseFloat(property || "")))
-		return addLeadingForEveryLine(text.substring(0, Number(property)), leadingChars);
-	return "";
+	if (Number.isInteger(parseFloat(lowerCaseProperty))) finalText = text.substring(0, Number(property));
+	return addLeadingForEveryLine(finalText, leadingChars);
 }
 
 function pasteText(
@@ -227,12 +229,4 @@ function pasteText(
 		})
 		.replace(allRE, pasteContent)
 		.replace(propertyRE, (_, property: string) => processText(pasteText, undefined, property));
-}
-
-export function getTelegramMdPath(plugin: TelegramSyncPlugin) {
-	// Determine the location for the Telegram.md file
-	const location = plugin.settings.newNotesLocation || "";
-	createFolderIfNotExist(plugin.app.vault, location);
-	const telegramMdPath = normalizePath(location ? `${location}/Telegram.md` : "Telegram.md");
-	return telegramMdPath;
 }
