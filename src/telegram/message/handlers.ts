@@ -1,13 +1,13 @@
 import TelegramSyncPlugin from "../../main";
 import TelegramBot from "node-telegram-bot-api";
-import { createFolderIfNotExist, getUniqueFilePath } from "src/utils/fsUtils";
+import { createFolderIfNotExist, getTelegramMdPath, getUniqueFilePath } from "src/utils/fsUtils";
 import * as release from "../../../release-notes.mjs";
 import { buyMeACoffeeLink, boostyLink, kofiLink, paypalLink } from "../../settings/donation";
 import { SendMessageOptions } from "node-telegram-bot-api";
 import path from "path";
 import * as GramJs from "../GramJs/client";
 import { extension } from "mime-types";
-import { applyNoteContentTemplate, finalizeMessageProcessing, getTelegramMdPath } from "./processors";
+import { applyNoteContentTemplate, finalizeMessageProcessing } from "./processors";
 import { ProgressBarType, createProgressBar, deleteProgressBar, updateProgressBar } from "../progressBar";
 import { getFileObject } from "./getters";
 import { TFile } from "obsidian";
@@ -79,9 +79,8 @@ async function createNoteContent(
 	plugin: TelegramSyncPlugin,
 	filePath: string,
 	notePath: string,
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	error: any,
-	msg: TelegramBot.Message
+	msg: TelegramBot.Message,
+	error?: Error
 ) {
 	let fileLink: string;
 
@@ -103,8 +102,7 @@ export async function handleFiles(plugin: TelegramSyncPlugin, msg: TelegramBot.M
 	await createFolderIfNotExist(plugin.app.vault, basePath);
 	let filePath = "";
 	let telegramFileName = "";
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	let error: any;
+	let error: Error | undefined = undefined;
 
 	try {
 		// Iterate through each file type
@@ -188,7 +186,13 @@ export async function handleFiles(plugin: TelegramSyncPlugin, msg: TelegramBot.M
 	}
 
 	if (plugin.settings.appendAllToTelegramMd) {
-		const noteContent = await createNoteContent(plugin, filePath, getTelegramMdPath(plugin), error, msg);
+		const noteContent = await createNoteContent(
+			plugin,
+			filePath,
+			getTelegramMdPath(plugin.app.vault, plugin.settings.newNotesLocation),
+			msg,
+			error
+		);
 		plugin.messageQueueToTelegramMd.push({ msg, formattedContent: noteContent, error });
 		return;
 	} else if (msg.caption || telegramFileName) {
@@ -202,7 +206,7 @@ export async function handleFiles(plugin: TelegramSyncPlugin, msg: TelegramBot.M
 			msg.date
 		);
 
-		const noteContent = await createNoteContent(plugin, filePath, notePath, error, msg);
+		const noteContent = await createNoteContent(plugin, filePath, notePath, msg, error);
 		await plugin.app.vault.create(notePath, noteContent);
 	}
 

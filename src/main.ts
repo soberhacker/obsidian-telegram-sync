@@ -116,11 +116,18 @@ export default class TelegramSyncPlugin extends Plugin {
 
 		try {
 			// Check if the bot is connected and set the connected flag accordingly
-			this.botUser = await this.bot.getMe();
-			await this.bot.startPolling();
+			try {
+				this.botUser = await this.bot.getMe();
+			} finally {
+				await this.bot.startPolling();
+			}
 			this.botConnected = true;
 		} catch (e) {
-			displayAndLog(this, `${e}\n\nTelegram Bot is disconnected!`);
+			if (!this.bot || !this.bot.isPolling())
+				displayAndLog(
+					this,
+					`${e}\n\nTelegram Bot is disconnected.\n\nCheck internet(proxy) connection, the functionality of Telegram using the official app. If everithing is ok, restart Obsidian.`
+				);
 		}
 	}
 
@@ -158,7 +165,7 @@ export default class TelegramSyncPlugin extends Plugin {
 
 			if (
 				this.settings.telegramSessionType == "bot" ||
-				(this.settings.telegramSessionType == "user" && !this.userConnected)
+				(this.settings.telegramSessionType == "user" && !this.userConnected && sessionId)
 			) {
 				await GramJs.signInAsBot(this.settings.botToken);
 			}
@@ -187,13 +194,12 @@ export default class TelegramSyncPlugin extends Plugin {
 			}
 		}
 	}
-
-	async handlePollingError(error: unknown) {
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	async handlePollingError(error: any) {
 		let pollingError = "unknown";
 
 		try {
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			const errorCode = (error as any).response.body.error_code;
+			const errorCode = error.response.body.error_code;
 
 			if (errorCode === 409) {
 				pollingError = "twoBotInstances";
@@ -204,8 +210,7 @@ export default class TelegramSyncPlugin extends Plugin {
 			}
 		} catch {
 			try {
-				// eslint-disable-next-line @typescript-eslint/no-explicit-any
-				pollingError = (error as any).code === "EFATAL" ? "fatalError" : pollingError;
+				pollingError = error.code === "EFATAL" ? "fatalError" : pollingError;
 			} catch {
 				pollingError = "unknown";
 			}
@@ -215,7 +220,7 @@ export default class TelegramSyncPlugin extends Plugin {
 			this.lastPollingErrors.push(pollingError);
 			if (!(pollingError == "twoBotInstances")) {
 				this.botConnected = false;
-				await displayAndLogError(this, `${error} \n\nTelegram bot is disconnected!`);
+				await displayAndLogError(this, new Error(`${error} \n\nTelegram bot is disconnected!`));
 			}
 		}
 
@@ -229,7 +234,8 @@ export default class TelegramSyncPlugin extends Plugin {
 	}
 
 	async checkConnectionAfterError(intervalInSeconds = 30) {
-		if (this.checkingBotConnection || this.botConnected || !this.bot || !this.bot.isPolling()) return;
+		if (this.checkingBotConnection || !this.bot || !this.bot.isPolling()) return;
+		if (!this.checkingBotConnection && this.botConnected) this.lastPollingErrors = [];
 		try {
 			this.checkingBotConnection = true;
 			await new Promise((resolve) => setTimeout(resolve, intervalInSeconds * _1sec));

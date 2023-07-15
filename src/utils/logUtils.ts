@@ -26,8 +26,7 @@ export function displayAndLog(plugin: TelegramSyncPlugin, message: string, timeo
 // Show error to console, telegram, display
 export async function displayAndLogError(
 	plugin: TelegramSyncPlugin,
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	error: any,
+	error: Error,
 	msg?: TelegramBot.Message,
 	timeout?: number
 ) {
