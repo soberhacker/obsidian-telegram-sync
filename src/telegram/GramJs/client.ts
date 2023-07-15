@@ -35,8 +35,14 @@ export function getNewSessionId(): number {
 
 // Stop the bot polling
 export async function stop() {
-	if (client) {
-		await client.destroy();
+	try {
+		if (client) {
+			client.setLogLevel(LogLevel.NONE);
+			await client.destroy();
+		}
+	} catch {
+		/* empty */
+	} finally {
 		client = undefined;
 		_botToken = undefined;
 		_voiceTranscripts = undefined;

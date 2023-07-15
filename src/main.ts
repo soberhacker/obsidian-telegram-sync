@@ -116,11 +116,18 @@ export default class TelegramSyncPlugin extends Plugin {
 
 		try {
 			// Check if the bot is connected and set the connected flag accordingly
-			this.botUser = await this.bot.getMe();
-			await this.bot.startPolling();
+			try {
+				this.botUser = await this.bot.getMe();
+			} finally {
+				await this.bot.startPolling();
+			}
 			this.botConnected = true;
 		} catch (e) {
-			displayAndLog(this, `${e}\n\nTelegram Bot is disconnected!`);
+			if (!this.bot || !this.bot.isPolling())
+				displayAndLog(
+					this,
+					`${e}\n\nTelegram Bot is disconnected.\n\nCheck internet(proxy) connection, the functionality of Telegram using the official app. If everithing is ok, restart Obsidian.`
+				);
 		}
 	}
 
@@ -227,7 +234,8 @@ export default class TelegramSyncPlugin extends Plugin {
 	}
 
 	async checkConnectionAfterError(intervalInSeconds = 30) {
-		if (this.checkingBotConnection || this.botConnected || !this.bot || !this.bot.isPolling()) return;
+		if (this.checkingBotConnection || !this.bot || !this.bot.isPolling()) return;
+		if (!this.checkingBotConnection && this.botConnected) this.lastPollingErrors = [];
 		try {
 			this.checkingBotConnection = true;
 			await new Promise((resolve) => setTimeout(resolve, intervalInSeconds * _1sec));
