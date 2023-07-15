@@ -1,7 +1,6 @@
 import { Modal, Setting } from "obsidian";
 import TelegramSyncPlugin from "src/main";
 import * as GramJs from "src/telegram/GramJs/client";
-import { _15sec, _5sec, displayAndLog, displayAndLogError } from "src/utils/logUtils";
 
 export class UserLogInModal extends Modal {
 	botSetingsDiv: HTMLDivElement;
@@ -50,17 +49,16 @@ export class UserLogInModal extends Modal {
 			.addButton((b) => {
 				b.setButtonText("Generate QR code");
 				b.onClick(async () => {
-					startQrCodeGenerating();
+					await this.showQrCodeGeneratingState("🔵 QR code generating...\n", "#007BFF");
 					try {
 						await this.plugin.initTelegramClient("user");
 						await GramJs.signInAsUserWithQrCode(this.qrCodeContainer, this.password);
 						if (await GramJs.isAuthorizedAsUser()) {
 							this.plugin.userConnected = true;
-							displayAndLog(this.plugin, "Successfully logged in", _5sec);
+							await this.showQrCodeGeneratingState("🟢 Successfully logged in!\n", "#008000");
 						}
 					} catch (e) {
-						errorQrCodeGenerating(e);
-						await displayAndLogError(this.plugin, e, undefined, _15sec);
+						await this.showQrCodeGeneratingState(`🔴 ${e}\n`, "#FF0000");
 					}
 				});
 			});
@@ -88,26 +86,19 @@ export class UserLogInModal extends Modal {
 	onOpen() {
 		this.display();
 	}
-}
 
-function cleanQrContainer() {
-	while (this.qrCodeContainer.firstChild) {
-		this.qrCodeContainer.removeChild(this.qrCodeContainer.firstChild);
+	cleanQrContainer() {
+		while (this.qrCodeContainer.firstChild) {
+			this.qrCodeContainer.removeChild(this.qrCodeContainer.firstChild);
+		}
 	}
-}
 
-function startQrCodeGenerating() {
-	cleanQrContainer();
-	// Create a new HTML element for the loading message
-	const loadingMessage = this.qrCodeContainer.createDiv("QR code\ngenerating...");
-	loadingMessage.style.color = "blue";
-}
-
-function errorQrCodeGenerating(e: Error) {
-	cleanQrContainer();
-	// Create a new HTML element for the error message
-	const errorMessage = this.qrCodeContainer.createDiv(e);
-	errorMessage.style.color = "red";
+	async showQrCodeGeneratingState(text: string, color?: string) {
+		this.cleanQrContainer();
+		const message = this.qrCodeContainer.createEl("pre", { text });
+		if (color) message.style.color = color;
+		message.style.fontWeight = "bold";
+	}
 }
 
 // addClientAuthorizationDescription() {

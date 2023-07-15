@@ -1,4 +1,4 @@
-export const version = "1.8.0";
+export const version = "1.8.1";
 // TODO add Demo gif and screenshots to readme.md
 // TODO add thanks for last patrons in donation section
 // TODO add notification about new version of Telegram Sync and link to the channel
