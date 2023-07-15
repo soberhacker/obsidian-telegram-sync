@@ -9,7 +9,7 @@ import * as GramJs from "src/telegram/GramJs/client";
 import { BotSettingsModal } from "./BotSettingsModal";
 import { UserLogInModal } from "./UserLogInModal";
 import { version } from "release-notes.mjs";
-import { _5sec } from "src/utils/logUtils";
+import { _15sec, _5sec, displayAndLog } from "src/utils/logUtils";
 
 export interface TopicName {
 	name: string;
@@ -29,9 +29,9 @@ export interface TelegramSyncSettings {
 	pluginVersion: string;
 	appId: string;
 	apiHash: string;
-	topicNames: TopicName[];
 	telegramSessionType: GramJs.SessionType;
 	telegramSessionId: number;
+	topicNames: TopicName[];
 }
 
 export const DEFAULT_SETTINGS: TelegramSyncSettings = {
@@ -47,9 +47,9 @@ export const DEFAULT_SETTINGS: TelegramSyncSettings = {
 	// TODO Check for not public appId, apiHash how are often flood wait blocks and the level of downloading speed
 	appId: "17349", // public, ok to be here
 	apiHash: "344583e45741c457fe1862106095a5eb", // public, ok to be here
-	topicNames: [],
 	telegramSessionType: "bot",
 	telegramSessionId: GramJs.getNewSessionId(),
+	topicNames: [],
 };
 
 export class TelegramSyncSettingTab extends PluginSettingTab {
@@ -161,12 +161,22 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 				if (this.plugin.settings.telegramSessionType == "user") {
 					// Log Out
 					await this.plugin.initTelegramClient("bot");
+					displayAndLog(
+						this.plugin,
+						"Successfully logged out.\n\nBut you should also terminate the session manually in the Telegram app.",
+						_15sec
+					);
 					userStatusConstructor.call(this, userStatusComponent);
 					userLogInConstructor.call(this, userLogInButton);
 				} else {
 					// Log In
+					const initialSessionType = this.plugin.settings.telegramSessionType;
 					const userLogInModal = new UserLogInModal(this.plugin);
 					userLogInModal.onClose = async () => {
+						if (initialSessionType == "bot" && !this.plugin.userConnected) {
+							this.plugin.settings.telegramSessionType = initialSessionType;
+							this.plugin.saveSettings();
+						}
 						userStatusConstructor.call(this, userStatusComponent);
 						userLogInConstructor.call(this, userLogInButton);
 					};
@@ -180,7 +190,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 			.setDesc("Connect your telegram user. It's required only for ")
 			.addText(userStatusConstructor)
 			.addButton(userLogInConstructor);
-
+		// TODO removing Refresh button if this.plugin.settings.telegramSessionType changed to "bot" (when Log out, etc)
 		if (this.plugin.settings.telegramSessionType == "user" && !this.plugin.userConnected) {
 			userSettings.addExtraButton((refreshButton) => {
 				refreshButton.setTooltip("Refresh");

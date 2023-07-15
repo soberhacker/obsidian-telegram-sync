@@ -1,6 +1,15 @@
 # Changelog
 
 
+## [1.8.1](https://github.com/soberhacker/obsidian-telegram-sync/compare/1.8.0...1.8.1) (2023-07-15)
+
+
+### Bug Fixes
+
+* connectiong as user ([c95e277](https://github.com/soberhacker/obsidian-telegram-sync/commit/c95e27771ede0af8dc47bac33d898d39282b06fe))
+* missing bot restarting if no internet at run ([7387675](https://github.com/soberhacker/obsidian-telegram-sync/commit/73876756421a7aab545f91ac1840ebf8cc15fbee))
+* undefined in the beginning of text ([3b75f18](https://github.com/soberhacker/obsidian-telegram-sync/commit/3b75f184116ec367981ef16df921c5439a029ef7))
+
 ## [1.8.0](https://github.com/soberhacker/obsidian-telegram-sync/compare/1.7.1...1.8.0) (2023-07-14)
 
 

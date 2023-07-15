@@ -61,6 +61,13 @@ export async function getUniqueFilePath(
 	return filePath;
 }
 
+export function getTelegramMdPath(vault: Vault, location: string) {
+	// Determine the location for the Telegram.md file
+	createFolderIfNotExist(vault, location);
+	const telegramMdPath = normalizePath(location ? `${location}/Telegram.md` : "Telegram.md");
+	return telegramMdPath;
+}
+
 export function base64ToString(base64: string): string {
 	return Buffer.from(base64, "base64").toString("utf-8");
 }
