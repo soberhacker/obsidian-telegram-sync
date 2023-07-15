@@ -50,6 +50,7 @@ export class UserLogInModal extends Modal {
 			.addButton((b) => {
 				b.setButtonText("Generate QR code");
 				b.onClick(async () => {
+					startQrCodeGenerating();
 					try {
 						await this.plugin.initTelegramClient("user");
 						await GramJs.signInAsUserWithQrCode(this.qrCodeContainer, this.password);
@@ -58,6 +59,7 @@ export class UserLogInModal extends Modal {
 							displayAndLog(this.plugin, "Successfully logged in", _5sec);
 						}
 					} catch (e) {
+						errorQrCodeGenerating(e);
 						await displayAndLogError(this.plugin, e, undefined, _15sec);
 					}
 				});
@@ -86,6 +88,26 @@ export class UserLogInModal extends Modal {
 	onOpen() {
 		this.display();
 	}
+}
+
+function cleanQrContainer() {
+	while (this.qrCodeContainer.firstChild) {
+		this.qrCodeContainer.removeChild(this.qrCodeContainer.firstChild);
+	}
+}
+
+function startQrCodeGenerating() {
+	cleanQrContainer();
+	// Create a new HTML element for the loading message
+	const loadingMessage = this.qrCodeContainer.createDiv("QR code\ngenerating...");
+	loadingMessage.style.color = "blue";
+}
+
+function errorQrCodeGenerating(e: Error) {
+	cleanQrContainer();
+	// Create a new HTML element for the error message
+	const errorMessage = this.qrCodeContainer.createDiv(e);
+	errorMessage.style.color = "red";
 }
 
 // addClientAuthorizationDescription() {

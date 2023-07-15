@@ -81,7 +81,8 @@ export async function init(
 			const authorized = await client.checkAuthorization();
 			if (sessionType == "user" && authorized && (await client.isBot()))
 				throw new Error("Stored session conflict. Try to log in again.");
-			if (!_clientUser && authorized) _clientUser = (await client.getMe()) as Api.User;
+			if (!authorized) _clientUser = undefined;
+			else if (!_clientUser && authorized) _clientUser = (await client.getMe()) as Api.User;
 		} catch (e) {
 			if (sessionType == "user") {
 				await init(_sessionId, "bot", apiId, apiHash, deviceId);
@@ -134,7 +135,8 @@ export async function signInAsBot(botToken: string) {
 
 export async function signInAsUserWithQrCode(container: HTMLDivElement, password?: string) {
 	if (!client) throw NotConnected;
-	if ((await client.checkAuthorization()) && (await client.isBot())) new Error("User session is missed");
+	if ((await client.checkAuthorization()) && (await client.isBot()))
+		throw new Error("User session is missed. Try to restart the plugin or Obsidian");
 	await client
 		.signInUserWithQrCode(
 			{ apiId: _apiId, apiHash: _apiHash },

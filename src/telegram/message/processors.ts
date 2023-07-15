@@ -10,8 +10,7 @@ import { convertMessageTextToMarkdown, escapeRegExp } from "./convertToMarkdown"
 import * as GramJs from "../GramJs/client";
 
 // Delete a message or send a confirmation reply based on settings and message age
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function finalizeMessageProcessing(plugin: TelegramSyncPlugin, msg: TelegramBot.Message, error?: any) {
+export async function finalizeMessageProcessing(plugin: TelegramSyncPlugin, msg: TelegramBot.Message, error?: Error) {
 	if (error) await displayAndLogError(plugin, error, msg, _5sec);
 	if (error || !plugin.bot) {
 		return;
@@ -37,17 +36,19 @@ export async function finalizeMessageProcessing(plugin: TelegramSyncPlugin, msg:
 		await deleteProgressBar(plugin.bot, msg, progressBarMessage);
 	} else {
 		let needReply = true;
-		let error = "";
+		let errorMessage = "";
 		try {
 			if (plugin.userConnected && plugin.botUser) {
 				await GramJs.syncSendReaction(plugin.botUser, msg);
 				needReply = false;
 			}
 		} catch (e) {
-			error = `\n\nCan't "like" the message, because ${e}`;
+			errorMessage = `\n\nCan't "like" the message, because ${e}`;
 		}
 		if (needReply) {
-			await plugin.bot?.sendMessage(msg.chat.id, "...✅..." + error, { reply_to_message_id: msg.message_id });
+			await plugin.bot?.sendMessage(msg.chat.id, "...✅..." + errorMessage, {
+				reply_to_message_id: msg.message_id,
+			});
 		}
 	}
 }
@@ -57,7 +58,7 @@ export async function appendMessageToTelegramMd(
 	msg: TelegramBot.Message,
 	formattedContent: string,
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	error?: any
+	error?: Error
 ) {
 	// Do not append messages if not connected
 	if (!plugin.botConnected) return;

@@ -29,9 +29,9 @@ export interface TelegramSyncSettings {
 	pluginVersion: string;
 	appId: string;
 	apiHash: string;
-	topicNames: TopicName[];
 	telegramSessionType: GramJs.SessionType;
 	telegramSessionId: number;
+	topicNames: TopicName[];
 }
 
 export const DEFAULT_SETTINGS: TelegramSyncSettings = {
@@ -47,9 +47,9 @@ export const DEFAULT_SETTINGS: TelegramSyncSettings = {
 	// TODO Check for not public appId, apiHash how are often flood wait blocks and the level of downloading speed
 	appId: "17349", // public, ok to be here
 	apiHash: "344583e45741c457fe1862106095a5eb", // public, ok to be here
-	topicNames: [],
 	telegramSessionType: "bot",
 	telegramSessionId: GramJs.getNewSessionId(),
+	topicNames: [],
 };
 
 export class TelegramSyncSettingTab extends PluginSettingTab {
