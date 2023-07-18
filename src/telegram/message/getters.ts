@@ -4,33 +4,48 @@ import TelegramSyncPlugin from "src/main";
 
 export const fileTypes = ["photo", "video", "voice", "document", "audio", "video_note"];
 
+export function getForwardFromName(msg: TelegramBot.Message): string {
+	let forwardFromName = "";
+
+	if (msg.forward_from || msg.forward_from_chat || msg.forward_sender_name || msg.from) {
+		if (msg.forward_from) {
+			forwardFromName =
+				msg.forward_from.first_name + (msg.forward_from.last_name ? " " + msg.forward_from.last_name : "");
+		} else if (msg.forward_from_chat) {
+			forwardFromName =
+				msg.forward_from_chat.title + (msg.forward_signature ? `(${msg.forward_signature})` : "") ||
+				msg.forward_from_chat.username ||
+				"";
+		} else if (msg.forward_sender_name) {
+			forwardFromName = msg.forward_sender_name;
+		} else if (msg.from) {
+			forwardFromName = msg.from.first_name + (msg.from.last_name ? " " + msg.from.last_name : "");
+		}
+	}
+
+	return forwardFromName;
+}
+
 export function getForwardFromLink(msg: TelegramBot.Message): string {
 	let forwardFromLink = "";
 
 	if (msg.forward_from || msg.forward_from_chat || msg.forward_sender_name || msg.from) {
+		const forwardFromName = getForwardFromName(msg);
 		let username = "";
-		let title = "";
 
 		if (msg.forward_from) {
 			username = msg.forward_from.username || "no_username_" + msg.forward_from.id.toString().slice(4);
-			title = msg.forward_from.first_name + (msg.forward_from.last_name ? " " + msg.forward_from.last_name : "");
 		} else if (msg.forward_from_chat) {
 			username =
 				(msg.forward_from_chat.username || "c/" + msg.forward_from_chat.id.toString().slice(4)) +
 				"/" +
 				(msg.forward_from_message_id || "999999999");
-			title =
-				msg.forward_from_chat.title + (msg.forward_signature ? `(${msg.forward_signature})` : "") ||
-				msg.forward_from_chat.username ||
-				"";
 		} else if (msg.forward_sender_name) {
 			username = "hidden_account_" + msg.forward_date;
-			title = msg.forward_sender_name;
 		} else if (msg.from) {
 			username = msg.from.username || "no_username_" + msg.from.id.toString().slice(4);
-			title = msg.from.first_name + (msg.from.last_name ? " " + msg.from.last_name : "");
 		}
-		forwardFromLink = forwardFromLink || `[${title}](https://t.me/${username})`;
+		forwardFromLink = `[${forwardFromName}](https://t.me/${username})`;
 	}
 
 	return forwardFromLink;
@@ -40,34 +55,32 @@ export function getUserLink(msg: TelegramBot.Message): string {
 	if (!msg.from) return "";
 
 	const username = msg.from.username || "no_username_" + msg.from.id.toString().slice(4);
-	const title = msg.from.first_name + (msg.from.last_name ? " " + msg.from.last_name : "");
-	return `[${title}](https://t.me/${username})`;
+	const fullName = msg.from.first_name + (msg.from.last_name ? " " + msg.from.last_name : "");
+	return `[${fullName}](https://t.me/${username})`;
 }
 
-export function getChatTitle(msg: TelegramBot.Message): string {
-	let title = "";
+export function getChatName(msg: TelegramBot.Message): string {
+	let chatName = "";
 	if (msg.chat.type == "private") {
-		title = msg.chat.first_name + (msg.chat.last_name ? " " + msg.chat.last_name : "");
+		chatName = msg.chat.first_name + (msg.chat.last_name ? " " + msg.chat.last_name : "");
 	} else {
-		title = msg.chat.title || msg.chat.type + msg.chat.id;
+		chatName = msg.chat.title || msg.chat.type + msg.chat.id;
 	}
-	return title;
+	return chatName;
 }
 
 export function getChatLink(msg: TelegramBot.Message): string {
-	let username = "";
+	let userName = "";
 	if (msg.chat.type == "private") {
-		username = msg.chat.username || "no_username_" + msg.chat.id.toString().slice(4);
+		userName = msg.chat.username || "no_username_" + msg.chat.id.toString().slice(4);
 	} else {
-		username =
-			msg.chat.username ||
-			`c/${msg.chat.id.toString().slice(4)}/${msg.message_thread_id || msg.reply_to_message?.message_thread_id}/${
-				msg.message_id
-			}`;
-		username = username.replace(/\/\//g, "/"); // because message_thread_id can be undefined
+		const threadId = msg.message_thread_id || msg.reply_to_message?.message_thread_id || "";
+		const chatId = msg.chat.id.toString().slice(4);
+		userName = msg.chat.username || `c/${chatId}/${threadId}/${msg.message_id}`;
+		userName = userName.replace(/\/\//g, "/"); // because threadId can be empty
 	}
-	const title = getChatTitle(msg);
-	const chatLink = `[${title}](https://t.me/${username})`;
+	const chatName = getChatName(msg);
+	const chatLink = `[${chatName}](https://t.me/${userName})`;
 	return chatLink;
 }
 
