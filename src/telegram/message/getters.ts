@@ -74,7 +74,9 @@ export function getChatLink(msg: TelegramBot.Message): string {
 	if (msg.chat.type == "private") {
 		userName = msg.chat.username || "no_username_" + msg.chat.id.toString().slice(4);
 	} else {
-		const threadId = msg.message_thread_id || msg.reply_to_message?.message_thread_id || "";
+		const threadId = msg.chat.is_forum
+			? msg.message_thread_id || msg.reply_to_message?.message_thread_id || "1"
+			: "";
 		const chatId = msg.chat.id.toString().slice(4);
 		userName = msg.chat.username || `c/${chatId}/${threadId}/${msg.message_id}`;
 		userName = userName.replace(/\/\//g, "/"); // because threadId can be empty
