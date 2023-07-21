@@ -6,6 +6,8 @@ import {
 	getForwardFromLink,
 	getForwardFromName,
 	getReplyMessageId,
+	getTopic,
+	getTopicId,
 	getTopicLink,
 	getUrl,
 	getUserLink,
@@ -154,11 +156,8 @@ export async function applyNoteContentTemplate(
 		.replace(/{{chatId}}/g, msg.chat.id.toString()) // id of the chat with the message
 		.replace(/{{chat:name}}/g, getChatName(msg)) // name of the chat (bot / group / channel)
 		.replace(/{{topic}}/g, await getTopicLink(plugin, msg)) // link to the topic with the message
-		.replace(
-			/{{topicId}}/g,
-			(msg.chat.is_forum && (msg.message_thread_id || msg.reply_to_message?.message_thread_id || 1).toString()) ||
-				""
-		) // head message id representing the topic
+		.replace(/{{topic:name}}/g, (await getTopic(plugin, msg))?.name || "") // link to the topic with the message
+		.replace(/{{topicId}}/g, getTopicId(msg)?.toString() || "") // head message id representing the topic
 		.replace(/{{messageId}}/g, msg.message_id.toString())
 		.replace(/{{replyMessageId}}/g, getReplyMessageId(msg))
 		.replace(/{{url1}}/g, getUrl(msg)) // fisrt url from the message

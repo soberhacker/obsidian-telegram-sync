@@ -1,6 +1,7 @@
 import TelegramBot from "node-telegram-bot-api";
 import LinkifyIt from "linkify-it";
 import TelegramSyncPlugin from "src/main";
+import { Topic } from "src/settings/Settings";
 
 export const fileTypes = ["photo", "video", "voice", "document", "audio", "video_note"];
 
@@ -108,31 +109,39 @@ export function getInlineUrls(msg: TelegramBot.Message): string {
 	return urls.trimEnd();
 }
 
-export async function getTopicLink(plugin: TelegramSyncPlugin, msg: TelegramBot.Message): Promise<string> {
-	if (!msg.chat.is_forum) return "";
+export function getTopicId(msg: TelegramBot.Message): number | undefined {
+	return (msg.chat.is_forum && (msg.message_thread_id || msg.reply_to_message?.message_thread_id || 1)) || undefined;
+}
+
+export async function getTopic(plugin: TelegramSyncPlugin, msg: TelegramBot.Message): Promise<Topic | undefined> {
+	if (!msg.chat.is_forum) return undefined;
 
 	const reply = msg.reply_to_message;
-	let topicName = plugin.settings.topicNames.find(
-		(tn) => tn.chatId == msg.chat.id && tn.topicId == (msg.message_thread_id || reply?.message_thread_id || 1)
-	);
-	if (!topicName && reply?.forum_topic_created?.name) {
-		topicName = {
+	const topicId = getTopicId(msg) || 1;
+	let topic = plugin.settings.topicNames.find((tn) => tn.chatId == msg.chat.id && tn.topicId == topicId);
+	if (!topic && reply?.forum_topic_created?.name) {
+		topic = {
 			name: reply?.forum_topic_created?.name,
 			chatId: msg.chat.id,
-			topicId: msg.message_thread_id || reply.message_thread_id || 1,
+			topicId: topicId,
 		};
-		plugin.settings.topicNames.push(topicName);
+		plugin.settings.topicNames.push(topic);
 		await plugin.saveSettings();
 	}
-	if (!topicName) {
+	if (!topic) {
 		throw new Error(
 			`Telegram bot has a limitation to get topic names. if the topic name displays incorrect, set the name manually using bot command "/topicName NAME"`
 		);
 	}
+	return topic;
+}
 
-	const title = topicName.name;
-	const path = (msg.chat.username || `c/${topicName.chatId.toString().slice(4)}`) + `/${topicName.topicId}`;
-	return `[${title}](https://t.me/${path})`;
+export async function getTopicLink(plugin: TelegramSyncPlugin, msg: TelegramBot.Message): Promise<string> {
+	if (!msg.chat.is_forum) return "";
+	const topic = await getTopic(plugin, msg);
+	if (!topic) return "";
+	const path = (msg.chat.username || `c/${topic.chatId.toString().slice(4)}`) + `/${topic.topicId}`;
+	return `[${topic.name}](https://t.me/${path})`;
 }
 
 export function getReplyMessageId(msg: TelegramBot.Message): string {

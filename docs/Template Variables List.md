@@ -15,6 +15,7 @@
 {{chatId}} - id of the chat (bot / group / channel)
 {{chat:name}} - name of the chat (bot / group / channel)
 {{topic}} - link to the topic (if the topic name displays incorrect, set the name manually using bot command "/topicName NAME")
+{{topic:name}} - name of the topic
 {{topicId}} - head message id representing the topic
 {{messageId}} - message id
 {{replyMessageId}} - reply message id
