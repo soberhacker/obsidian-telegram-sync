@@ -212,7 +212,7 @@ export async function handleFiles(plugin: TelegramSyncPlugin, msg: TelegramBot.M
 }
 
 // show changes about new release
-export async function ifNewRelaseThenShowChanges(plugin: TelegramSyncPlugin, msg: TelegramBot.Message) {
+export async function ifNewReleaseThenShowChanges(plugin: TelegramSyncPlugin, msg: TelegramBot.Message) {
 	if (plugin.settings.pluginVersion && plugin.settings.pluginVersion !== release.version && release.showInTelegram) {
 		plugin.settings.pluginVersion = release.version;
 		await plugin.saveSettings();

@@ -14,6 +14,8 @@ export const _1h = 60 * _1min;
 export const _2h = 2 * _1h;
 export const doNotHide = 24 * _1h;
 
+export const reconnectedMessage = "Telegram bot is reconnected!";
+
 // Show notification and log message into console.
 export function displayAndLog(plugin: TelegramSyncPlugin, message: string, timeout?: number) {
 	const beautyMessage = message.replace(/^Error:\s*/, "");

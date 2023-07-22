@@ -2,9 +2,9 @@ import { Plugin } from "obsidian";
 import { DEFAULT_SETTINGS, TelegramSyncSettings, TelegramSyncSettingTab } from "./settings/Settings";
 import TelegramBot from "node-telegram-bot-api";
 import * as async from "async";
-import { handleMessage, ifNewRelaseThenShowChanges } from "./telegram/message/handlers";
+import { handleMessage, ifNewReleaseThenShowChanges } from "./telegram/message/handlers";
 import { machineIdSync } from "node-machine-id";
-import { _15sec, _1sec, displayAndLog } from "./utils/logUtils";
+import { _15sec, _1min, _1sec, displayAndLog, reconnectedMessage } from "./utils/logUtils";
 import { displayAndLogError } from "./utils/logUtils";
 import { appendMessageToTelegramMd } from "./telegram/message/processors";
 import * as GramJs from "./telegram/GramJs/client";
@@ -17,12 +17,42 @@ export default class TelegramSyncPlugin extends Plugin {
 	botConnected = false;
 	userConnected = false;
 	checkingBotConnection = false;
+	checkingClientConnection = false;
 	bot?: TelegramBot;
 	botUser?: TelegramBot.User;
 	messageQueueToTelegramMd: async.QueueObject<unknown>;
 	listOfNotePaths: string[] = [];
 	currentDeviceId = machineIdSync(true);
 	lastPollingErrors: string[] = [];
+	restartingIntervalId: NodeJS.Timer;
+	restartingIntervalTime = _1min;
+
+	async initTelegram(restart = false) {
+		this.checkingBotConnection = true;
+		try {
+			if (restart) await this.reconnectTelegramClient(false);
+			else await this.initTelegramClient(this.settings.telegramSessionType, this.settings.telegramSessionId);
+			await this.initTelegramBot();
+		} finally {
+			this.checkingBotConnection = false;
+		}
+	}
+
+	async restartTelegram() {
+		if (this.botConnected || this.checkingBotConnection || this.checkingClientConnection || !this.settings.botToken)
+			return;
+		try {
+			await this.initTelegram(true);
+			displayAndLog(this, reconnectedMessage);
+			this.restartingIntervalTime = _1min;
+			clearInterval(this.restartingIntervalId);
+			this.restartingIntervalId = setInterval(this.restartTelegram, this.restartingIntervalTime);
+		} catch {
+			this.restartingIntervalTime = this.restartingIntervalTime * 2;
+			clearInterval(this.restartingIntervalId);
+			this.restartingIntervalId = setInterval(this.restartTelegram, this.restartingIntervalTime);
+		}
+	}
 
 	// Load the plugin, settings, and initialize the bot
 	async onload() {
@@ -41,20 +71,15 @@ export default class TelegramSyncPlugin extends Plugin {
 
 		// Initialize the Telegram bot when Obsidian layout is fully loaded
 		this.app.workspace.onLayoutReady(async () => {
-			this.checkingBotConnection = true;
-			try {
-				await this.initTelegramClient(this.settings.telegramSessionType, this.settings.telegramSessionId);
-				await this.initTelegramBot();
-			} finally {
-				this.checkingBotConnection = false;
-			}
+			await this.initTelegram();
+			// restart bot if needed
+			this.restartingIntervalId = setInterval(this.restartTelegram, this.restartingIntervalTime);
 		});
+	}
 
-		this.register(async () => {
-			await this.stopTelegramBot();
-			await GramJs.stop();
-			this.userConnected = false;
-		});
+	async onunload(): Promise<void> {
+		await this.stopTelegramBot();
+		await this.stopTelegramClient();
 	}
 
 	// Load settings from the plugin's data
@@ -114,7 +139,7 @@ export default class TelegramSyncPlugin extends Plugin {
 
 			try {
 				await handleMessage(this, msg);
-				await ifNewRelaseThenShowChanges(this, msg);
+				await ifNewReleaseThenShowChanges(this, msg);
 			} catch (error) {
 				await displayAndLogError(this, error, msg, _15sec);
 			}
@@ -124,6 +149,7 @@ export default class TelegramSyncPlugin extends Plugin {
 			// Check if the bot is connected and set the connected flag accordingly
 			try {
 				this.botUser = await this.bot.getMe();
+				this.lastPollingErrors = [];
 			} finally {
 				await this.bot.startPolling();
 			}
@@ -132,7 +158,7 @@ export default class TelegramSyncPlugin extends Plugin {
 			if (!this.bot || !this.bot.isPolling())
 				displayAndLog(
 					this,
-					`${e}\n\nTelegram Bot is disconnected.\n\nCheck internet(proxy) connection, the functionality of Telegram using the official app. If everithing is ok, restart Obsidian.`
+					`${e}\n\nTelegram Bot is disconnected.\n\nCheck internet(proxy) connection, the functionality of Telegram using the official app. If everything is ok, restart Obsidian.`
 				);
 		}
 	}
@@ -186,20 +212,26 @@ export default class TelegramSyncPlugin extends Plugin {
 		}
 	}
 
-	async reconnectTelegramClient() {
+	async reconnectTelegramClient(displayError = false) {
+		if (this.checkingClientConnection) return;
+
+		this.checkingClientConnection = true;
 		try {
 			await GramJs.reconnect();
 			this.userConnected = await GramJs.isAuthorizedAsUser();
 		} catch (e) {
 			this.userConnected = false;
-			if (this.settings.telegramSessionType == "user") {
+			if (displayError && this.botConnected && this.settings.telegramSessionType == "user") {
 				displayAndLog(
 					this,
 					`Telegram user is disconnected.\n\nTry restore the connection manually by restarting Obsidian or by refresh button in the plugin settings!\n\n${e}`
 				);
 			}
+		} finally {
+			this.checkingClientConnection = false;
 		}
 	}
+
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	async handlePollingError(error: any) {
 		let pollingError = "unknown";
@@ -239,7 +271,7 @@ export default class TelegramSyncPlugin extends Plugin {
 		return this.botUser;
 	}
 
-	async checkConnectionAfterError(intervalInSeconds = 30) {
+	async checkConnectionAfterError(intervalInSeconds = 15) {
 		if (this.checkingBotConnection || !this.bot || !this.bot.isPolling()) return;
 		if (!this.checkingBotConnection && this.botConnected) this.lastPollingErrors = [];
 		try {
@@ -249,11 +281,9 @@ export default class TelegramSyncPlugin extends Plugin {
 			this.botConnected = true;
 			this.lastPollingErrors = [];
 			this.checkingBotConnection = false;
-			displayAndLog(this, "Telegram bot is reconnected!");
-			await this.reconnectTelegramClient();
+			displayAndLog(this, reconnectedMessage);
+			this.reconnectTelegramClient();
 		} catch {
-			/* do nothing*/
-		} finally {
 			this.checkingBotConnection = false;
 		}
 	}
@@ -266,6 +296,15 @@ export default class TelegramSyncPlugin extends Plugin {
 			this.bot = undefined;
 			this.botUser = undefined;
 			this.botConnected = false;
+		}
+	}
+
+	// Stop connection as user
+	async stopTelegramClient() {
+		try {
+			await GramJs.stop();
+		} finally {
+			this.userConnected = false;
 		}
 	}
 }
