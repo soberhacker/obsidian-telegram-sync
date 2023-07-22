@@ -13,30 +13,34 @@
 {{voiceTranscript:XX}} - XX symbols of transcribed voices (same limits as for Telegram Premium subscribers)
 {{chat}} - link to the chat (bot / group / channel)
 {{chatId}} - id of the chat (bot / group / channel)
+{{chat:name}} - name of the chat (bot / group / channel)
 {{topic}} - link to the topic (if the topic name displays incorrect, set the name manually using bot command "/topicName NAME")
+{{topic:name}} - name of the topic
 {{topicId}} - head message id representing the topic
 {{messageId}} - message id
 {{replyMessageId}} - reply message id
 {{user}} - link to the user who sent the message
 {{userId}} - id of the user who sent the message
 {{forwardFrom}} - link to the forwarded message or its creator (user / channel)
+{{forwardFrom:name}} - name of forwarded message creator
 {{messageDate:YYYYMMDD}} - date, when the message was sent
 {{messageTime:HHmmss}} - time, when the message was sent
 {{creationDate:YYYYMMDD}} - date, when the message was created
 {{creationTime:HHmmss}} - time, when the message was created
 {{url1}} - first url from the message
 {{url1:previewYYY}} - first url preview with YYY pixels height (default 250)
-{{replace:TEXT=>WITH}} - replace or delete text in resulting note
+{{replace:TEXT=>WITH}} - replace or delete text in resulting note (\n - new line)
 ```
 
 ###### Template example:
 ```
 {{messageDate:YYYY}} {{content:firstLine}}
 
-{{content}}
+{{content:noFirstLine}}
 
 Source: {{chat}}-{{forwardFrom}}
 Created: {{creationDate:YYYY-DD-MM}} {{creationTime:HH:mm:ss}}
+{{replace:\n\n=>\n}}
 ```
 
 - If Note Content Template is unspecified, template by default will be equal {{content}}

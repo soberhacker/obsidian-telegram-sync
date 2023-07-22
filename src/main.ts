@@ -8,6 +8,7 @@ import { _15sec, _1sec, displayAndLog } from "./utils/logUtils";
 import { displayAndLogError } from "./utils/logUtils";
 import { appendMessageToTelegramMd } from "./telegram/message/processors";
 import * as GramJs from "./telegram/GramJs/client";
+import { getFileObject } from "./telegram/message/getters";
 
 // Main class for the Telegram Sync plugin
 export default class TelegramSyncPlugin extends Plugin {
@@ -91,6 +92,11 @@ export default class TelegramSyncPlugin extends Plugin {
 			if (!this.botConnected) {
 				this.botConnected = true;
 				this.lastPollingErrors = [];
+			}
+			// skip system messages
+			if (!msg.text && !getFileObject(msg).fileType) {
+				displayAndLog(this, "Got a system message from Telegram Bot", 0);
+				return;
 			}
 			displayAndLog(this, `Got a message from Telegram Bot: ${msg.text || "binary"}`, 0);
 

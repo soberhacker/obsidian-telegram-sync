@@ -1,6 +1,17 @@
 import TelegramBot from "node-telegram-bot-api";
 import TelegramSyncPlugin from "../../main";
-import { getChatLink, getForwardFromLink, getReplyMessageId, getTopicLink, getUrl, getUserLink } from "./getters";
+import {
+	getChatLink,
+	getChatName,
+	getForwardFromLink,
+	getForwardFromName,
+	getReplyMessageId,
+	getTopic,
+	getTopicId,
+	getTopicLink,
+	getUrl,
+	getUserLink,
+} from "./getters";
 import { getTelegramMdPath } from "src/utils/fsUtils";
 import { TFile, normalizePath } from "obsidian";
 import { formatDateTime } from "../../utils/dateUtils";
@@ -138,16 +149,15 @@ export async function applyNoteContentTemplate(
 		.replace(/{{date:(.*?)}}/g, (_, format) => formatDateTime(dateTimeNow, format))
 		.replace(/{{time:(.*?)}}/g, (_, format) => formatDateTime(dateTimeNow, format))
 		.replace(/{{forwardFrom}}/g, forwardFromLink)
+		.replace(/{{forwardFrom:name}}/g, getForwardFromName(msg)) // name of forwarded message creator
 		.replace(/{{user}}/g, getUserLink(msg)) // link to the user who sent the message
 		.replace(/{{userId}}/g, msg.from?.id.toString() || msg.message_id.toString()) // id of the user who sent the message
 		.replace(/{{chat}}/g, getChatLink(msg)) // link to the chat with the message
 		.replace(/{{chatId}}/g, msg.chat.id.toString()) // id of the chat with the message
+		.replace(/{{chat:name}}/g, getChatName(msg)) // name of the chat (bot / group / channel)
 		.replace(/{{topic}}/g, await getTopicLink(plugin, msg)) // link to the topic with the message
-		.replace(
-			/{{topicId}}/g,
-			(msg.chat.is_forum && (msg.message_thread_id || msg.reply_to_message?.message_thread_id || 1).toString()) ||
-				""
-		) // head message id representing the topic
+		.replace(/{{topic:name}}/g, (await getTopic(plugin, msg))?.name || "") // link to the topic with the message
+		.replace(/{{topicId}}/g, getTopicId(msg)?.toString() || "") // head message id representing the topic
 		.replace(/{{messageId}}/g, msg.message_id.toString())
 		.replace(/{{replyMessageId}}/g, getReplyMessageId(msg))
 		.replace(/{{url1}}/g, getUrl(msg)) // fisrt url from the message

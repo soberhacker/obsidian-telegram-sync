@@ -10,8 +10,9 @@ import { BotSettingsModal } from "./BotSettingsModal";
 import { UserLogInModal } from "./UserLogInModal";
 import { version } from "release-notes.mjs";
 import { _15sec, _5sec, displayAndLog } from "src/utils/logUtils";
+import { getTopicId } from "src/telegram/message/getters";
 
-export interface TopicName {
+export interface Topic {
 	name: string;
 	chatId: number;
 	topicId: number;
@@ -32,7 +33,7 @@ export interface TelegramSyncSettings {
 	apiHash: string;
 	telegramSessionType: GramJs.SessionType;
 	telegramSessionId: number;
-	topicNames: TopicName[];
+	topicNames: Topic[];
 }
 
 export const DEFAULT_SETTINGS: TelegramSyncSettings = {
@@ -334,21 +335,21 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 		const bot = this.plugin.bot;
 		if (!bot || !msg.text) return;
 
-		const reply = msg.reply_to_message;
-		if (msg.message_thread_id || (reply && reply.message_thread_id)) {
+		const topicId = getTopicId(msg);
+		if (topicId) {
 			const topicName = msg.text.substring(11);
 			if (!topicName) throw new Error("Set topic name! example: /topicName NewTopicName");
-			const newTopicName: TopicName = {
+			const newTopic: Topic = {
 				name: topicName,
 				chatId: msg.chat.id,
-				topicId: msg.message_thread_id || reply?.message_thread_id || 1,
+				topicId: topicId,
 			};
 			const topicNameIndex = this.plugin.settings.topicNames.findIndex(
-				(tn) => tn.topicId == newTopicName.topicId && tn.chatId == newTopicName.chatId
+				(tn) => tn.topicId == newTopic.topicId && tn.chatId == newTopic.chatId
 			);
 			if (topicNameIndex > -1) {
-				this.plugin.settings.topicNames[topicNameIndex].name = newTopicName.name;
-			} else this.plugin.settings.topicNames.push(newTopicName);
+				this.plugin.settings.topicNames[topicNameIndex].name = newTopic.name;
+			} else this.plugin.settings.topicNames.push(newTopic);
 			await this.plugin.saveSettings();
 
 			const progressBarMessage = await createProgressBar(bot, msg, ProgressBarType.stored);

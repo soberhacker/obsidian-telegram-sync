@@ -108,9 +108,7 @@ export async function handleFiles(plugin: TelegramSyncPlugin, msg: TelegramBot.M
 	try {
 		// Iterate through each file type
 		const { fileType, fileObject } = getFileObject(msg);
-		if (!fileType || !fileObject) {
-			throw new Error("Can't get file object from the message!");
-		}
+
 		const fileObjectToUse = fileObject instanceof Array ? fileObject.pop() : fileObject;
 		const fileId = fileObjectToUse.file_id;
 		telegramFileName = ("file_name" in fileObjectToUse && fileObjectToUse.file_name) || "";
