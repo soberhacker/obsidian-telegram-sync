@@ -97,6 +97,7 @@ async function createNoteContent(
 // Handle files received in messages
 export async function handleFiles(plugin: TelegramSyncPlugin, msg: TelegramBot.Message) {
 	if (!plugin.bot) return;
+	if (!plugin.settings.needToSaveFiles) return;
 
 	const basePath = plugin.settings.newFilesLocation || plugin.settings.newNotesLocation || "";
 	await createFolderIfNotExist(plugin.app.vault, basePath);

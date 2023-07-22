@@ -23,6 +23,7 @@ export interface TelegramSyncSettings {
 	appendAllToTelegramMd: boolean;
 	templateFileLocation: string;
 	deleteMessagesFromTelegram: boolean;
+	needToSaveFiles: boolean;
 	newFilesLocation: string;
 	allowedChatFromUsernames: string[];
 	mainDeviceId: string;
@@ -40,6 +41,7 @@ export const DEFAULT_SETTINGS: TelegramSyncSettings = {
 	appendAllToTelegramMd: false,
 	templateFileLocation: "",
 	deleteMessagesFromTelegram: false,
+	needToSaveFiles: true,
 	newFilesLocation: "",
 	allowedChatFromUsernames: [""],
 	mainDeviceId: "",
@@ -65,9 +67,11 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 		this.addUser();
 		this.containerEl.createEl("br");
 		this.containerEl.createEl("h2", { text: "Locations" });
+		this.containerEl.createEl("h3", { text: "Notes location" });
 		this.addNewNotesLocation();
-		this.addNewFilesLocation();
 		this.addTemplateFileLocation();
+		this.containerEl.createEl("h3", { text: "File location" });
+		this.addNewFilesLocation();
 		this.containerEl.createEl("br");
 		this.containerEl.createEl("h2", { text: "Behavior settings" });
 		this.addAppendAllToTelegramMd();
@@ -227,6 +231,16 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 
 	addNewFilesLocation() {
 		new Setting(this.containerEl)
+			.setName("Save files")
+			.addToggle((cb) => {
+				cb.setValue(this.plugin.settings.needToSaveFiles)
+				.onChange(async (value) => {
+					this.plugin.settings.needToSaveFiles = value;
+					this.plugin.settingsTab.display();
+				})
+			});
+		if(this.plugin.settings.needToSaveFiles === false) return;
+		new Setting(this.containerEl)
 			.setName("New files location")
 			.setDesc("Folder where the new files will be created")
 			.addSearch((cb) => {
@@ -236,7 +250,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 					.onChange(async (newFolder) => {
 						this.plugin.settings.newFilesLocation = newFolder ? normalizePath(newFolder) : newFolder;
 						await this.plugin.saveSettings();
-					});
+					})
 			});
 	}
 
