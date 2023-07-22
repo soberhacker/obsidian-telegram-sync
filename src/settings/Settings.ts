@@ -250,7 +250,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 					.onChange(async (newFolder) => {
 						this.plugin.settings.newFilesLocation = newFolder ? normalizePath(newFolder) : newFolder;
 						await this.plugin.saveSettings();
-					})
+					});
 			});
 	}
 
