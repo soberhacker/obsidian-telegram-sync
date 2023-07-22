@@ -70,7 +70,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 		this.containerEl.createEl("h3", { text: "Notes location" });
 		this.addNewNotesLocation();
 		this.addTemplateFileLocation();
-		this.containerEl.createEl("h3", { text: "File location" });
+		this.containerEl.createEl("h3", { text: "Files location" });
 		this.addNewFilesLocation();
 		this.containerEl.createEl("br");
 		this.containerEl.createEl("h2", { text: "Behavior settings" });
