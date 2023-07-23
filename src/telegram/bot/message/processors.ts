@@ -16,13 +16,12 @@ import { getTelegramMdPath } from "src/utils/fsUtils";
 import { TFile, normalizePath } from "obsidian";
 import { formatDateTime } from "../../../utils/dateUtils";
 import { _15sec, _1h, _5sec, displayAndLog, displayAndLogError } from "src/utils/logUtils";
-import { ProgressBarType, createProgressBar, deleteProgressBar, updateProgressBar } from "../progressBar";
 import { convertMessageTextToMarkdown, escapeRegExp } from "./convertToMarkdown";
 import * as Client from "../../user/client";
 
 // Delete a message or send a confirmation reply based on settings and message age
 export async function finalizeMessageProcessing(plugin: TelegramSyncPlugin, msg: TelegramBot.Message, error?: Error) {
-	if (error) await displayAndLogError(plugin, error, msg, _5sec);
+	if (error) await displayAndLogError(plugin, error, "", "", msg, _5sec);
 	if (error || !plugin.bot) {
 		return;
 	}
@@ -34,17 +33,7 @@ export async function finalizeMessageProcessing(plugin: TelegramSyncPlugin, msg:
 
 	if (plugin.settings.deleteMessagesFromTelegram && hoursDifference <= 48) {
 		// Send the initial progress bar
-		const progressBarMessage = await createProgressBar(plugin.bot, msg, ProgressBarType.deleting);
-
-		// Update the progress bar during the delay
-		let stage = 0;
-		for (let i = 1; i <= 10; i++) {
-			await new Promise((resolve) => setTimeout(resolve, 50)); // 50 ms delay between updates
-			stage = await updateProgressBar(plugin.bot, msg, progressBarMessage, 10, i, stage);
-		}
-
 		await plugin.bot?.deleteMessage(msg.chat.id, msg.message_id);
-		await deleteProgressBar(plugin.bot, msg, progressBarMessage);
 	} else {
 		let needReply = true;
 		let errorMessage = "";
@@ -54,7 +43,7 @@ export async function finalizeMessageProcessing(plugin: TelegramSyncPlugin, msg:
 				needReply = false;
 			}
 		} catch (e) {
-			errorMessage = `\n\nCan't "like" the message, because ${e}`;
+			errorMessage = `\n\nCan't "like" the message, ${e}`;
 		}
 		if (needReply) {
 			await plugin.bot?.sendMessage(msg.chat.id, "...✅..." + errorMessage, {

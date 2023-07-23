@@ -3,7 +3,7 @@ import { DEFAULT_SETTINGS, TelegramSyncSettings, TelegramSyncSettingTab } from "
 import TelegramBot from "node-telegram-bot-api";
 import * as async from "async";
 import { machineIdSync } from "node-machine-id";
-import { _15sec, _1sec, _2min, displayAndLog, reconnectedMessage } from "./utils/logUtils";
+import { _15sec, _1sec, _2min, displayAndLog, StatusMessages, _5sec } from "./utils/logUtils";
 import { appendMessageToTelegramMd } from "./telegram/bot/message/processors";
 import * as Client from "./telegram/user/client";
 import * as Bot from "./telegram/bot/bot";
@@ -50,7 +50,7 @@ export default class TelegramSyncPlugin extends Plugin {
 		try {
 			// if it is manual restart wait for other restart attempts by interval
 			if (restartType) {
-				// no more then 10 sec
+				// wait no more then 10 sec
 				for (let i = 1; i <= 10; i++) {
 					if (!this.checkingUserConnection && !this.checkingBotConnection) break;
 					await new Promise((resolve) => setTimeout(resolve, _1sec));
@@ -64,7 +64,7 @@ export default class TelegramSyncPlugin extends Plugin {
 				this.settings?.botToken
 			) {
 				await this.initTelegram("bot");
-				displayAndLog(this, reconnectedMessage);
+				displayAndLog(this, StatusMessages.botReconnected, _5sec);
 				needRestartInterval = true;
 			}
 

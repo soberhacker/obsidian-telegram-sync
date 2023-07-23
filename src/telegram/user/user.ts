@@ -1,6 +1,6 @@
 import TelegramSyncPlugin from "src/main";
 import * as client from "./client";
-import { _15sec, displayAndLog, displayAndLogError } from "src/utils/logUtils";
+import { StatusMessages, displayAndLogError } from "src/utils/logUtils";
 
 export async function connect(plugin: TelegramSyncPlugin, sessionType: client.SessionType, sessionId?: number) {
 	if (
@@ -40,13 +40,13 @@ export async function connect(plugin: TelegramSyncPlugin, sessionType: client.Se
 		) {
 			await client.signInAsBot(plugin.settings.botToken);
 		}
-	} catch (e) {
-		if (!e.message.includes("API_ID_PUBLISHED_FLOOD")) {
+	} catch (error) {
+		if (!error.message.includes("API_ID_PUBLISHED_FLOOD")) {
 			if (sessionType == "user") {
 				plugin.settings.telegramSessionType = initialSessionType;
 				plugin.saveSettings();
 			}
-			await displayAndLogError(plugin, e, undefined, _15sec);
+			await displayAndLogError(plugin, error, "", "", undefined, 0);
 		}
 	}
 }
@@ -58,12 +58,14 @@ export async function reconnect(plugin: TelegramSyncPlugin, displayError = false
 	try {
 		await client.reconnect(false);
 		plugin.userConnected = await client.isAuthorizedAsUser();
-	} catch (e) {
+	} catch (error) {
 		plugin.userConnected = false;
 		if (displayError && plugin.botConnected && plugin.settings.telegramSessionType == "user") {
-			displayAndLog(
+			await displayAndLogError(
 				plugin,
-				`Telegram user is disconnected.\n\nTry restore the connection manually by restarting Obsidian or by refresh button in the plugin settings!\n\n${e}`
+				error,
+				StatusMessages.userDisconnected,
+				"Try restore the connection manually by restarting Obsidian or by refresh button in the plugin settings!"
 			);
 		}
 	} finally {

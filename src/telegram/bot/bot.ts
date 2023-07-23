@@ -1,6 +1,6 @@
 import TelegramBot from "node-telegram-bot-api";
 import TelegramSyncPlugin from "src/main";
-import { _15sec, _1sec, displayAndLog, displayAndLogError, reconnectedMessage } from "src/utils/logUtils";
+import { _15sec, _1sec, displayAndLog, displayAndLogError, StatusMessages, _5sec } from "src/utils/logUtils";
 import { handleMessage, ifNewReleaseThenShowChanges } from "./message/handlers";
 import { reconnect } from "../user/user";
 import { getFileObject } from "./message/getters";
@@ -36,12 +36,20 @@ export async function connect(plugin: TelegramSyncPlugin) {
 		// if user disconnected and should be connected then reconnect it
 		if (!plugin.userConnected) await plugin.restartTelegram("user");
 
+		const { fileObject, fileType } = getFileObject(msg);
 		// skip system messages
-		if (!msg.text && !getFileObject(msg).fileType) {
-			displayAndLog(plugin, "Got a system message from Telegram Bot", 0);
+
+		if (!msg.text && !fileType) {
+			displayAndLog(plugin, `Got a system message from Telegram Bot`, 0);
 			return;
 		}
-		displayAndLog(plugin, `Got a message from Telegram Bot: ${msg.text || "binary"}`, 0);
+		let fileInfo = "binary";
+		if (fileType && fileObject)
+			fileInfo = `${fileType} ${
+				fileObject instanceof Array ? fileObject[0]?.file_unique_id : fileObject.file_unique_id
+			}`;
+
+		displayAndLog(plugin, `Got a message from Telegram Bot: ${msg.text || fileInfo}`, 0);
 
 		// Skip processing if the message is a "/start" command
 		// https://github.com/soberhacker/obsidian-telegram-sync/issues/109
@@ -59,7 +67,7 @@ export async function connect(plugin: TelegramSyncPlugin) {
 			await handleMessage(plugin, msg);
 			await ifNewReleaseThenShowChanges(plugin, msg);
 		} catch (error) {
-			await displayAndLogError(plugin, error, msg, _15sec);
+			await displayAndLogError(plugin, error, "", "", msg, _15sec);
 		}
 	});
 
@@ -72,11 +80,13 @@ export async function connect(plugin: TelegramSyncPlugin) {
 			await plugin.bot.startPolling();
 		}
 		plugin.botConnected = true;
-	} catch (e) {
+	} catch (error) {
 		if (!plugin.bot || !plugin.bot.isPolling())
-			displayAndLog(
+			await displayAndLogError(
 				plugin,
-				`${e}\n\nTelegram Bot is disconnected.\n\nCheck internet(proxy) connection, the functionality of Telegram using the official app. If everything is ok, restart Obsidian.`
+				error,
+				StatusMessages.botDisconnected,
+				"Check internet(proxy) connection, the functionality of Telegram using the official app. If everything is ok, restart Obsidian."
 			);
 	}
 }
@@ -118,7 +128,7 @@ async function handlePollingError(plugin: TelegramSyncPlugin, error: any) {
 		plugin.lastPollingErrors.push(pollingError);
 		if (!(pollingError == "twoBotInstances")) {
 			plugin.botConnected = false;
-			await displayAndLogError(plugin, new Error(`${error} \n\nTelegram bot is disconnected!`));
+			await displayAndLogError(plugin, error, StatusMessages.botDisconnected);
 		}
 	}
 
@@ -135,7 +145,7 @@ async function checkConnectionAfterError(plugin: TelegramSyncPlugin, intervalInS
 		plugin.botConnected = true;
 		plugin.lastPollingErrors = [];
 		plugin.checkingBotConnection = false;
-		displayAndLog(plugin, reconnectedMessage);
+		displayAndLog(plugin, StatusMessages.botReconnected, _5sec);
 		reconnect(plugin);
 	} catch {
 		plugin.checkingBotConnection = false;
