@@ -44,7 +44,7 @@ Created: {{creationDate:YYYY-DD-MM}} {{creationTime:HH:mm:ss}}
 ```
 
 - If Note Content Template is unspecified, template by default will be equal {{content}}
-- All available formats for dates and time you can find in [Monent JS Docs](https://momentjs.com/docs/#/parsing/string-format/)
+- All available formats for dates and time you can find in [Moment JS Docs](https://momentjs.com/docs/#/parsing/string-format/)
 
 
 
@@ -69,7 +69,7 @@ myNotes/WorldNews/{{forwardFrom:The Washington Post}}.md
 myNotes/Telegram.md
 
 // Important channels are written in separate folders, other messages - in root folder in separate notes
-myNotes/{{chat:Recipies}}/{content:30}.md
+myNotes/{{chat:Recipes}}/{content:30}.md
 myNotes/{{chat:Ideas}}/{{content:firstLine}}.md
 myNotes/{{chat:Work}}/{{forwardFrom}}_{{creationDate}}.md
 myNotes/{{content:20}}_{{messageDate}}_{{messageTime}}.md
@@ -96,7 +96,7 @@ myNotes/{{creationDate:YYYY}}/{{creationDate:MM-DD}}.{{creationTime:HH:mm:ss(SSS
 ###### Variables:
 ```json
 ❌{{fileType}} - file type identified by Telegram (video, audio, voice, photo, document...)
-❌{{fileExtention}} - file extension (mp3, ogg, docx, png...)
+❌{{fileExtension}} - file extension (mp3, ogg, docx, png...)
 ❌{{fileName}} - unique file name assigned by Telegram (without extension)
 ```
 
@@ -108,7 +108,7 @@ myFiles/{{messageDate:YYYY}}/{{fileType}}.{{messageTime:HHmmss}}.{{fileName}}.{{
 ```
 
 -  **Note Content Template Variables** are also available here (except for {{file*}}, {{url1*}}, {{replace*}}, {{content}}, {{content:text}})
--  Always define file names and finish paths with *".{{fileExtention}}"*
+-  Always define file names and finish paths with *".{{fileExtension}}"*
 -  If a file with such name exists then new file will be created with auto-generated unique name
 
 

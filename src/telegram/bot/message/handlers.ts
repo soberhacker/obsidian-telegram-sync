@@ -1,11 +1,11 @@
-import TelegramSyncPlugin from "../../main";
+import TelegramSyncPlugin from "../../../main";
 import TelegramBot from "node-telegram-bot-api";
 import { createFolderIfNotExist, getTelegramMdPath, getUniqueFilePath } from "src/utils/fsUtils";
-import * as release from "../../../release-notes.mjs";
-import { buyMeACoffeeLink, boostyLink, kofiLink, paypalLink } from "../../settings/donation";
+import * as release from "../../../../release-notes.mjs";
+import { buyMeACoffeeLink, boostyLink, kofiLink, paypalLink } from "../../../settings/donation";
 import { SendMessageOptions } from "node-telegram-bot-api";
 import path from "path";
-import * as GramJs from "../GramJs/client";
+import * as Client from "../../user/client";
 import { extension } from "mime-types";
 import { applyNoteContentTemplate, finalizeMessageProcessing } from "./processors";
 import { ProgressBarType, createProgressBar, deleteProgressBar, updateProgressBar } from "../progressBar";
@@ -144,7 +144,7 @@ export async function handleFiles(plugin: TelegramSyncPlugin, msg: TelegramBot.M
 			);
 		} catch (e) {
 			if (e.message == "ETELEGRAM: 400 Bad Request: file is too big") {
-				const media = await GramJs.downloadMedia(
+				const media = await Client.downloadMedia(
 					plugin.bot,
 					msg,
 					fileId,

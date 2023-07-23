@@ -4,13 +4,15 @@ import { FileSuggest } from "./suggesters/FileSuggester";
 import { FolderSuggest } from "./suggesters/FolderSuggester";
 import { boostyButton, paypalButton, buyMeACoffeeButton, kofiButton } from "./donation";
 import TelegramBot from "node-telegram-bot-api";
-import { createProgressBar, updateProgressBar, deleteProgressBar, ProgressBarType } from "src/telegram/progressBar";
-import * as GramJs from "src/telegram/GramJs/client";
+import { createProgressBar, updateProgressBar, deleteProgressBar, ProgressBarType } from "src/telegram/bot/progressBar";
+import * as Client from "src/telegram/user/client";
 import { BotSettingsModal } from "./BotSettingsModal";
 import { UserLogInModal } from "./UserLogInModal";
 import { version } from "release-notes.mjs";
 import { _15sec, _5sec, displayAndLog } from "src/utils/logUtils";
-import { getTopicId } from "src/telegram/message/getters";
+import { getTopicId } from "src/telegram/bot/message/getters";
+import * as Bot from "../telegram/bot/bot";
+import * as User from "../telegram/user/user";
 
 export interface Topic {
 	name: string;
@@ -30,7 +32,7 @@ export interface TelegramSyncSettings {
 	pluginVersion: string;
 	appId: string;
 	apiHash: string;
-	telegramSessionType: GramJs.SessionType;
+	telegramSessionType: Client.SessionType;
 	telegramSessionId: number;
 	topicNames: Topic[];
 }
@@ -49,7 +51,7 @@ export const DEFAULT_SETTINGS: TelegramSyncSettings = {
 	appId: "17349", // public, ok to be here
 	apiHash: "344583e45741c457fe1862106095a5eb", // public, ok to be here
 	telegramSessionType: "bot",
-	telegramSessionId: GramJs.getNewSessionId(),
+	telegramSessionId: Client.getNewSessionId(),
 	topicNames: [],
 };
 
@@ -115,8 +117,8 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 							botStatusConstructor.call(this, botStatusComponent);
 							botSettingsConstructor.call(this, botSettingsButton);
 							if (this.plugin.settings.telegramSessionType == "bot")
-								await this.plugin.initTelegramClient(this.plugin.settings.telegramSessionType);
-							await this.plugin.initTelegramBot();
+								await User.connect(this.plugin, this.plugin.settings.telegramSessionType);
+							await Bot.connect(this.plugin);
 						} finally {
 							this.plugin.checkingBotConnection = false;
 						}
@@ -161,7 +163,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 			userLogInButton.onClick(async () => {
 				if (this.plugin.settings.telegramSessionType == "user") {
 					// Log Out
-					await this.plugin.initTelegramClient("bot");
+					await User.connect(this.plugin, "bot");
 					displayAndLog(
 						this.plugin,
 						"Successfully logged out.\n\nBut you should also terminate the session manually in the Telegram app.",
@@ -197,7 +199,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 				refreshButton.setTooltip("Refresh");
 				refreshButton.setIcon("refresh-ccw");
 				refreshButton.onClick(async () => {
-					await this.plugin.initTelegramClient("user", this.plugin.settings.telegramSessionId);
+					await User.connect(this.plugin, "user", this.plugin.settings.telegramSessionId);
 					userStatusConstructor.call(this, userStatusComponent);
 					refreshButton.setDisabled(true);
 				});

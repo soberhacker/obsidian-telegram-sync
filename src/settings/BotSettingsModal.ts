@@ -3,7 +3,7 @@ import TelegramSyncPlugin from "src/main";
 import { _5sec, displayAndLog } from "src/utils/logUtils";
 
 export class BotSettingsModal extends Modal {
-	botSetingsDiv: HTMLDivElement;
+	botSettingsDiv: HTMLDivElement;
 	saved = false;
 	constructor(public plugin: TelegramSyncPlugin) {
 		super(plugin.app);
@@ -11,8 +11,8 @@ export class BotSettingsModal extends Modal {
 
 	async display() {
 		this.contentEl.empty();
-		this.botSetingsDiv = this.contentEl.createDiv();
-		this.botSetingsDiv.createEl("h4", { text: "Bot settings" });
+		this.botSettingsDiv = this.contentEl.createDiv();
+		this.botSettingsDiv.createEl("h4", { text: "Bot settings" });
 		this.addBotToken();
 		this.addAllowedChatFromUsernamesSetting();
 		this.addDeviceId();
@@ -20,7 +20,7 @@ export class BotSettingsModal extends Modal {
 	}
 
 	addBotToken() {
-		new Setting(this.botSetingsDiv)
+		new Setting(this.botSettingsDiv)
 			.setName("Bot token (required)")
 			.setDesc("Enter your Telegram bot token.")
 			.addText((text) => {
@@ -38,7 +38,7 @@ export class BotSettingsModal extends Modal {
 	}
 
 	addAllowedChatFromUsernamesSetting() {
-		const allowedChatFromUsernamesSetting = new Setting(this.botSetingsDiv)
+		const allowedChatFromUsernamesSetting = new Setting(this.botSettingsDiv)
 			.setName("Allowed chat from usernames (required)")
 			.setDesc("Only messages from these usernames will be processed. At least your username must be entered.")
 			.addTextArea((text) => {
@@ -66,7 +66,7 @@ export class BotSettingsModal extends Modal {
 	}
 
 	addDeviceId() {
-		const deviceIdSetting = new Setting(this.botSetingsDiv)
+		const deviceIdSetting = new Setting(this.botSettingsDiv)
 			.setName("Main device id")
 			.setDesc(
 				"Specify the device to be used for sync when running Obsidian simultaneously on multiple desktops. If not specified, the priority will shift unpredictably."

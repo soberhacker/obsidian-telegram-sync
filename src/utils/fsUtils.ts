@@ -1,12 +1,12 @@
 import { TFile, TFolder, Vault, normalizePath } from "obsidian";
 import { date2DateString, date2TimeString } from "./dateUtils";
 
-// Create a folderpath if it does not exist
-export async function createFolderIfNotExist(vault: Vault, folderpath: string) {
-	if (!vault || !folderpath) {
+// Create a folder path if it does not exist
+export async function createFolderIfNotExist(vault: Vault, folderPath: string) {
+	if (!vault || !folderPath) {
 		return;
 	}
-	const folder = vault.getAbstractFileByPath(normalizePath(folderpath));
+	const folder = vault.getAbstractFileByPath(normalizePath(folderPath));
 
 	if (folder && folder instanceof TFolder) {
 		return;
@@ -14,11 +14,11 @@ export async function createFolderIfNotExist(vault: Vault, folderpath: string) {
 
 	if (folder && folder instanceof TFile) {
 		throw new URIError(
-			`Folder "${folderpath}" can't be created because there is a file with the same name. Change the path or rename the file.`
+			`Folder "${folderPath}" can't be created because there is a file with the same name. Change the path or rename the file.`
 		);
 	}
 
-	await vault.createFolder(folderpath).catch((error) => {
+	await vault.createFolder(folderPath).catch((error) => {
 		if (error.message !== "Folder already exists.") {
 			throw error;
 		}

@@ -6,11 +6,11 @@ import TelegramBot from "node-telegram-bot-api";
 import QRCode from "qrcode";
 import os from "os";
 import { convertBotFileToMessageMedia } from "./convertBotFileToMessageMedia";
-import { ProgressBarType, createProgressBar, deleteProgressBar, updateProgressBar } from "../progressBar";
+import { ProgressBarType, createProgressBar, deleteProgressBar, updateProgressBar } from "../bot/progressBar";
 import { getInputPeer, getMessage } from "./convertors";
 import { formatDateTime } from "src/utils/dateUtils";
 import { LogLevel, Logger } from "telegram/extensions/Logger";
-import { _5sec } from "src/utils/logUtils";
+import { _1min, _5sec } from "src/utils/logUtils";
 
 export type SessionType = "bot" | "user";
 
@@ -22,12 +22,13 @@ let _sessionType: SessionType;
 let _sessionId: number;
 let _clientUser: Api.User | undefined;
 let _voiceTranscripts: Map<string, string> | undefined;
+let lastReconnectTime = new Date();
 
 // change session name when changes in plugin require new client authorization
 const sessionName = "telegram_sync_170";
 const NotConnected = new Error("Can't connect to the Telegram Api");
 const NotAuthorized = new Error("Not authorized");
-const NotAuthorizedAsUser = new Error("Not authorized as user. You have to log in as user, not as bot");
+const NotAuthorizedAsUser = new Error("Not authorized as user. You have to connect as user");
 
 export function getNewSessionId(): number {
 	return Number(formatDateTime(new Date(), "YYYYMMDDHHmmssSSS"));
@@ -98,9 +99,10 @@ export async function init(
 	}
 }
 
-export async function reconnect(): Promise<boolean> {
+export async function reconnect(checkInterval = true): Promise<boolean> {
 	if (!client) return false;
-	if (!client.connected) {
+	if (!client.connected && (!checkInterval || new Date().getTime() - lastReconnectTime.getTime() >= _1min)) {
+		lastReconnectTime = new Date();
 		await client.connect();
 	}
 	return client.connected || false;
@@ -178,6 +180,18 @@ export async function signInAsUserWithQrCode(container: HTMLDivElement, password
 		});
 }
 
+async function checkBotService(): Promise<TelegramClient> {
+	if (!client || !(await reconnect())) throw NotConnected;
+	if (!(await client.checkAuthorization())) throw NotAuthorized;
+	return client;
+}
+
+async function checkUserService(): Promise<{ checkedClient: TelegramClient; checkedUser: Api.User }> {
+	const checkedClient = await checkBotService();
+	if ((await checkedClient.isBot()) || !_clientUser) throw NotAuthorizedAsUser;
+	return { checkedClient, checkedUser: _clientUser };
+}
+
 // download files > 20MB
 export async function downloadMedia(
 	bot: TelegramBot,
@@ -186,19 +200,18 @@ export async function downloadMedia(
 	fileSize: number,
 	botUser?: TelegramBot.User
 ) {
-	if (!client) throw NotConnected;
-	if (!(await client.checkAuthorization())) throw NotAuthorized;
+	const checkedClient = await checkBotService();
 
 	// user clients needs different file id
 	let stage = 0;
 	let message: Api.Message | undefined = undefined;
 	if (_clientUser && botUser && (await isAuthorizedAsUser())) {
-		const inputPeer = await getInputPeer(client, _clientUser, botUser, botMsg);
-		message = await getMessage(client, inputPeer, botMsg);
+		const inputPeer = await getInputPeer(checkedClient, _clientUser, botUser, botMsg);
+		message = await getMessage(checkedClient, inputPeer, botMsg);
 	}
 
 	const progressBarMessage = await createProgressBar(bot, botMsg, ProgressBarType.downloading);
-	return await client
+	return await checkedClient
 		.downloadMedia(message || convertBotFileToMessageMedia(fileId || "", fileSize), {
 			progressCallback: async (receivedBytes, totalBytes) => {
 				stage = await updateProgressBar(
@@ -220,11 +233,10 @@ export async function downloadMedia(
 }
 
 export async function sendReaction(botUser: TelegramBot.User, botMsg: TelegramBot.Message) {
-	if (!client || !(await client.checkAuthorization())) throw NotConnected;
-	if ((await client.isBot()) || !_clientUser) throw NotAuthorizedAsUser;
-	const inputPeer = await getInputPeer(client, _clientUser, botUser, botMsg);
-	const message = await getMessage(client, inputPeer, botMsg);
-	await client.invoke(
+	const { checkedClient, checkedUser } = await checkUserService();
+	const inputPeer = await getInputPeer(checkedClient, checkedUser, botUser, botMsg);
+	const message = await getMessage(checkedClient, inputPeer, botMsg);
+	await checkedClient.invoke(
 		new Api.messages.SendReaction({
 			peer: inputPeer,
 			msgId: message.id,
@@ -261,20 +273,19 @@ export async function transcribeAudio(
 	if (_voiceTranscripts.has(`${botMsg.chat.id}_${botMsg.message_id}`))
 		return _voiceTranscripts.get(`${botMsg.chat.id}_${botMsg.message_id}`) || "";
 
-	if (!client || !(await client.checkAuthorization())) throw NotConnected;
-	if ((await client.isBot()) || !_clientUser) throw NotAuthorizedAsUser;
-	if (!_clientUser.premium) {
+	const { checkedClient, checkedUser } = await checkUserService();
+	if (!checkedUser.premium) {
 		throw new Error(
 			"Transcribing voices available only for Telegram Premium subscribers! Remove {{voiceTranscript}} from current template or log in with a premium user."
 		);
 	}
 	if (!botUser) return "";
-	const inputPeer = await getInputPeer(client, _clientUser, botUser, botMsg);
-	const message = await getMessage(client, inputPeer, botMsg, mediaId);
+	const inputPeer = await getInputPeer(checkedClient, checkedUser, botUser, botMsg);
+	const message = await getMessage(checkedClient, inputPeer, botMsg, mediaId);
 	let transcribedAudio: Api.messages.TranscribedAudio | undefined;
 	// to avoid endless loop, limited waiting
 	for (let i = 1; i <= limit * 14; i++) {
-		transcribedAudio = await client.invoke(
+		transcribedAudio = await checkedClient.invoke(
 			new Api.messages.TranscribeAudio({
 				peer: inputPeer,
 				msgId: message.id,
