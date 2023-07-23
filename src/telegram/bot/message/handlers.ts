@@ -8,7 +8,7 @@ import path from "path";
 import * as Client from "../../user/client";
 import { extension } from "mime-types";
 import { applyNoteContentTemplate, finalizeMessageProcessing } from "./processors";
-import { ProgressBarType, createProgressBar, deleteProgressBar, updateProgressBar } from "../progressBar";
+import { ProgressBarType, _3MB, createProgressBar, deleteProgressBar, updateProgressBar } from "../progressBar";
 import { getFileObject } from "./getters";
 import { TFile } from "obsidian";
 
@@ -123,11 +123,14 @@ export async function handleFiles(plugin: TelegramSyncPlugin, msg: TelegramBot.M
 				return;
 			}
 
-			const progressBarMessage = await createProgressBar(plugin.bot, msg, ProgressBarType.downloading);
-
 			const totalBytes = fileObjectToUse.file_size;
 			let receivedBytes = 0;
+
 			let stage = 0;
+			// show progress bar only if file size > 3MB
+			const progressBarMessage =
+				totalBytes > _3MB ? await createProgressBar(plugin.bot, msg, ProgressBarType.downloading) : undefined;
+
 			for await (const chunk of fileStream) {
 				fileChunks.push(new Uint8Array(chunk));
 				receivedBytes += chunk.length;

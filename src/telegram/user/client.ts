@@ -6,7 +6,7 @@ import TelegramBot from "node-telegram-bot-api";
 import QRCode from "qrcode";
 import os from "os";
 import { convertBotFileToMessageMedia } from "./convertBotFileToMessageMedia";
-import { ProgressBarType, createProgressBar, deleteProgressBar, updateProgressBar } from "../bot/progressBar";
+import { ProgressBarType, _3MB, createProgressBar, deleteProgressBar, updateProgressBar } from "../bot/progressBar";
 import { getInputPeer, getMessage } from "./convertors";
 import { formatDateTime } from "src/utils/dateUtils";
 import { LogLevel, Logger } from "telegram/extensions/Logger";
@@ -210,7 +210,8 @@ export async function downloadMedia(
 		message = await getMessage(checkedClient, inputPeer, botMsg);
 	}
 
-	const progressBarMessage = await createProgressBar(bot, botMsg, ProgressBarType.downloading);
+	const progressBarMessage =
+		fileSize > _3MB ? await createProgressBar(bot, botMsg, ProgressBarType.downloading) : undefined;
 	return await checkedClient
 		.downloadMedia(message || convertBotFileToMessageMedia(fileId || "", fileSize), {
 			progressCallback: async (receivedBytes, totalBytes) => {
@@ -232,7 +233,7 @@ export async function downloadMedia(
 		});
 }
 
-export async function sendReaction(botUser: TelegramBot.User, botMsg: TelegramBot.Message) {
+export async function sendReaction(botUser: TelegramBot.User, botMsg: TelegramBot.Message, emoticon: string) {
 	const { checkedClient, checkedUser } = await checkUserService();
 	const inputPeer = await getInputPeer(checkedClient, checkedUser, botUser, botMsg);
 	const message = await getMessage(checkedClient, inputPeer, botMsg);
@@ -240,17 +241,17 @@ export async function sendReaction(botUser: TelegramBot.User, botMsg: TelegramBo
 		new Api.messages.SendReaction({
 			peer: inputPeer,
 			msgId: message.id,
-			reaction: [new Api.ReactionEmoji({ emoticon: "👍" })],
+			reaction: [new Api.ReactionEmoji({ emoticon })],
 		})
 	);
 }
 
 let sendReactionQueue = Promise.resolve();
 
-export const syncSendReaction = async (botUser: TelegramBot.User, botMsg: TelegramBot.Message) => {
+export const syncSendReaction = async (botUser: TelegramBot.User, botMsg: TelegramBot.Message, emoticon: string) => {
 	let error: Error | undefined;
 	sendReactionQueue = sendReactionQueue
-		.then(async () => await sendReaction(botUser, botMsg))
+		.then(async () => await sendReaction(botUser, botMsg, emoticon))
 		.catch((e) => {
 			error = e;
 		});

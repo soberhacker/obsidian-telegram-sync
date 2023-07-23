@@ -39,7 +39,7 @@ export async function finalizeMessageProcessing(plugin: TelegramSyncPlugin, msg:
 		let errorMessage = "";
 		try {
 			if (plugin.settings.telegramSessionType == "user" && plugin.botUser) {
-				await Client.syncSendReaction(plugin.botUser, msg);
+				await Client.syncSendReaction(plugin.botUser, msg, "👍");
 				needReply = false;
 			}
 		} catch (e) {
