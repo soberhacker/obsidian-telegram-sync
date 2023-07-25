@@ -24,29 +24,27 @@ interface PersistentNotice {
 	notice: Notice;
 	message: string;
 }
-const persistentNotices: PersistentNotice[] = [];
+let persistentNotices: PersistentNotice[] = [];
 
 // Show notification and log message into console.
 export function displayAndLog(plugin: TelegramSyncPlugin, message: string, timeout?: number) {
-	if (timeout !== 0) {
-		const notice = new Notice(message, timeout || doNotHide);
-		if (!timeout) {
-			persistentNotices.push({ notice, message: message });
-		} else if (persistentNotices.length > 0) {
-			const hideBotDisconnectedMessages = message.contains(StatusMessages.botReconnected);
-			for (const persistentNotice of persistentNotices) {
-				if (
-					(hideBotDisconnectedMessages &&
-						persistentNotice.message.contains(StatusMessages.botDisconnected)) ||
-					persistentNotice.message == message
-				) {
-					persistentNotice.notice.hide();
-					persistentNotices.remove(persistentNotice);
-				}
-			}
-		}
-	}
 	console.log(`${plugin.manifest.name}: ${message}`);
+
+	if (timeout == 0) return;
+	const notice = new Notice(message, timeout || doNotHide);
+
+	const hideBotDisconnectedMessages = message.contains(StatusMessages.botReconnected);
+	persistentNotices = persistentNotices.filter((persistentNotice) => {
+		const shouldHide =
+			(hideBotDisconnectedMessages && persistentNotice.message.contains(StatusMessages.botDisconnected)) ||
+			persistentNotice.message == message;
+		if (shouldHide) {
+			persistentNotice.notice.hide();
+		}
+		return !shouldHide;
+	});
+
+	if (!timeout) persistentNotices.push({ notice, message });
 }
 
 // Show error to console, telegram, display

@@ -45,15 +45,9 @@ setInterval(() => {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function getMediaId(media: any): bigint | undefined {
 	if (!media) return undefined;
-	try {
-		return media.document.id;
-	} catch {
-		try {
-			return media.photo.id;
-		} catch {
-			return undefined;
-		}
-	}
+	if (media.document && media.document.id) return media.document.id;
+	if (media.photo && media.photo.id) return media.photo.id;
+	return undefined;
 }
 
 export async function getInputPeer(
@@ -128,23 +122,31 @@ export async function getMessage(
 	const skipMsgIds = cachedMessageCouples
 		.filter(
 			(msgCouple) =>
-				(msgCouple.date == botMsg.date || msgCouple.date + 1 == botMsg.date) &&
+				(msgCouple.date - 1 == botMsg.date ||
+					msgCouple.date == botMsg.date ||
+					msgCouple.date + 1 == botMsg.date) &&
 				msgCouple.botMsgId != botMsg.message_id
 		)
 		.map((msgCouple) => msgCouple.userMsg && msgCouple.userMsg.id);
 
 	const messages = messagesRequests.map((rq) => rq.messages).reduce((accumulator, msgs) => accumulator.concat(msgs));
 	const unprocessedMessages = messages.filter((msg) => !skipMsgIds.contains(msg.id));
-	const userMsg = unprocessedMessages.find(
-		(m) =>
-			(m.date == botMsg.date || m.date + 1 /*different rounding for some reason*/ == botMsg.date) &&
-			(m.message || "") == (botMsg.text || botMsg.caption || "") &&
-			((mediaId && m.media && mediaId == getMediaId(m.media)?.toString()) || !(mediaId && m.media))
-	);
+	const userMsg = unprocessedMessages.find((m) => {
+		// different rounding between bot api and user api for unknown reason
+		const equalDates = m.date - 1 == botMsg.date || m.date == botMsg.date || m.date + 1 == botMsg.date;
+		if (!equalDates) return false;
+		//if msg was edited then it's enough only equal dates
+		if (m.editDate) return true;
+		const equalTexts = (m.message || "") == (botMsg.text || botMsg.caption || "");
+		if (!equalTexts) return false;
+		const equalGroup = (m.groupedId?.toJSNumber() || 0) == (botMsg.media_group_id || 0);
+		if (!equalGroup) return false;
+		const equalMedia = !(mediaId && m.media) || mediaId == getMediaId(m.media)?.toString();
+		return equalMedia;
+	});
 	if (!userMsg && limit < 200 && messages.length > 0 && botMsg.date >= (messages.last()?.date || botMsg.date + 1))
 		return await getMessage(client, inputPeer, botMsg, mediaId, limit + 150);
 	else if (!userMsg) {
-		console.log(`${cantFindTheMessage}\n\n botMsg=\n${botMsg}\n\nmessagesRequest=\n${messagesRequests}`);
 		throw new Error(cantFindTheMessage);
 	}
 	if (cachedMessageCouples.find((mc) => mc.userMsg.id == userMsg.id)) {

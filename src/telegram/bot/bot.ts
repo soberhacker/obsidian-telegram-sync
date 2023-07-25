@@ -20,21 +20,20 @@ export async function connect(plugin: TelegramSyncPlugin) {
 
 	// Create a new bot instance and start polling
 	plugin.bot = new TelegramBot(plugin.settings.botToken);
-
+	const bot = plugin.bot;
 	// Set connected flag to false and log errors when a polling error occurs
-	plugin.bot.on("polling_error", async (error: unknown) => {
+	bot.on("polling_error", async (error: unknown) => {
 		handlePollingError(plugin, error);
 	});
 
-	plugin.bot.on("message", async (msg) => {
+	bot.on("message", async (msg) => {
 		if (!plugin.botConnected) {
 			plugin.botConnected = true;
 			plugin.lastPollingErrors = [];
 		}
 
-		// TODO add catch error
 		// if user disconnected and should be connected then reconnect it
-		if (!plugin.userConnected) await plugin.restartTelegram("user");
+		if (!plugin.userConnected) await plugin.syncRestartTelegram("user");
 
 		const { fileObject, fileType } = getFileObject(msg);
 		// skip system messages
@@ -74,14 +73,14 @@ export async function connect(plugin: TelegramSyncPlugin) {
 	try {
 		// Check if the bot is connected and set the connected flag accordingly
 		try {
-			plugin.botUser = await plugin.bot.getMe();
+			plugin.botUser = await bot.getMe();
 			plugin.lastPollingErrors = [];
 		} finally {
-			await plugin.bot.startPolling();
+			await bot.startPolling();
 		}
 		plugin.botConnected = true;
 	} catch (error) {
-		if (!plugin.bot || !plugin.bot.isPolling())
+		if (!bot || !bot.isPolling())
 			await displayAndLogError(
 				plugin,
 				error,

@@ -48,6 +48,7 @@ export async function finalizeMessageProcessing(plugin: TelegramSyncPlugin, msg:
 		if (needReply) {
 			await plugin.bot?.sendMessage(msg.chat.id, "...✅..." + errorMessage, {
 				reply_to_message_id: msg.message_id,
+				disable_notification: true,
 			});
 		}
 	}

@@ -3,7 +3,7 @@ import { DEFAULT_SETTINGS, TelegramSyncSettings, TelegramSyncSettingTab } from "
 import TelegramBot from "node-telegram-bot-api";
 import * as async from "async";
 import { machineIdSync } from "node-machine-id";
-import { _15sec, _1sec, _2min, displayAndLog, StatusMessages, _5sec } from "./utils/logUtils";
+import { _15sec, _2min, displayAndLog, StatusMessages, _5sec } from "./utils/logUtils";
 import { appendMessageToTelegramMd } from "./telegram/bot/message/processors";
 import * as Client from "./telegram/user/client";
 import * as Bot from "./telegram/bot/bot";
@@ -45,20 +45,21 @@ export default class TelegramSyncPlugin extends Plugin {
 		}
 	}
 
-	restartTelegram = async (restartType?: Client.SessionType) => {
+	restartTelegram = async (sessionType?: Client.SessionType) => {
 		let needRestartInterval = false;
 		try {
-			// if it is manual restart wait for other restart attempts by interval
-			if (restartType) {
-				// wait no more then 10 sec
-				for (let i = 1; i <= 10; i++) {
-					if (!this.checkingUserConnection && !this.checkingBotConnection) break;
-					await new Promise((resolve) => setTimeout(resolve, _1sec));
-				}
+			if (
+				(!sessionType || sessionType == "user") &&
+				!this.userConnected &&
+				!this.checkingUserConnection &&
+				this.settings.telegramSessionType == "user"
+			) {
+				await this.initTelegram("user");
+				needRestartInterval = true;
 			}
 
 			if (
-				(!restartType || restartType == "bot") &&
+				(!sessionType || sessionType == "bot") &&
 				!this.botConnected &&
 				!this.checkingBotConnection &&
 				this.settings?.botToken
@@ -68,26 +69,30 @@ export default class TelegramSyncPlugin extends Plugin {
 				needRestartInterval = true;
 			}
 
-			if (
-				(!restartType || restartType == "user") &&
-				!this.userConnected &&
-				!this.checkingUserConnection &&
-				this.settings.telegramSessionType == "user"
-			) {
-				await this.initTelegram("user");
-				needRestartInterval = true;
-			}
-
 			if (needRestartInterval) {
 				this.restartingIntervalTime = _15sec;
 				clearInterval(this.restartingIntervalId);
-				this.restartingIntervalId = setInterval(this.restartTelegram, this.restartingIntervalTime);
+				this.restartingIntervalId = setInterval(this.syncRestartTelegram, this.restartingIntervalTime);
 			}
 		} catch {
 			if (this.restartingIntervalTime < _2min) this.restartingIntervalTime = this.restartingIntervalTime * 2;
 			clearInterval(this.restartingIntervalId);
-			this.restartingIntervalId = setInterval(this.restartTelegram, this.restartingIntervalTime);
+			this.restartingIntervalId = setInterval(this.syncRestartTelegram, this.restartingIntervalTime);
 		}
+	};
+
+	restartTelegramQueue = Promise.resolve();
+
+	syncRestartTelegram = async (sessionType?: Client.SessionType) => {
+		let error: Error | undefined;
+		this.restartTelegramQueue = this.restartTelegramQueue
+			.then(async () => await this.restartTelegram(sessionType))
+			.catch((e) => {
+				error = e;
+			});
+		const result = await this.restartTelegramQueue;
+		if (error) throw error;
+		return result;
 	};
 
 	// Load the plugin, settings, and initialize the bot
@@ -109,7 +114,7 @@ export default class TelegramSyncPlugin extends Plugin {
 		this.app.workspace.onLayoutReady(async () => {
 			await this.initTelegram();
 			// restart telegram bot or user if needed
-			this.restartingIntervalId = setInterval(this.restartTelegram, this.restartingIntervalTime);
+			this.restartingIntervalId = setInterval(this.syncRestartTelegram, this.restartingIntervalTime);
 		});
 	}
 
