@@ -70,14 +70,13 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 		this.addUser();
 		this.containerEl.createEl("br");
 		this.containerEl.createEl("h2", { text: "Locations" });
-		this.containerEl.createEl("h3", { text: "Notes location" });
 		this.addNewNotesLocation();
-		this.addTemplateFileLocation();
-		this.containerEl.createEl("h3", { text: "Files location" });
 		this.addNewFilesLocation();
+		this.addTemplateFileLocation();
 		this.containerEl.createEl("br");
 		this.containerEl.createEl("h2", { text: "Behavior settings" });
 		this.addAppendAllToTelegramMd();
+		this.addSaveFilesCheckbox();
 		this.addDeleteMessagesFromTelegram();
 		this.addDonation();
 	}
@@ -234,16 +233,6 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 
 	addNewFilesLocation() {
 		new Setting(this.containerEl)
-			.setName("Save files")
-			.addToggle((cb) => {
-				cb.setValue(this.plugin.settings.needToSaveFiles)
-				.onChange(async (value) => {
-					this.plugin.settings.needToSaveFiles = value;
-					this.plugin.settingsTab.display();
-				})
-			});
-		if(this.plugin.settings.needToSaveFiles === false) return;
-		new Setting(this.containerEl)
 			.setName("New files location")
 			.setDesc("Folder where the new files will be created")
 			.addSearch((cb) => {
@@ -294,6 +283,20 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				})
 			);
+	}
+
+	addSaveFilesCheckbox() {
+		new Setting(this.containerEl)
+			.setName("Save files")
+			.setDesc("If enabled, files will be downloaded and saved in your vault. Diasale if you do not want to download files.")
+			.addToggle((cb) => {
+				cb.setValue(this.plugin.settings.needToSaveFiles)
+				.onChange(async (value) => {
+					this.plugin.settings.needToSaveFiles = value;
+					this.plugin.settingsTab.display();
+				})
+			});
+		if(this.plugin.settings.needToSaveFiles === false) return;
 	}
 
 	addDeleteMessagesFromTelegram() {
