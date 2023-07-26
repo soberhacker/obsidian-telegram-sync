@@ -26,6 +26,7 @@ export interface TelegramSyncSettings {
 	appendAllToTelegramMd: boolean;
 	templateFileLocation: string;
 	deleteMessagesFromTelegram: boolean;
+	needToSaveFiles: boolean;
 	newFilesLocation: string;
 	allowedChatFromUsernames: string[];
 	mainDeviceId: string;
@@ -41,6 +42,7 @@ export const DEFAULT_SETTINGS: TelegramSyncSettings = {
 	appendAllToTelegramMd: false,
 	templateFileLocation: "",
 	deleteMessagesFromTelegram: false,
+	needToSaveFiles: true,
 	newFilesLocation: "",
 	allowedChatFromUsernames: [""],
 	mainDeviceId: "",
@@ -69,6 +71,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 		this.containerEl.createEl("br");
 		this.containerEl.createEl("h2", { text: "Behavior settings" });
 		this.addAppendAllToTelegramMd();
+		this.addSaveFilesCheckbox();
 		this.addDeleteMessagesFromTelegram();
 		this.addDonation();
 	}
@@ -275,6 +278,20 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				})
 			);
+	}
+
+	addSaveFilesCheckbox() {
+		new Setting(this.containerEl)
+			.setName("Save files")
+			.setDesc("If enabled, files will be downloaded and saved in your vault. Diasale if you do not want to download files.")
+			.addToggle((cb) => {
+				cb.setValue(this.plugin.settings.needToSaveFiles)
+				.onChange(async (value) => {
+					this.plugin.settings.needToSaveFiles = value;
+					this.plugin.settingsTab.display();
+				})
+			});
+		if(this.plugin.settings.needToSaveFiles === false) return;
 	}
 
 	addDeleteMessagesFromTelegram() {

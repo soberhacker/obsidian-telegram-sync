@@ -36,7 +36,7 @@ export async function handleMessage(plugin: TelegramSyncPlugin, msg: TelegramBot
 		return;
 	}
 
-	if (!msg.text) {
+	if (!msg.text && plugin.settings.needToSaveFiles) {
 		await handleFiles(plugin, msg);
 		return;
 	}
