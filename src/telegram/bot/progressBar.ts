@@ -7,11 +7,13 @@ export enum ProgressBarType {
 	stored = "stored",
 }
 
+export const _3MB = 3 * 1024 * 1024;
+
 export async function createProgressBar(
 	bot: TelegramBot,
 	msg: TelegramBot.Message,
 	action: ProgressBarType
-): Promise<TelegramBot.Message> {
+): Promise<TelegramBot.Message | undefined> {
 	return await bot.sendMessage(msg.chat.id, action, {
 		reply_to_message_id: msg.message_id,
 		reply_markup: { inline_keyboard: createProgressBarKeyboard(0).inline_keyboard },
@@ -23,11 +25,12 @@ export async function createProgressBar(
 export async function updateProgressBar(
 	bot: TelegramBot,
 	msg: TelegramBot.Message,
-	progressBarMessage: TelegramBot.Message,
+	progressBarMessage: TelegramBot.Message | undefined,
 	total: number,
 	current: number,
 	previousStage: number
 ): Promise<number> {
+	if (!progressBarMessage) return 0;
 	const stage = Math.ceil((current / total) * 10);
 	if (previousStage == stage || isTooManyRequests) return stage;
 	try {
@@ -47,8 +50,9 @@ export async function updateProgressBar(
 export async function deleteProgressBar(
 	bot: TelegramBot,
 	msg: TelegramBot.Message,
-	progressBarMessage: TelegramBot.Message
+	progressBarMessage: TelegramBot.Message | undefined
 ) {
+	if (!progressBarMessage) return;
 	await bot.deleteMessage(msg.chat.id, progressBarMessage.message_id);
 }
 // Create a progress bar keyboard

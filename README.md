@@ -6,12 +6,12 @@
 </a>&nbsp;<a href="https://github.com/soberhacker/obsidian-telegram-sync">
 <img src="https://img.shields.io/github/downloads/soberhacker/obsidian-telegram-sync/total">
 </a>&nbsp;<a href="https://github.com/soberhacker/obsidian-telegram-sync">
-<img src="https://img.shields.io/tokei/lines/github/soberhacker/obsidian-telegram-sync">
+<img src="https://img.shields.io/github/languages/code-size/soberhacker/obsidian-telegram-sync">
 </a><br><br>
 
 Transfer messages and files from Telegram to your Obsidian vault. You can easily save text, voice transcripts, images and other files from your Telegram chats to Obsidian for further processing and organization.
 
-📮 [Ask a question in Telegram](https://t.me/ObsidianTelegramSync)&nbsp;&nbsp;&nbsp;&nbsp;🐛 [Report issue](https://github.com/soberhacker/obsidian-telegram-sync/issues)
+[📮&nbsp;Ask&nbsp;a&nbsp;question&nbsp;in&nbsp;Telegram](https://t.me/ObsidianTelegramSync)&nbsp;&nbsp;&nbsp;&nbsp;[🐛&nbsp;Report&nbsp;issue](https://github.com/soberhacker/obsidian-telegram-sync/issues)
 
 ---
 

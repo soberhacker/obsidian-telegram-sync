@@ -14,24 +14,52 @@ export const _1h = 60 * _1min;
 export const _2h = 2 * _1h;
 export const doNotHide = 24 * _1h;
 
+export enum StatusMessages {
+	botReconnected = "Telegram bot is reconnected!",
+	botDisconnected = "Telegram bot is disconnected!",
+	userDisconnected = "Telegram user is disconnected!",
+}
+
+interface PersistentNotice {
+	notice: Notice;
+	message: string;
+}
+let persistentNotices: PersistentNotice[] = [];
+
 // Show notification and log message into console.
 export function displayAndLog(plugin: TelegramSyncPlugin, message: string, timeout?: number) {
-	const beautyMessage = message.replace(/^Error:\s*/, "");
-	if (timeout !== 0) {
-		new Notice(beautyMessage, timeout || doNotHide);
-	}
-	console.log(`${plugin.manifest.name}: ${beautyMessage}`);
+	console.log(`${plugin.manifest.name}: ${message}`);
+
+	if (timeout == 0) return;
+	const notice = new Notice(message, timeout || doNotHide);
+
+	const hideBotDisconnectedMessages = message.contains(StatusMessages.botReconnected);
+	persistentNotices = persistentNotices.filter((persistentNotice) => {
+		const shouldHide =
+			(hideBotDisconnectedMessages && persistentNotice.message.contains(StatusMessages.botDisconnected)) ||
+			persistentNotice.message == message;
+		if (shouldHide) {
+			persistentNotice.notice.hide();
+		}
+		return !shouldHide;
+	});
+
+	if (!timeout) persistentNotices.push({ notice, message });
 }
 
 // Show error to console, telegram, display
 export async function displayAndLogError(
 	plugin: TelegramSyncPlugin,
 	error: Error,
+	status?: string,
+	action?: string,
 	msg?: TelegramBot.Message,
 	timeout?: number
 ) {
-	const beautyError = `Error: ${error}`.replace(/^Error:\s*/, "");
+	let beautyError = `${error.name}: ${error.message.replace(/Error: /g, "")}\n\n${status || ""}\n\n${action || ""}`;
+	beautyError = beautyError.trim();
 	displayAndLog(plugin, beautyError, timeout);
+	if (error.stack) console.log(error.stack);
 	if (msg) {
 		await plugin.bot?.sendMessage(msg.chat.id, `...❌...\n\n${beautyError}`, {
 			reply_to_message_id: msg.message_id,

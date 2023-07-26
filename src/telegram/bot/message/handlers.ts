@@ -1,14 +1,14 @@
-import TelegramSyncPlugin from "../../main";
+import TelegramSyncPlugin from "../../../main";
 import TelegramBot from "node-telegram-bot-api";
 import { createFolderIfNotExist, getTelegramMdPath, getUniqueFilePath } from "src/utils/fsUtils";
-import * as release from "../../../release-notes.mjs";
-import { buyMeACoffeeLink, boostyLink, kofiLink, paypalLink } from "../../settings/donation";
+import * as release from "../../../../release-notes.mjs";
+import { buyMeACoffeeLink, boostyLink, kofiLink, paypalLink } from "../../../settings/donation";
 import { SendMessageOptions } from "node-telegram-bot-api";
 import path from "path";
-import * as GramJs from "../GramJs/client";
+import * as Client from "../../user/client";
 import { extension } from "mime-types";
 import { applyNoteContentTemplate, finalizeMessageProcessing } from "./processors";
-import { ProgressBarType, createProgressBar, deleteProgressBar, updateProgressBar } from "../progressBar";
+import { ProgressBarType, _3MB, createProgressBar, deleteProgressBar, updateProgressBar } from "../progressBar";
 import { getFileObject } from "./getters";
 import { TFile } from "obsidian";
 
@@ -124,11 +124,14 @@ export async function handleFiles(plugin: TelegramSyncPlugin, msg: TelegramBot.M
 				return;
 			}
 
-			const progressBarMessage = await createProgressBar(plugin.bot, msg, ProgressBarType.downloading);
-
 			const totalBytes = fileObjectToUse.file_size;
 			let receivedBytes = 0;
+
 			let stage = 0;
+			// show progress bar only if file size > 3MB
+			const progressBarMessage =
+				totalBytes > _3MB ? await createProgressBar(plugin.bot, msg, ProgressBarType.downloading) : undefined;
+
 			for await (const chunk of fileStream) {
 				fileChunks.push(new Uint8Array(chunk));
 				receivedBytes += chunk.length;
@@ -145,7 +148,7 @@ export async function handleFiles(plugin: TelegramSyncPlugin, msg: TelegramBot.M
 			);
 		} catch (e) {
 			if (e.message == "ETELEGRAM: 400 Bad Request: file is too big") {
-				const media = await GramJs.downloadMedia(
+				const media = await Client.downloadMedia(
 					plugin.bot,
 					msg,
 					fileId,
@@ -213,7 +216,7 @@ export async function handleFiles(plugin: TelegramSyncPlugin, msg: TelegramBot.M
 }
 
 // show changes about new release
-export async function ifNewRelaseThenShowChanges(plugin: TelegramSyncPlugin, msg: TelegramBot.Message) {
+export async function ifNewReleaseThenShowChanges(plugin: TelegramSyncPlugin, msg: TelegramBot.Message) {
 	if (plugin.settings.pluginVersion && plugin.settings.pluginVersion !== release.version && release.showInTelegram) {
 		plugin.settings.pluginVersion = release.version;
 		await plugin.saveSettings();

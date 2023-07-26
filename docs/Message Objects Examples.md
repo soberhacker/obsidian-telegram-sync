@@ -88,7 +88,7 @@
         },
         "is_topic_message": true
     },
-    "text": "Text texttt txet",
+    "text": "Text is good",
     "is_topic_message": true
 }
 ```
@@ -135,7 +135,7 @@
     "is_topic_message": true
 }
 ```
-###### example 3 (system message (bot delted, added....))
+###### example 3 (system message (bot deleted, added....))
 ```json
 {
     "message_id": 6471,
