@@ -2,6 +2,7 @@ export const version = "1.9.0";
 // TODO add Demo gif and screenshots to readme.md
 // TODO add thanks for last patrons in donation section
 // TODO add notification about new version of Telegram Sync and link to the channel
+// TODO add channel link to readme.md
 // ## Demo
 //![](https://raw.githubusercontent.com/vslinko/obsidian-outliner/main/demos/demo1.gif)<br>
 export const showInTelegram = true;

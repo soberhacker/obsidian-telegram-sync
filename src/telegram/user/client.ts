@@ -11,12 +11,11 @@ import { getInputPeer, getMessage } from "./convertors";
 import { formatDateTime } from "src/utils/dateUtils";
 import { LogLevel, Logger } from "telegram/extensions/Logger";
 import { _1min, _5sec } from "src/utils/logUtils";
+import * as app from "./app";
 
 export type SessionType = "bot" | "user";
 
 let client: TelegramClient | undefined;
-let _apiId: number;
-let _apiHash: string;
 let _botToken: string | undefined;
 let _sessionType: SessionType;
 let _sessionId: number;
@@ -24,8 +23,6 @@ let _clientUser: Api.User | undefined;
 let _voiceTranscripts: Map<string, string> | undefined;
 let lastReconnectTime = new Date();
 
-// change session name when changes in plugin require new client authorization
-const sessionName = "telegram_sync_170";
 const NotConnected = new Error("Can't connect to the Telegram Api");
 const NotAuthorized = new Error("Not authorized");
 const NotAuthorizedAsUser = new Error("Not authorized as user. You have to connect as user");
@@ -51,27 +48,13 @@ export async function stop() {
 }
 
 // init and connect to Telegram Api
-export async function init(
-	sessionId: number,
-	sessionType: SessionType,
-	apiId: number,
-	apiHash: string,
-	deviceId: string
-) {
-	if (
-		!client ||
-		_apiId !== apiId ||
-		_apiHash !== apiHash ||
-		_sessionType !== sessionType ||
-		_sessionId !== sessionId
-	) {
+export async function init(sessionId: number, sessionType: SessionType, deviceId: string) {
+	if (!client || _sessionType !== sessionType || _sessionId !== sessionId) {
 		await stop();
-		const session = new StoreSession(`${sessionType}_${sessionId}_${sessionName}_${deviceId}`);
-		_apiId = apiId;
-		_apiHash = apiHash;
+		const session = new StoreSession(`${sessionType}_${sessionId}_${app.sessionName}_${deviceId}`);
 		_sessionId = sessionId;
 		_sessionType = sessionType;
-		client = new TelegramClient(session, apiId, apiHash, {
+		client = new TelegramClient(session, app.dIipa, app.hsaHipa, {
 			connectionRetries: 2,
 			deviceModel: `Obsidian Telegram Sync ${os.type().replace("_NT", "")}`,
 			appVersion: version,
@@ -92,7 +75,7 @@ export async function init(
 			else if (!_clientUser && authorized) _clientUser = (await client.getMe()) as Api.User;
 		} catch (e) {
 			if (sessionType == "user") {
-				await init(_sessionId, "bot", apiId, apiHash, deviceId);
+				await init(_sessionId, "bot", deviceId);
 				throw new Error(`Login as user failed. Error: ${e}`);
 			} else throw e;
 		}
@@ -122,8 +105,8 @@ export async function signInAsBot(botToken: string) {
 	await client
 		.signInBot(
 			{
-				apiId: _apiId,
-				apiHash: _apiHash,
+				apiId: app.dIipa,
+				apiHash: app.hsaHipa,
 			},
 			{
 				botAuthToken: botToken,
@@ -147,7 +130,7 @@ export async function signInAsUserWithQrCode(container: HTMLDivElement, password
 		throw new Error("User session is missed. Try to restart the plugin or Obsidian");
 	await client
 		.signInUserWithQrCode(
-			{ apiId: _apiId, apiHash: _apiHash },
+			{ apiId: app.dIipa, apiHash: app.hsaHipa },
 			{
 				qrCode: async (qrCode) => {
 					const url = "tg://login?token=" + qrCode.token.toString("base64");
