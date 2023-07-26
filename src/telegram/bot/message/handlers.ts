@@ -66,7 +66,7 @@ export async function handleMessage(plugin: TelegramSyncPlugin, msg: TelegramBot
 			plugin.app.vault,
 			plugin.listOfNotePaths,
 			plugin.settings.newNotesLocation,
-			msg.text,
+			msg.text || "",
 			"md",
 			msg.date
 		);

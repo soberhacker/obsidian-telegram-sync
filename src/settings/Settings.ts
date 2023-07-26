@@ -283,15 +283,14 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 	addSaveFilesCheckbox() {
 		new Setting(this.containerEl)
 			.setName("Save files")
-			.setDesc("If enabled, files will be downloaded and saved in your vault. Diasale if you do not want to download files.")
+			.setDesc("Files will be downloaded and saved in your vault.")
 			.addToggle((cb) => {
-				cb.setValue(this.plugin.settings.needToSaveFiles)
-				.onChange(async (value) => {
+				cb.setValue(this.plugin.settings.needToSaveFiles).onChange(async (value) => {
 					this.plugin.settings.needToSaveFiles = value;
 					this.plugin.settingsTab.display();
-				})
+				});
 			});
-		if(this.plugin.settings.needToSaveFiles === false) return;
+		if (this.plugin.settings.needToSaveFiles === false) return;
 	}
 
 	addDeleteMessagesFromTelegram() {
