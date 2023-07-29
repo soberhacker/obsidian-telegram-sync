@@ -54,7 +54,7 @@ export async function getUniqueFilePath(
 	) {
 		previousFilePath = filePath;
 		fileId += 1;
-		fileName = `${title} - ${messageDateString}${fileId}.${_fileExtension}}`;
+		fileName = `${title} - ${messageDateString}${fileId}.${_fileExtension}`;
 		filePath = normalizePath(locationPath ? `${locationPath}/${fileName}` : fileName);
 	}
 	generatedFilePaths.push(filePath);

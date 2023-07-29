@@ -1,13 +1,12 @@
 import { Plugin } from "obsidian";
 import { DEFAULT_SETTINGS, TelegramSyncSettings, TelegramSyncSettingTab } from "./settings/Settings";
 import TelegramBot from "node-telegram-bot-api";
-import * as async from "async";
 import { machineIdSync } from "node-machine-id";
 import { _15sec, _2min, displayAndLog, StatusMessages, _5sec } from "./utils/logUtils";
-import { appendMessageToTelegramMd } from "./telegram/bot/message/processors";
 import * as Client from "./telegram/user/client";
 import * as Bot from "./telegram/bot/bot";
 import * as User from "./telegram/user/user";
+import { enqueue } from "./utils/queues";
 
 // Main class for the Telegram Sync plugin
 export default class TelegramSyncPlugin extends Plugin {
@@ -19,7 +18,6 @@ export default class TelegramSyncPlugin extends Plugin {
 	checkingUserConnection = false;
 	bot?: TelegramBot;
 	botUser?: TelegramBot.User;
-	messageQueueToTelegramMd: async.QueueObject<unknown>;
 	listOfNotePaths: string[] = [];
 	currentDeviceId = machineIdSync(true);
 	lastPollingErrors: string[] = [];
@@ -72,27 +70,19 @@ export default class TelegramSyncPlugin extends Plugin {
 			if (needRestartInterval) {
 				this.restartingIntervalTime = _15sec;
 				clearInterval(this.restartingIntervalId);
-				this.restartingIntervalId = setInterval(this.syncRestartTelegram, this.restartingIntervalTime);
+				this.restartingIntervalId = setInterval(
+					async () => await enqueue(this, this.restartTelegram, sessionType),
+					this.restartingIntervalTime
+				);
 			}
 		} catch {
 			if (this.restartingIntervalTime < _2min) this.restartingIntervalTime = this.restartingIntervalTime * 2;
 			clearInterval(this.restartingIntervalId);
-			this.restartingIntervalId = setInterval(this.syncRestartTelegram, this.restartingIntervalTime);
+			this.restartingIntervalId = setInterval(
+				async () => await enqueue(this, this.restartTelegram, sessionType),
+				this.restartingIntervalTime
+			);
 		}
-	};
-
-	restartTelegramQueue = Promise.resolve();
-
-	syncRestartTelegram = async (sessionType?: Client.SessionType) => {
-		let error: Error | undefined;
-		this.restartTelegramQueue = this.restartTelegramQueue
-			.then(async () => await this.restartTelegram(sessionType))
-			.catch((e) => {
-				error = e;
-			});
-		const result = await this.restartTelegramQueue;
-		if (error) throw error;
-		return result;
 	};
 
 	// Load the plugin, settings, and initialize the bot
@@ -104,17 +94,14 @@ export default class TelegramSyncPlugin extends Plugin {
 		this.settingsTab = new TelegramSyncSettingTab(this);
 		this.addSettingTab(this.settingsTab);
 
-		// Create a queue to handle appending messages to the Telegram.md file
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		this.messageQueueToTelegramMd = async.queue(async (task: any) => {
-			await appendMessageToTelegramMd(this, task.msg, task.formattedContent, task.error);
-		}, 1);
-
 		// Initialize the Telegram bot when Obsidian layout is fully loaded
 		this.app.workspace.onLayoutReady(async () => {
 			await this.initTelegram();
 			// restart telegram bot or user if needed
-			this.restartingIntervalId = setInterval(this.syncRestartTelegram, this.restartingIntervalTime);
+			this.restartingIntervalId = setInterval(
+				async () => await enqueue(this, this.restartTelegram),
+				this.restartingIntervalTime
+			);
 		});
 	}
 

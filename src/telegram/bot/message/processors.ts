@@ -18,6 +18,7 @@ import { formatDateTime } from "../../../utils/dateUtils";
 import { _15sec, _1h, _5sec, displayAndLog, displayAndLogError } from "src/utils/logUtils";
 import { convertMessageTextToMarkdown, escapeRegExp } from "./convertToMarkdown";
 import * as Client from "../../user/client";
+import { enqueue } from "src/utils/queues";
 
 // Delete a message or send a confirmation reply based on settings and message age
 export async function finalizeMessageProcessing(plugin: TelegramSyncPlugin, msg: TelegramBot.Message, error?: Error) {
@@ -39,7 +40,7 @@ export async function finalizeMessageProcessing(plugin: TelegramSyncPlugin, msg:
 		let errorMessage = "";
 		try {
 			if (plugin.settings.telegramSessionType == "user" && plugin.botUser) {
-				await Client.syncSendReaction(plugin.botUser, msg, "👍");
+				await enqueue(Client.sendReaction, plugin.botUser, msg, "👍");
 				needReply = false;
 			}
 		} catch (e) {

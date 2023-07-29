@@ -11,7 +11,7 @@ import { getInputPeer, getMessage } from "./convertors";
 import { formatDateTime } from "src/utils/dateUtils";
 import { LogLevel, Logger } from "telegram/extensions/Logger";
 import { _1min, _5sec } from "src/utils/logUtils";
-import * as app from "./app";
+import * as config from "./config";
 
 export type SessionType = "bot" | "user";
 
@@ -51,12 +51,12 @@ export async function stop() {
 export async function init(sessionId: number, sessionType: SessionType, deviceId: string) {
 	if (!client || _sessionType !== sessionType || _sessionId !== sessionId) {
 		await stop();
-		const session = new StoreSession(`${sessionType}_${sessionId}_${app.sessionName}_${deviceId}`);
+		const session = new StoreSession(`${sessionType}_${sessionId}_${deviceId}`);
 		_sessionId = sessionId;
 		_sessionType = sessionType;
-		client = new TelegramClient(session, app.dIipa, app.hsaHipa, {
+		client = new TelegramClient(session, config.dIipa, config.hsaHipa, {
 			connectionRetries: 2,
-			deviceModel: `Obsidian Telegram Sync ${os.type().replace("_NT", "")}`,
+			deviceModel: os.hostname() || os.type(),
 			appVersion: version,
 			useWSS: true,
 			networkSocket: PromisedWebSockets,
@@ -105,8 +105,8 @@ export async function signInAsBot(botToken: string) {
 	await client
 		.signInBot(
 			{
-				apiId: app.dIipa,
-				apiHash: app.hsaHipa,
+				apiId: config.dIipa,
+				apiHash: config.hsaHipa,
 			},
 			{
 				botAuthToken: botToken,
@@ -130,7 +130,7 @@ export async function signInAsUserWithQrCode(container: HTMLDivElement, password
 		throw new Error("User session is missed. Try to restart the plugin or Obsidian");
 	await client
 		.signInUserWithQrCode(
-			{ apiId: app.dIipa, apiHash: app.hsaHipa },
+			{ apiId: config.dIipa, apiHash: config.hsaHipa },
 			{
 				qrCode: async (qrCode) => {
 					const url = "tg://login?token=" + qrCode.token.toString("base64");
@@ -241,20 +241,6 @@ export async function sendReaction(botUser: TelegramBot.User, botMsg: TelegramBo
 		throw error;
 	}
 }
-
-let sendReactionQueue = Promise.resolve();
-
-export const syncSendReaction = async (botUser: TelegramBot.User, botMsg: TelegramBot.Message, emoticon: string) => {
-	let error: Error | undefined;
-	sendReactionQueue = sendReactionQueue
-		.then(async () => await sendReaction(botUser, botMsg, emoticon))
-		.catch((e) => {
-			error = e;
-		});
-	const result = await sendReactionQueue;
-	if (error) throw error;
-	return result;
-};
 
 export async function transcribeAudio(
 	botMsg: TelegramBot.Message,

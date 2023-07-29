@@ -1,16 +1,23 @@
 import TelegramSyncPlugin from "src/main";
 import * as client from "./client";
 import { StatusMessages, displayAndLogError } from "src/utils/logUtils";
+import * as release from "release-notes.mjs";
 
 export async function connect(plugin: TelegramSyncPlugin, sessionType: client.SessionType, sessionId?: number) {
+	// TODO remove this condition in 2024
+	// Api keys were changed so needed some adaptation
 	if (
-		!(
-			plugin.settings.appId !== "" &&
-			plugin.settings.apiHash !== "" &&
-			(sessionType == "user" || plugin.settings.botToken !== "")
-		)
-	)
-		return;
+		sessionType == "user" &&
+		!release.showBreakingChanges &&
+		release.versionALessThanVersionB(plugin.settings.pluginVersion, "1.9.1")
+	) {
+		sessionType = "bot";
+		plugin.settings.telegramSessionType = "bot";
+		await plugin.saveSettings();
+		release.showBreakingChangesInReleaseNotes();
+	}
+
+	if (!(sessionType == "user" || plugin.settings.botToken !== "")) return;
 
 	const initialSessionType = plugin.settings.telegramSessionType;
 	try {
@@ -27,8 +34,6 @@ export async function connect(plugin: TelegramSyncPlugin, sessionType: client.Se
 		await client.init(
 			plugin.settings.telegramSessionId,
 			plugin.settings.telegramSessionType,
-			+plugin.settings.appId,
-			plugin.settings.apiHash,
 			plugin.currentDeviceId
 		);
 
@@ -53,7 +58,6 @@ export async function connect(plugin: TelegramSyncPlugin, sessionType: client.Se
 
 export async function reconnect(plugin: TelegramSyncPlugin, displayError = false) {
 	if (plugin.checkingUserConnection) return;
-
 	plugin.checkingUserConnection = true;
 	try {
 		await client.reconnect(false);

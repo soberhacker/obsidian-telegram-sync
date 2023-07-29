@@ -120,33 +120,21 @@ export async function getMessage(
 		mediaId = extractMediaId(fileObjectToUse.file_id);
 	}
 	const skipMsgIds = cachedMessageCouples
-		.filter(
-			(msgCouple) =>
-				(msgCouple.date - 1 == botMsg.date ||
-					msgCouple.date == botMsg.date ||
-					msgCouple.date + 1 == botMsg.date) &&
-				msgCouple.botMsgId != botMsg.message_id
-		)
+		.filter((msgCouple) => Math.abs(botMsg.date - msgCouple.date) <= 1 && msgCouple.botMsgId != botMsg.message_id)
 		.map((msgCouple) => msgCouple.userMsg && msgCouple.userMsg.id);
 
 	const messages = messagesRequests.map((rq) => rq.messages).reduce((accumulator, msgs) => accumulator.concat(msgs));
 	const unprocessedMessages = messages.filter((msg) => !skipMsgIds.contains(msg.id));
-	const userMsg = unprocessedMessages.find((m) => {
-		// different rounding between bot api and user api for unknown reason
-		const equalDates = m.date - 1 == botMsg.date || m.date == botMsg.date || m.date + 1 == botMsg.date;
-		if (!equalDates) return false;
-		//if msg was edited then it's enough only equal dates
-		if (m.editDate) return true;
-		const equalTexts = (m.message || "") == (botMsg.text || botMsg.caption || "");
-		if (!equalTexts) return false;
-		const equalGroup = (m.groupedId?.toJSNumber() || 0) == (botMsg.media_group_id || 0);
-		if (!equalGroup) return false;
-		const equalMedia = !(mediaId && m.media) || mediaId == getMediaId(m.media)?.toString();
-		return equalMedia;
-	});
-	if (!userMsg && limit < 200 && messages.length > 0 && botMsg.date >= (messages.last()?.date || botMsg.date + 1))
+	// add dateOffset, because different date rounding between bot api and user api for unknown reason
+	const userMsg =
+		findUserMsg(unprocessedMessages, botMsg, 0, mediaId) ||
+		findUserMsg(unprocessedMessages, botMsg, 1, mediaId) ||
+		findUserMsg(unprocessedMessages, botMsg, -1, mediaId);
+
+	if (!userMsg && limit < 200 && messages.length > 0 && botMsg.date + 1 >= (messages.last()?.date || botMsg.date + 1))
 		return await getMessage(client, inputPeer, botMsg, mediaId, limit + 150);
-	else if (!userMsg) {
+
+	if (!userMsg) {
 		throw new Error(cantFindTheMessage);
 	}
 	if (cachedMessageCouples.find((mc) => mc.userMsg.id == userMsg.id)) {
@@ -162,4 +150,24 @@ export async function getMessage(
 	};
 	cachedMessageCouples.push(messageCouple);
 	return userMsg;
+}
+
+function findUserMsg(
+	messages: Api.Message[],
+	botMsg: TelegramBot.Message,
+	dateOffset = 0,
+	mediaId?: string
+): Api.Message | undefined {
+	return messages.find((m) => {
+		const equalDates = m.date + dateOffset == botMsg.date;
+		if (!equalDates) return false;
+		//if msg was edited then it's enough only equal dates
+		if (m.editDate) return true;
+		const equalTexts = (m.message || "") == (botMsg.text || botMsg.caption || "");
+		if (!equalTexts) return false;
+		const equalGroup = (m.groupedId?.toJSNumber() || 0) == (botMsg.media_group_id || 0);
+		if (!equalGroup) return false;
+		const equalMedia = !(mediaId && m.media) || mediaId == getMediaId(m.media)?.toString();
+		return equalMedia;
+	});
 }

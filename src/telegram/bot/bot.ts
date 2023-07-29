@@ -4,6 +4,7 @@ import { _15sec, _1sec, displayAndLog, displayAndLogError, StatusMessages, _5sec
 import { handleMessage, ifNewReleaseThenShowChanges } from "./message/handlers";
 import { reconnect } from "../user/user";
 import { getFileObject } from "./message/getters";
+import { enqueue } from "src/utils/queues";
 
 // Initialize the Telegram bot and set up message handling
 export async function connect(plugin: TelegramSyncPlugin) {
@@ -33,7 +34,7 @@ export async function connect(plugin: TelegramSyncPlugin) {
 		}
 
 		// if user disconnected and should be connected then reconnect it
-		if (!plugin.userConnected) await plugin.syncRestartTelegram("user");
+		if (!plugin.userConnected) await enqueue(plugin, plugin.restartTelegram, "user");
 
 		const { fileObject, fileType } = getFileObject(msg);
 		// skip system messages
@@ -64,7 +65,7 @@ export async function connect(plugin: TelegramSyncPlugin) {
 
 		try {
 			await handleMessage(plugin, msg);
-			await ifNewReleaseThenShowChanges(plugin, msg);
+			await enqueue(ifNewReleaseThenShowChanges, plugin, msg);
 		} catch (error) {
 			await displayAndLogError(plugin, error, "", "", msg, _15sec);
 		}

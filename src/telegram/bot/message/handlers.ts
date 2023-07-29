@@ -2,15 +2,16 @@ import TelegramSyncPlugin from "../../../main";
 import TelegramBot from "node-telegram-bot-api";
 import { createFolderIfNotExist, getTelegramMdPath, getUniqueFilePath } from "src/utils/fsUtils";
 import * as release from "../../../../release-notes.mjs";
-import { buyMeACoffeeLink, boostyLink, kofiLink, paypalLink } from "../../../settings/donation";
+import { inlineKeyboard as donationInlineKeyboard } from "../../../settings/donation";
 import { SendMessageOptions } from "node-telegram-bot-api";
 import path from "path";
 import * as Client from "../../user/client";
 import { extension } from "mime-types";
-import { applyNoteContentTemplate, finalizeMessageProcessing } from "./processors";
+import { appendMessageToTelegramMd, applyNoteContentTemplate, finalizeMessageProcessing } from "./processors";
 import { ProgressBarType, _3MB, createProgressBar, deleteProgressBar, updateProgressBar } from "../progressBar";
 import { getFileObject } from "./getters";
 import { TFile } from "obsidian";
+import { enqueue } from "src/utils/queues";
 
 // handle all messages from Telegram
 export async function handleMessage(plugin: TelegramSyncPlugin, msg: TelegramBot.Message) {
@@ -59,20 +60,20 @@ export async function handleMessage(plugin: TelegramSyncPlugin, msg: TelegramBot
 	const appendAllToTelegramMd = plugin.settings.appendAllToTelegramMd;
 
 	if (appendAllToTelegramMd) {
-		plugin.messageQueueToTelegramMd.push({ msg, formattedContent });
+		await enqueue(appendMessageToTelegramMd, plugin, msg, formattedContent);
 		return;
-	} else {
-		const notePath = await getUniqueFilePath(
-			plugin.app.vault,
-			plugin.listOfNotePaths,
-			plugin.settings.newNotesLocation,
-			msg.text || "",
-			"md",
-			msg.date
-		);
-		await plugin.app.vault.create(notePath, formattedContent);
-		await finalizeMessageProcessing(plugin, msg);
 	}
+
+	const notePath = await getUniqueFilePath(
+		plugin.app.vault,
+		plugin.listOfNotePaths,
+		plugin.settings.newNotesLocation,
+		msg.text || "",
+		"md",
+		msg.date
+	);
+	await plugin.app.vault.create(notePath, formattedContent);
+	await finalizeMessageProcessing(plugin, msg);
 }
 
 async function createNoteContent(
@@ -194,7 +195,7 @@ export async function handleFiles(plugin: TelegramSyncPlugin, msg: TelegramBot.M
 			msg,
 			error
 		);
-		plugin.messageQueueToTelegramMd.push({ msg, formattedContent: noteContent, error });
+		await enqueue(appendMessageToTelegramMd, plugin, msg, noteContent, error);
 		return;
 	} else if (msg.caption || telegramFileName) {
 		// Save caption as a separate note
@@ -216,29 +217,21 @@ export async function handleFiles(plugin: TelegramSyncPlugin, msg: TelegramBot.M
 
 // show changes about new release
 export async function ifNewReleaseThenShowChanges(plugin: TelegramSyncPlugin, msg: TelegramBot.Message) {
-	if (plugin.settings.pluginVersion && plugin.settings.pluginVersion !== release.version && release.showInTelegram) {
-		plugin.settings.pluginVersion = release.version;
-		await plugin.saveSettings();
+	if (plugin.settings.pluginVersion == release.version) return;
 
+	if (plugin.settings.pluginVersion && release.showNewFeatures) {
 		const options: SendMessageOptions = {
 			parse_mode: "HTML",
-			reply_markup: {
-				inline_keyboard: [
-					[
-						{ text: "⚡  Boosty", url: boostyLink },
-						{ text: "☕  Buy me a coffee", url: buyMeACoffeeLink },
-					],
-					[
-						{ text: "💰  Ko-fi Donation", url: kofiLink },
-						{ text: "💳  PayPal Donation", url: paypalLink },
-					],
-				],
-			},
+			reply_markup: { inline_keyboard: donationInlineKeyboard },
 		};
 
-		await plugin.bot?.sendMessage(msg.chat.id, release.releaseNotes, options);
-	} else if (!plugin.settings.pluginVersion) {
-		plugin.settings.pluginVersion = release.version;
-		await plugin.saveSettings();
+		await plugin.bot?.sendMessage(msg.chat.id, release.notes, options);
 	}
+
+	if (plugin.settings.pluginVersion && release.showBreakingChanges && !plugin.userConnected) {
+		await plugin.bot?.sendMessage(msg.chat.id, release.breakingChanges, { parse_mode: "HTML" });
+	}
+
+	plugin.settings.pluginVersion = release.version;
+	await plugin.saveSettings();
 }
