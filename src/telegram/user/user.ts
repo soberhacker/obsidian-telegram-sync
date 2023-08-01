@@ -9,7 +9,7 @@ export async function connect(plugin: TelegramSyncPlugin, sessionType: client.Se
 	if (
 		sessionType == "user" &&
 		!release.showBreakingChanges &&
-		release.versionALessThanVersionB(plugin.settings.pluginVersion, "1.9.1")
+		release.versionALessThanVersionB(plugin.settings.pluginVersion, "1.9.0")
 	) {
 		sessionType = "bot";
 		plugin.settings.telegramSessionType = "bot";
