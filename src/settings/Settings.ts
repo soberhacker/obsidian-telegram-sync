@@ -4,14 +4,17 @@ import { FileSuggest } from "./suggesters/FileSuggester";
 import { FolderSuggest } from "./suggesters/FolderSuggester";
 import { boostyButton, paypalButton, buyMeACoffeeButton, kofiButton } from "./donation";
 import TelegramBot from "node-telegram-bot-api";
-import { createProgressBar, updateProgressBar, deleteProgressBar, ProgressBarType } from "src/telegram/progressBar";
-import * as GramJs from "src/telegram/GramJs/client";
+import { createProgressBar, updateProgressBar, deleteProgressBar, ProgressBarType } from "src/telegram/bot/progressBar";
+import * as Client from "src/telegram/user/client";
 import { BotSettingsModal } from "./BotSettingsModal";
 import { UserLogInModal } from "./UserLogInModal";
 import { version } from "release-notes.mjs";
 import { _15sec, _5sec, displayAndLog } from "src/utils/logUtils";
+import { getTopicId } from "src/telegram/bot/message/getters";
+import * as Bot from "../telegram/bot/bot";
+import * as User from "../telegram/user/user";
 
-export interface TopicName {
+export interface Topic {
 	name: string;
 	chatId: number;
 	topicId: number;
@@ -23,15 +26,14 @@ export interface TelegramSyncSettings {
 	appendAllToTelegramMd: boolean;
 	templateFileLocation: string;
 	deleteMessagesFromTelegram: boolean;
+	needToSaveFiles: boolean;
 	newFilesLocation: string;
 	allowedChatFromUsernames: string[];
 	mainDeviceId: string;
 	pluginVersion: string;
-	appId: string;
-	apiHash: string;
-	telegramSessionType: GramJs.SessionType;
+	telegramSessionType: Client.SessionType;
 	telegramSessionId: number;
-	topicNames: TopicName[];
+	topicNames: Topic[];
 }
 
 export const DEFAULT_SETTINGS: TelegramSyncSettings = {
@@ -40,15 +42,13 @@ export const DEFAULT_SETTINGS: TelegramSyncSettings = {
 	appendAllToTelegramMd: false,
 	templateFileLocation: "",
 	deleteMessagesFromTelegram: false,
+	needToSaveFiles: true,
 	newFilesLocation: "",
 	allowedChatFromUsernames: [""],
 	mainDeviceId: "",
 	pluginVersion: "",
-	// TODO Check for not public appId, apiHash how are often flood wait blocks and the level of downloading speed
-	appId: "17349", // public, ok to be here
-	apiHash: "344583e45741c457fe1862106095a5eb", // public, ok to be here
 	telegramSessionType: "bot",
-	telegramSessionId: GramJs.getNewSessionId(),
+	telegramSessionId: Client.getNewSessionId(),
 	topicNames: [],
 };
 
@@ -71,6 +71,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 		this.containerEl.createEl("br");
 		this.containerEl.createEl("h2", { text: "Behavior settings" });
 		this.addAppendAllToTelegramMd();
+		this.addSaveFilesCheckbox();
 		this.addDeleteMessagesFromTelegram();
 		this.addDonation();
 	}
@@ -114,8 +115,8 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 							botStatusConstructor.call(this, botStatusComponent);
 							botSettingsConstructor.call(this, botSettingsButton);
 							if (this.plugin.settings.telegramSessionType == "bot")
-								await this.plugin.initTelegramClient(this.plugin.settings.telegramSessionType);
-							await this.plugin.initTelegramBot();
+								await User.connect(this.plugin, this.plugin.settings.telegramSessionType);
+							await Bot.connect(this.plugin);
 						} finally {
 							this.plugin.checkingBotConnection = false;
 						}
@@ -160,7 +161,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 			userLogInButton.onClick(async () => {
 				if (this.plugin.settings.telegramSessionType == "user") {
 					// Log Out
-					await this.plugin.initTelegramClient("bot");
+					await User.connect(this.plugin, "bot");
 					displayAndLog(
 						this.plugin,
 						"Successfully logged out.\n\nBut you should also terminate the session manually in the Telegram app.",
@@ -196,7 +197,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 				refreshButton.setTooltip("Refresh");
 				refreshButton.setIcon("refresh-ccw");
 				refreshButton.onClick(async () => {
-					await this.plugin.initTelegramClient("user", this.plugin.settings.telegramSessionId);
+					await User.connect(this.plugin, "user", this.plugin.settings.telegramSessionId);
 					userStatusConstructor.call(this, userStatusComponent);
 					refreshButton.setDisabled(true);
 				});
@@ -279,6 +280,19 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 			);
 	}
 
+	addSaveFilesCheckbox() {
+		new Setting(this.containerEl)
+			.setName("Save files")
+			.setDesc("Files will be downloaded and saved in your vault")
+			.addToggle((cb) => {
+				cb.setValue(this.plugin.settings.needToSaveFiles).onChange(async (value) => {
+					this.plugin.settings.needToSaveFiles = value;
+					this.plugin.settingsTab.display();
+				});
+			});
+		if (this.plugin.settings.needToSaveFiles === false) return;
+	}
+
 	addDeleteMessagesFromTelegram() {
 		new Setting(this.containerEl)
 			.setName("Delete messages from Telegram")
@@ -320,21 +334,21 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 		const bot = this.plugin.bot;
 		if (!bot || !msg.text) return;
 
-		const reply = msg.reply_to_message;
-		if (msg.message_thread_id || (reply && reply.message_thread_id)) {
+		const topicId = getTopicId(msg);
+		if (topicId) {
 			const topicName = msg.text.substring(11);
 			if (!topicName) throw new Error("Set topic name! example: /topicName NewTopicName");
-			const newTopicName: TopicName = {
+			const newTopic: Topic = {
 				name: topicName,
 				chatId: msg.chat.id,
-				topicId: msg.message_thread_id || reply?.message_thread_id || 1,
+				topicId: topicId,
 			};
 			const topicNameIndex = this.plugin.settings.topicNames.findIndex(
-				(tn) => tn.topicId == newTopicName.topicId && tn.chatId == newTopicName.chatId
+				(tn) => tn.topicId == newTopic.topicId && tn.chatId == newTopic.chatId
 			);
 			if (topicNameIndex > -1) {
-				this.plugin.settings.topicNames[topicNameIndex].name = newTopicName.name;
-			} else this.plugin.settings.topicNames.push(newTopicName);
+				this.plugin.settings.topicNames[topicNameIndex].name = newTopic.name;
+			} else this.plugin.settings.topicNames.push(newTopic);
 			await this.plugin.saveSettings();
 
 			const progressBarMessage = await createProgressBar(bot, msg, ProgressBarType.stored);

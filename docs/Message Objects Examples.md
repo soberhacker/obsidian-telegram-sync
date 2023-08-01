@@ -88,7 +88,7 @@
         },
         "is_topic_message": true
     },
-    "text": "Text texttt txet",
+    "text": "Text is good",
     "is_topic_message": true
 }
 ```
@@ -133,5 +133,26 @@
     },
     "text": "No, I'm message",
     "is_topic_message": true
+}
+```
+###### example 3 (system message (bot deleted, added....))
+```json
+{
+    "message_id": 6471,
+    "from": {
+        "id": 1110636370,
+        "is_bot": false,
+        "first_name": "soberhacker",
+        "username": "soberhacker",
+        "language_code": "ru"
+    },
+    "chat": {
+        "id": -955999997,
+        "title": "Test Group",
+        "type": "group",
+        "all_members_are_administrators": true
+    },
+    "date": 1689804496,
+    "group_chat_created": true
 }
 ```

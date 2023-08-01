@@ -1,17 +1,28 @@
 import TelegramBot from "node-telegram-bot-api";
-import TelegramSyncPlugin from "../../main";
-import { getChatLink, getForwardFromLink, getReplyMessageId, getTopicLink, getUrl, getUserLink } from "./getters";
+import TelegramSyncPlugin from "../../../main";
+import {
+	getChatLink,
+	getChatName,
+	getForwardFromLink,
+	getForwardFromName,
+	getReplyMessageId,
+	getTopic,
+	getTopicId,
+	getTopicLink,
+	getUrl,
+	getUserLink,
+} from "./getters";
 import { getTelegramMdPath } from "src/utils/fsUtils";
 import { TFile, normalizePath } from "obsidian";
-import { formatDateTime } from "../../utils/dateUtils";
+import { formatDateTime } from "../../../utils/dateUtils";
 import { _15sec, _1h, _5sec, displayAndLog, displayAndLogError } from "src/utils/logUtils";
-import { ProgressBarType, createProgressBar, deleteProgressBar, updateProgressBar } from "../progressBar";
 import { convertMessageTextToMarkdown, escapeRegExp } from "./convertToMarkdown";
-import * as GramJs from "../GramJs/client";
+import * as Client from "../../user/client";
+import { enqueue } from "src/utils/queues";
 
 // Delete a message or send a confirmation reply based on settings and message age
 export async function finalizeMessageProcessing(plugin: TelegramSyncPlugin, msg: TelegramBot.Message, error?: Error) {
-	if (error) await displayAndLogError(plugin, error, msg, _5sec);
+	if (error) await displayAndLogError(plugin, error, "", "", msg, _5sec);
 	if (error || !plugin.bot) {
 		return;
 	}
@@ -23,31 +34,22 @@ export async function finalizeMessageProcessing(plugin: TelegramSyncPlugin, msg:
 
 	if (plugin.settings.deleteMessagesFromTelegram && hoursDifference <= 48) {
 		// Send the initial progress bar
-		const progressBarMessage = await createProgressBar(plugin.bot, msg, ProgressBarType.deleting);
-
-		// Update the progress bar during the delay
-		let stage = 0;
-		for (let i = 1; i <= 10; i++) {
-			await new Promise((resolve) => setTimeout(resolve, 50)); // 50 ms delay between updates
-			stage = await updateProgressBar(plugin.bot, msg, progressBarMessage, 10, i, stage);
-		}
-
 		await plugin.bot?.deleteMessage(msg.chat.id, msg.message_id);
-		await deleteProgressBar(plugin.bot, msg, progressBarMessage);
 	} else {
 		let needReply = true;
 		let errorMessage = "";
 		try {
-			if (plugin.userConnected && plugin.botUser) {
-				await GramJs.syncSendReaction(plugin.botUser, msg);
+			if (plugin.settings.telegramSessionType == "user" && plugin.botUser) {
+				await enqueue(Client.sendReaction, plugin.botUser, msg, "👍");
 				needReply = false;
 			}
 		} catch (e) {
-			errorMessage = `\n\nCan't "like" the message, because ${e}`;
+			errorMessage = `\n\nCan't "like" the message, ${e}`;
 		}
 		if (needReply) {
 			await plugin.bot?.sendMessage(msg.chat.id, "...✅..." + errorMessage, {
 				reply_to_message_id: msg.message_id,
+				disable_notification: true,
 			});
 		}
 	}
@@ -106,8 +108,8 @@ export async function applyNoteContentTemplate(
 	}
 
 	let voiceTranscript = "";
-	if (templateContent.includes("{{voiceTranscript")) {
-		voiceTranscript = await GramJs.transcribeAudio(msg, await plugin.getBotUser(msg));
+	if (templateContent.includes("{{voiceTranscript") && plugin.bot) {
+		voiceTranscript = await Client.transcribeAudio(plugin.bot, msg, await plugin.getBotUser(msg));
 	}
 
 	const messageDateTime = new Date(msg.date * 1000);
@@ -128,9 +130,9 @@ export async function applyNoteContentTemplate(
 			lines[i] = pasteText(plugin, "voiceTranscript", line, voiceTranscript, voiceTranscript);
 		}
 	}
-	let proccessedContent = lines.join("\n");
+	let processedContent = lines.join("\n");
 
-	proccessedContent = proccessedContent
+	processedContent = processedContent
 		.replace(/{{file}}/g, fileLink || "")
 		.replace(/{{file:link}}/g, fileLink?.startsWith("!") ? fileLink.slice(1) : fileLink || "")
 		.replace(/{{messageDate:(.*?)}}/g, (_, format) => formatDateTime(messageDateTime, format))
@@ -138,19 +140,18 @@ export async function applyNoteContentTemplate(
 		.replace(/{{date:(.*?)}}/g, (_, format) => formatDateTime(dateTimeNow, format))
 		.replace(/{{time:(.*?)}}/g, (_, format) => formatDateTime(dateTimeNow, format))
 		.replace(/{{forwardFrom}}/g, forwardFromLink)
+		.replace(/{{forwardFrom:name}}/g, getForwardFromName(msg)) // name of forwarded message creator
 		.replace(/{{user}}/g, getUserLink(msg)) // link to the user who sent the message
 		.replace(/{{userId}}/g, msg.from?.id.toString() || msg.message_id.toString()) // id of the user who sent the message
 		.replace(/{{chat}}/g, getChatLink(msg)) // link to the chat with the message
 		.replace(/{{chatId}}/g, msg.chat.id.toString()) // id of the chat with the message
+		.replace(/{{chat:name}}/g, getChatName(msg)) // name of the chat (bot / group / channel)
 		.replace(/{{topic}}/g, await getTopicLink(plugin, msg)) // link to the topic with the message
-		.replace(
-			/{{topicId}}/g,
-			(msg.chat.is_forum && (msg.message_thread_id || msg.reply_to_message?.message_thread_id || 1).toString()) ||
-				""
-		) // head message id representing the topic
+		.replace(/{{topic:name}}/g, (await getTopic(plugin, msg))?.name || "") // link to the topic with the message
+		.replace(/{{topicId}}/g, getTopicId(msg)?.toString() || "") // head message id representing the topic
 		.replace(/{{messageId}}/g, msg.message_id.toString())
 		.replace(/{{replyMessageId}}/g, getReplyMessageId(msg))
-		.replace(/{{url1}}/g, getUrl(msg)) // fisrt url from the message
+		.replace(/{{url1}}/g, getUrl(msg)) // first url from the message
 		.replace(/{{url1:preview(.*?)}}/g, (_, height: string) => {
 			let linkPreview = "";
 			const url1 = getUrl(msg);
@@ -177,9 +178,9 @@ export async function applyNoteContentTemplate(
 	itemsForReplacing.forEach(([replaceThis, replaceWith]) => {
 		const beautyReplaceThis = escapeRegExp(replaceThis).replace(/\\\\n/g, "\\n");
 		const beautyReplaceWith = replaceWith.replace(/\\n/g, "\n");
-		proccessedContent = proccessedContent.replace(new RegExp(beautyReplaceThis, "g"), beautyReplaceWith);
+		processedContent = processedContent.replace(new RegExp(beautyReplaceThis, "g"), beautyReplaceWith);
 	});
-	return proccessedContent;
+	return processedContent;
 }
 
 // Copy tab and blockquotes to every new line of {{content*}} or {{voiceTranscript*}} if they are placed in front of this variables.

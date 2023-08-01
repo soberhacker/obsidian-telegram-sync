@@ -1,6 +1,6 @@
 import TelegramBot from "node-telegram-bot-api";
 import { Api, TelegramClient } from "telegram";
-import { getFileObject } from "../message/getters";
+import { getFileObject } from "../bot/message/getters";
 import { extractMediaId } from "./convertBotFileToMessageMedia";
 import { TotalList } from "telegram/Helpers";
 import { _1h, _1sec, _2h, _2sec } from "src/utils/logUtils";
@@ -11,7 +11,7 @@ interface MessageCouple {
 	date: number;
 	creationTime: Date;
 	botMsgId: number;
-	clientMsg: Api.Message;
+	userMsg: Api.Message;
 }
 
 interface MessagesRequests {
@@ -22,10 +22,10 @@ interface MessagesRequests {
 }
 
 interface UserCouple {
-	clientUserId: number;
+	userId: number;
 	botUserId: number;
 	botChatId: number;
-	clientChat: Api.TypeInputPeer;
+	userChat: Api.TypeInputPeer;
 }
 
 let cachedMessageCouples: MessageCouple[] = [];
@@ -45,20 +45,14 @@ setInterval(() => {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function getMediaId(media: any): bigint | undefined {
 	if (!media) return undefined;
-	try {
-		return media.document.id;
-	} catch {
-		try {
-			return media.photo.id;
-		} catch {
-			return undefined;
-		}
-	}
+	if (media.document && media.document.id) return media.document.id;
+	if (media.photo && media.photo.id) return media.photo.id;
+	return undefined;
 }
 
 export async function getInputPeer(
 	client: TelegramClient,
-	clientUser: Api.User,
+	user: Api.User,
 	botUser: TelegramBot.User,
 	botMsg: TelegramBot.Message,
 	limit = 10
@@ -67,18 +61,18 @@ export async function getInputPeer(
 		(usrCouple) =>
 			usrCouple.botChatId == botMsg.chat.id &&
 			usrCouple.botUserId == botUser.id &&
-			usrCouple.clientUserId == clientUser.id.toJSNumber()
+			usrCouple.userId == user.id.toJSNumber()
 	);
-	if (userCouple) return userCouple.clientChat;
+	if (userCouple) return userCouple.userChat;
 
-	const chatId = botMsg.chat.id == clientUser.id.toJSNumber() ? botUser.id : botMsg.chat.id;
+	const chatId = botMsg.chat.id == user.id.toJSNumber() ? botUser.id : botMsg.chat.id;
 	const dialogs = await client.getDialogs({ limit });
 	const dialog = dialogs.find((d) => d.id?.toJSNumber() == chatId);
-	if (!dialog && limit <= 20) return await getInputPeer(client, clientUser, botUser, botMsg, limit + 10);
+	if (!dialog && limit <= 20) return await getInputPeer(client, user, botUser, botMsg, limit + 10);
 	else if (!dialog || !dialog.inputEntity) {
 		console.log(dialogs);
 		throw new Error(
-			`User ${clientUser.username || clientUser.firstName || clientUser.id} does not have chat with ${
+			`User ${user.username || user.firstName || user.id} does not have chat with ${
 				botMsg.chat.username || botMsg.chat.title || botMsg.chat.first_name || botMsg.chat.id
 			} `
 		);
@@ -86,8 +80,8 @@ export async function getInputPeer(
 	userCouple = {
 		botChatId: botMsg.chat.id,
 		botUserId: botUser.id,
-		clientUserId: clientUser.id.toJSNumber(),
-		clientChat: dialog.inputEntity,
+		userId: user.id.toJSNumber(),
+		userChat: dialog.inputEntity,
 	};
 	cachedUserCouples.push(userCouple);
 	return dialog.inputEntity;
@@ -101,7 +95,7 @@ export async function getMessage(
 	limit = 50
 ): Promise<Api.Message> {
 	let messageCouple = cachedMessageCouples.find((msgCouple) => msgCouple.botMsgId == botMsg.message_id);
-	if (messageCouple?.clientMsg) return messageCouple.clientMsg;
+	if (messageCouple?.userMsg) return messageCouple.userMsg;
 
 	const messagesRequests = cachedMessagesRequests.filter(
 		(rq) =>
@@ -126,28 +120,24 @@ export async function getMessage(
 		mediaId = extractMediaId(fileObjectToUse.file_id);
 	}
 	const skipMsgIds = cachedMessageCouples
-		.filter(
-			(msgCouple) =>
-				(msgCouple.date == botMsg.date || msgCouple.date + 1 == botMsg.date) &&
-				msgCouple.botMsgId != botMsg.message_id
-		)
-		.map((msgCouple) => msgCouple.clientMsg && msgCouple.clientMsg.id);
+		.filter((msgCouple) => Math.abs(botMsg.date - msgCouple.date) <= 1 && msgCouple.botMsgId != botMsg.message_id)
+		.map((msgCouple) => msgCouple.userMsg && msgCouple.userMsg.id);
 
 	const messages = messagesRequests.map((rq) => rq.messages).reduce((accumulator, msgs) => accumulator.concat(msgs));
 	const unprocessedMessages = messages.filter((msg) => !skipMsgIds.contains(msg.id));
-	const clientMsg = unprocessedMessages.find(
-		(m) =>
-			(m.date == botMsg.date || m.date + 1 /*different rounding for some reason*/ == botMsg.date) &&
-			(m.message || "") == (botMsg.text || botMsg.caption || "") &&
-			((mediaId && m.media && mediaId == getMediaId(m.media)?.toString()) || !(mediaId && m.media))
-	);
-	if (!clientMsg && limit < 200 && messages.length > 0 && botMsg.date >= (messages.last()?.date || botMsg.date + 1))
+	// add dateOffset, because different date rounding between bot api and user api for unknown reason
+	const userMsg =
+		findUserMsg(unprocessedMessages, botMsg, 0, mediaId) ||
+		findUserMsg(unprocessedMessages, botMsg, 1, mediaId) ||
+		findUserMsg(unprocessedMessages, botMsg, -1, mediaId);
+
+	if (!userMsg && limit < 200 && messages.length > 0 && botMsg.date + 1 >= (messages.last()?.date || botMsg.date + 1))
 		return await getMessage(client, inputPeer, botMsg, mediaId, limit + 150);
-	else if (!clientMsg) {
-		console.log(`${cantFindTheMessage}\n\n botMsg=\n${botMsg}\n\nmessagesRequest=\n${messagesRequests}`);
+
+	if (!userMsg) {
 		throw new Error(cantFindTheMessage);
 	}
-	if (cachedMessageCouples.find((mc) => mc.clientMsg.id == clientMsg.id)) {
+	if (cachedMessageCouples.find((mc) => mc.userMsg.id == userMsg.id)) {
 		throw new Error(
 			"Because there may be several identical messages, it is not possible to pinpoint which message is needed."
 		);
@@ -156,8 +146,28 @@ export async function getMessage(
 		date: botMsg.date,
 		creationTime: new Date(),
 		botMsgId: botMsg.message_id,
-		clientMsg: clientMsg,
+		userMsg: userMsg,
 	};
 	cachedMessageCouples.push(messageCouple);
-	return clientMsg;
+	return userMsg;
+}
+
+function findUserMsg(
+	messages: Api.Message[],
+	botMsg: TelegramBot.Message,
+	dateOffset = 0,
+	mediaId?: string
+): Api.Message | undefined {
+	return messages.find((m) => {
+		const equalDates = m.date + dateOffset == botMsg.date;
+		if (!equalDates) return false;
+		//if msg was edited then it's enough only equal dates
+		if (m.editDate) return true;
+		const equalTexts = (m.message || "") == (botMsg.text || botMsg.caption || "");
+		if (!equalTexts) return false;
+		const equalGroup = (m.groupedId?.toJSNumber() || 0) == (botMsg.media_group_id || 0);
+		if (!equalGroup) return false;
+		const equalMedia = !(mediaId && m.media) || mediaId == getMediaId(m.media)?.toString();
+		return equalMedia;
+	});
 }

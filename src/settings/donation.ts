@@ -17,6 +17,17 @@ export const kofiLink = "https://ko-fi.com/soberhacker";
 export const kofiImgLink = "https://storage.ko-fi.com/cdn/brandasset/logo_white_stroke.png?";
 export const kofiButton = createDonationButton(kofiLink, kofiImgLink, 47, 145);
 
+export const inlineKeyboard = [
+	[
+		{ text: "⚡  Boosty", url: boostyLink },
+		{ text: "☕  Buy me a coffee", url: buyMeACoffeeLink },
+	],
+	[
+		{ text: "💰  Ko-fi Donation", url: kofiLink },
+		{ text: "💳  PayPal Donation", url: paypalLink },
+	],
+];
+
 function createDonationButton(link: string, imgLink: string, height?: number, width?: number): HTMLElement {
 	const a = createEl("a");
 	a.setAttribute("href", link);
