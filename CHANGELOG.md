@@ -1,6 +1,27 @@
 # Changelog
 
 
+## [1.9.0](https://github.com/soberhacker/obsidian-telegram-sync/compare/1.8.1...1.9.0) (2023-08-01)
+
+
+### Features
+
+* add {{chat:name}} and {{forwardFrom:name}} ([522cc7b](https://github.com/soberhacker/obsidian-telegram-sync/commit/522cc7b24c0d51b3e727e876baee64b957735be8))
+* add {{topic:name}} variable ([53d0b45](https://github.com/soberhacker/obsidian-telegram-sync/commit/53d0b458493c2d7103ad1a0bebfb7a5a8385733d))
+* add progress bar for transcribing process ([506fad8](https://github.com/soberhacker/obsidian-telegram-sync/commit/506fad83aab64e33b80e725dbfb0dedd4689ad93))
+* hide repeating notifications ([04bf1a1](https://github.com/soberhacker/obsidian-telegram-sync/commit/04bf1a171316a033169de468a36d05e51b85ba2a))
+* no progress bar when downloading file &lt; 3MB ([6e2a3bd](https://github.com/soberhacker/obsidian-telegram-sync/commit/6e2a3bdd12deb388101f8132de1bf572d44624f1))
+* restarting user connection ([0392b5f](https://github.com/soberhacker/obsidian-telegram-sync/commit/0392b5ffa0a013492a4b78d51a85faee44f39c47))
+
+
+### Bug Fixes
+
+* error when handling media group ([09b3bf1](https://github.com/soberhacker/obsidian-telegram-sync/commit/09b3bf116428b1522676dc27872b504a1086d7be))
+* handling system messages ([dafb0d6](https://github.com/soberhacker/obsidian-telegram-sync/commit/dafb0d6552eefdc698ae1b9ab108ed6922ca0ce1))
+* occurrence Telegram flood protection ([33d3db2](https://github.com/soberhacker/obsidian-telegram-sync/commit/33d3db24f6ea550aaed70b4d343f609209c24542))
+* unexpected connection loss after awakening ([05d4ad0](https://github.com/soberhacker/obsidian-telegram-sync/commit/05d4ad0a963457976c4dc8e913e9961d99793aab))
+* unnecessary "undefined" in chat link ([738a68f](https://github.com/soberhacker/obsidian-telegram-sync/commit/738a68f0661936062831d1e6e5a9f7cf57d30728))
+
 ## [1.8.1](https://github.com/soberhacker/obsidian-telegram-sync/compare/1.8.0...1.8.1) (2023-07-15)
 
 
