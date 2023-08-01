@@ -43,7 +43,7 @@ export default class TelegramSyncPlugin extends Plugin {
 		}
 	}
 
-	restartTelegram = async (sessionType?: Client.SessionType) => {
+	async restartTelegram(sessionType?: Client.SessionType) {
 		let needRestartInterval = false;
 		try {
 			if (
@@ -83,7 +83,7 @@ export default class TelegramSyncPlugin extends Plugin {
 				this.restartingIntervalTime
 			);
 		}
-	};
+	}
 
 	// Load the plugin, settings, and initialize the bot
 	async onload() {

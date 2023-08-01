@@ -283,7 +283,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 	addSaveFilesCheckbox() {
 		new Setting(this.containerEl)
 			.setName("Save files")
-			.setDesc("Files will be downloaded and saved in your vault.")
+			.setDesc("Files will be downloaded and saved in your vault")
 			.addToggle((cb) => {
 				cb.setValue(this.plugin.settings.needToSaveFiles).onChange(async (value) => {
 					this.plugin.settings.needToSaveFiles = value;

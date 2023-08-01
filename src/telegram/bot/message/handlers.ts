@@ -131,14 +131,22 @@ export async function handleFiles(plugin: TelegramSyncPlugin, msg: TelegramBot.M
 			// show progress bar only if file size > 3MB
 			const progressBarMessage =
 				totalBytes > _3MB ? await createProgressBar(plugin.bot, msg, ProgressBarType.downloading) : undefined;
-
-			for await (const chunk of fileStream) {
-				fileChunks.push(new Uint8Array(chunk));
-				receivedBytes += chunk.length;
-				stage = await updateProgressBar(plugin.bot, msg, progressBarMessage, totalBytes, receivedBytes, stage);
+			try {
+				for await (const chunk of fileStream) {
+					fileChunks.push(new Uint8Array(chunk));
+					receivedBytes += chunk.length;
+					stage = await updateProgressBar(
+						plugin.bot,
+						msg,
+						progressBarMessage,
+						totalBytes,
+						receivedBytes,
+						stage
+					);
+				}
+			} finally {
+				await deleteProgressBar(plugin.bot, msg, progressBarMessage);
 			}
-
-			await deleteProgressBar(plugin.bot, msg, progressBarMessage);
 
 			fileByteArray = new Uint8Array(
 				fileChunks.reduce<number[]>((acc, val) => {

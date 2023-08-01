@@ -30,6 +30,7 @@ export async function enqueue<C, A extends unknown[], R>(
 	const args = rest;
 
 	const queueKey = fn.name;
+	if (!queueKey) throw new Error("Function should have a name");
 
 	queues.set(
 		queueKey,

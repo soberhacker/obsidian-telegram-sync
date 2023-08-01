@@ -243,6 +243,7 @@ export async function sendReaction(botUser: TelegramBot.User, botMsg: TelegramBo
 }
 
 export async function transcribeAudio(
+	bot: TelegramBot,
 	botMsg: TelegramBot.Message,
 	botUser?: TelegramBot.User,
 	mediaId?: string,
@@ -259,25 +260,34 @@ export async function transcribeAudio(
 	const { checkedClient, checkedUser } = await checkUserService();
 	if (!checkedUser.premium) {
 		throw new Error(
-			"Transcribing voices available only for Telegram Premium subscribers! Remove {{voiceTranscript}} from current template or log in with a premium user."
+			"Transcribing voices available only for Telegram Premium subscribers! Remove {{voiceTranscript}} from current template or login with a premium user."
 		);
 	}
 	if (!botUser) return "";
 	const inputPeer = await getInputPeer(checkedClient, checkedUser, botUser, botMsg);
 	const message = await getMessage(checkedClient, inputPeer, botMsg, mediaId);
 	let transcribedAudio: Api.messages.TranscribedAudio | undefined;
-	// to avoid endless loop, limited waiting
-	for (let i = 1; i <= limit * 14; i++) {
-		transcribedAudio = await checkedClient.invoke(
-			new Api.messages.TranscribeAudio({
-				peer: inputPeer,
-				msgId: message.id,
-			})
-		);
-		if (transcribedAudio.pending)
-			await new Promise((resolve) => setTimeout(resolve, _5sec)); // 5 sec delay between updates
-		else if (i == limit * 14) throw new Error("Very long audio. Transcribing can't be longer then 15 min lasting.");
-		else break;
+
+	let stage = 0;
+	const progressBarMessage = await createProgressBar(bot, botMsg, ProgressBarType.transcribing);
+	try {
+		// to avoid endless loop, limited waiting
+		for (let i = 1; i <= limit * 14; i++) {
+			transcribedAudio = await checkedClient.invoke(
+				new Api.messages.TranscribeAudio({
+					peer: inputPeer,
+					msgId: message.id,
+				})
+			);
+			stage = await updateProgressBar(bot, botMsg, progressBarMessage, 14, i, stage);
+			if (transcribedAudio.pending)
+				await new Promise((resolve) => setTimeout(resolve, _5sec)); // 5 sec delay between updates
+			else if (i == limit * 14)
+				throw new Error("Very long audio. Transcribing can't be longer then 15 min lasting.");
+			else break;
+		}
+	} finally {
+		await deleteProgressBar(bot, botMsg, progressBarMessage);
 	}
 	if (!transcribedAudio) throw new Error("Can't transcribe the audio");
 	if (!_voiceTranscripts.has(`${botMsg.chat.id}_${botMsg.message_id}`))

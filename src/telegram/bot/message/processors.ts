@@ -108,8 +108,8 @@ export async function applyNoteContentTemplate(
 	}
 
 	let voiceTranscript = "";
-	if (templateContent.includes("{{voiceTranscript")) {
-		voiceTranscript = await Client.transcribeAudio(msg, await plugin.getBotUser(msg));
+	if (templateContent.includes("{{voiceTranscript") && plugin.bot) {
+		voiceTranscript = await Client.transcribeAudio(plugin.bot, msg, await plugin.getBotUser(msg));
 	}
 
 	const messageDateTime = new Date(msg.date * 1000);

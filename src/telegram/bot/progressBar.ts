@@ -5,6 +5,7 @@ export enum ProgressBarType {
 	downloading = "downloading",
 	deleting = "deleting",
 	stored = "stored",
+	transcribing = "transcribing",
 }
 
 export const _3MB = 3 * 1024 * 1024;
