@@ -25,7 +25,6 @@ export async function connect(plugin: TelegramSyncPlugin) {
 		handlePollingError(plugin, error);
 	});
 
-	// TODO handling channel posts
 	bot.on("channel_post", async (msg) => {
 		await handleMessageOrPost(plugin, msg, "post");
 	});

@@ -89,7 +89,7 @@ export default class TelegramSyncPlugin extends Plugin {
 	async onload() {
 		console.log(`Loading ${this.manifest.name} plugin`);
 		await this.loadSettings();
-		// TODO Remove allowedChatFromUsernames in 2024, because it is deprecated
+		// TODO in 2024: Remove allowedChatFromUsernames, because it is deprecated
 		if (this.settings.allowedChatFromUsernames.length != 0) {
 			this.settings.allowedChats = [...this.settings.allowedChatFromUsernames];
 			this.settings.allowedChatFromUsernames = [];

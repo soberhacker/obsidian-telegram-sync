@@ -4,7 +4,7 @@ import { StatusMessages, displayAndLogError } from "src/utils/logUtils";
 import * as release from "release-notes.mjs";
 
 export async function connect(plugin: TelegramSyncPlugin, sessionType: client.SessionType, sessionId?: number) {
-	// TODO remove this condition in 2024
+	// TODO in 2024: remove this condition
 	// Api keys were changed so needed some adaptation
 	if (
 		sessionType == "user" &&
