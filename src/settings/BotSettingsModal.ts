@@ -14,7 +14,7 @@ export class BotSettingsModal extends Modal {
 		this.botSettingsDiv = this.contentEl.createDiv();
 		this.botSettingsDiv.createEl("h4", { text: "Bot settings" });
 		this.addBotToken();
-		this.addAllowedChatFromUsernamesSetting();
+		this.addAllowedChatsSetting();
 		this.addDeviceId();
 		this.addFooterButtons();
 	}
@@ -37,14 +37,16 @@ export class BotSettingsModal extends Modal {
 			});
 	}
 
-	addAllowedChatFromUsernamesSetting() {
-		const allowedChatFromUsernamesSetting = new Setting(this.botSettingsDiv)
-			.setName("Allowed chat from usernames (required)")
-			.setDesc("Only messages from these usernames will be processed. At least your username must be entered.")
+	addAllowedChatsSetting() {
+		const allowedChatsSetting = new Setting(this.botSettingsDiv)
+			.setName("Allowed chats (required)")
+			.setDesc(
+				"Enter list of usernames or chat ids that should be processed. At least your username must be entered."
+			)
 			.addTextArea((text) => {
 				const textArea = text
-					.setPlaceholder("example: soberhacker,username")
-					.setValue(this.plugin.settings.allowedChatFromUsernames.join(", "))
+					.setPlaceholder("example: soberhacker,1227636")
+					.setValue(this.plugin.settings.allowedChats.join(", "))
 					.onChange(async (value: string) => {
 						value = value.replace(/\s/g, "");
 						if (!value) {
@@ -52,7 +54,7 @@ export class BotSettingsModal extends Modal {
 							textArea.inputEl.style.borderWidth = "2px";
 							textArea.inputEl.style.borderStyle = "solid";
 						}
-						this.plugin.settings.allowedChatFromUsernames = value.split(",");
+						this.plugin.settings.allowedChats = value.split(",");
 					});
 			});
 		// add link to Telegram FAQ about getting username
@@ -62,7 +64,7 @@ export class BotSettingsModal extends Modal {
 			href: "https://telegram.org/faq?setln=en#q-what-are-usernames-how-do-i-get-one",
 			text: "Telegram FAQ",
 		});
-		allowedChatFromUsernamesSetting.descEl.appendChild(howDoIGetUsername);
+		allowedChatsSetting.descEl.appendChild(howDoIGetUsername);
 	}
 
 	addDeviceId() {

@@ -28,7 +28,8 @@ export interface TelegramSyncSettings {
 	deleteMessagesFromTelegram: boolean;
 	needToSaveFiles: boolean;
 	newFilesLocation: string;
-	allowedChatFromUsernames: string[];
+	allowedChatFromUsernames: string[]; // deprecated, use allowedChats
+	allowedChats: string[];
 	mainDeviceId: string;
 	pluginVersion: string;
 	telegramSessionType: Client.SessionType;
@@ -44,7 +45,8 @@ export const DEFAULT_SETTINGS: TelegramSyncSettings = {
 	deleteMessagesFromTelegram: false,
 	needToSaveFiles: true,
 	newFilesLocation: "",
-	allowedChatFromUsernames: [""],
+	allowedChatFromUsernames: [""], // deprecated, use allowedChats
+	allowedChats: [""],
 	mainDeviceId: "",
 	pluginVersion: "",
 	telegramSessionType: "bot",
@@ -109,6 +111,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 				const botSettingsModal = new BotSettingsModal(this.plugin);
 				botSettingsModal.onClose = async () => {
 					if (botSettingsModal.saved) {
+						await this.plugin.saveSettings();
 						// Initialize the bot with the new token
 						this.plugin.checkingBotConnection = true;
 						try {

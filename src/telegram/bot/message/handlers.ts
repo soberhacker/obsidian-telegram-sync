@@ -12,6 +12,69 @@ import { ProgressBarType, _3MB, createProgressBar, deleteProgressBar, updateProg
 import { getFileObject } from "./getters";
 import { TFile } from "obsidian";
 import { enqueue } from "src/utils/queues";
+import { _15sec, displayAndLog, displayAndLogError } from "src/utils/logUtils";
+
+export async function handleMessageOrPost(
+	plugin: TelegramSyncPlugin,
+	msg: TelegramBot.Message,
+	msgType: "post" | "message"
+) {
+	if (!plugin.botConnected) {
+		plugin.botConnected = true;
+		plugin.lastPollingErrors = [];
+	}
+
+	// if user disconnected and should be connected then reconnect it
+	if (!plugin.userConnected) await enqueue(plugin, plugin.restartTelegram, "user");
+
+	const { fileObject, fileType } = getFileObject(msg);
+	// skip system messages
+
+	if (!msg.text && !fileType) {
+		displayAndLog(plugin, `Got a system message from Telegram Bot`, 0);
+		return;
+	}
+	let fileInfo = "binary";
+	if (fileType && fileObject)
+		fileInfo = `${fileType} ${
+			fileObject instanceof Array ? fileObject[0]?.file_unique_id : fileObject.file_unique_id
+		}`;
+
+	displayAndLog(plugin, `Got a message from Telegram Bot: ${msg.text || fileInfo}`, 0);
+
+	// Skip processing if the message is a "/start" command
+	// https://github.com/soberhacker/obsidian-telegram-sync/issues/109
+	if (msg.text === "/start") {
+		return;
+	}
+
+	// Store topic name if "/topicName " command
+	if (msg.text?.includes("/topicName")) {
+		await plugin.settingsTab.storeTopicName(msg);
+		return;
+	}
+
+	// Check if message has been sended by allowed users or chats
+	const telegramUserName = msg.from?.username ?? "";
+	const allowedChats = plugin.settings.allowedChats;
+
+	if (!allowedChats.includes(telegramUserName) && !allowedChats.includes(msg.chat.id.toString())) {
+		const telegramUserNameFull = telegramUserName ? `your username "${telegramUserName}" or` : "";
+		plugin.bot?.sendMessage(
+			msg.chat.id,
+			`Access denied. Add ${telegramUserNameFull} this chat id "${msg.chat.id}" in the plugin setting "Allowed Chats".`,
+			{ reply_to_message_id: msg.message_id }
+		);
+		return;
+	}
+
+	try {
+		await handleMessage(plugin, msg);
+		msgType == "message" && (await enqueue(ifNewReleaseThenShowChanges, plugin, msg));
+	} catch (error) {
+		await displayAndLogError(plugin, error, "", "", msg, _15sec);
+	}
+}
 
 // handle all messages from Telegram
 export async function handleMessage(plugin: TelegramSyncPlugin, msg: TelegramBot.Message) {
@@ -39,19 +102,6 @@ export async function handleMessage(plugin: TelegramSyncPlugin, msg: TelegramBot
 
 	if (!msg.text && plugin.settings.needToSaveFiles) {
 		await handleFiles(plugin, msg);
-		return;
-	}
-
-	// Check if message has been sended by allowed usernames
-	const telegramUserName = msg.from?.username ?? "";
-	const allowedChatFromUsernames = plugin.settings.allowedChatFromUsernames;
-
-	if (!telegramUserName || !allowedChatFromUsernames.includes(telegramUserName)) {
-		plugin.bot?.sendMessage(
-			msg.chat.id,
-			`Access denied. Add your username ${telegramUserName} in the plugin setting "Allowed Chat From Usernames".`,
-			{ reply_to_message_id: msg.message_id }
-		);
 		return;
 	}
 

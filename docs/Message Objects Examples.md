@@ -144,7 +144,7 @@
         "is_bot": false,
         "first_name": "soberhacker",
         "username": "soberhacker",
-        "language_code": "ru"
+        "language_code": "en"
     },
     "chat": {
         "id": -955999997,
@@ -154,5 +154,23 @@
     },
     "date": 1689804496,
     "group_chat_created": true
+}
+```
+###### example 4 Channel Post 
+```json
+{
+    "message_id": 10,
+    "sender_chat": {
+        "id": -1001909715512,
+        "title": "Telegram Sync Test Channel",
+        "type": "channel"
+    },
+    "chat": {
+        "id": -1001909715512,
+        "title": "Telegram Sync Test Channel",
+        "type": "channel"
+    },
+    "date": 1691018159,
+    "text": "ку"
 }
 ```

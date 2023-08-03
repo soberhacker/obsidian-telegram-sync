@@ -1,10 +1,8 @@
 import TelegramBot from "node-telegram-bot-api";
 import TelegramSyncPlugin from "src/main";
-import { _15sec, _1sec, displayAndLog, displayAndLogError, StatusMessages, _5sec } from "src/utils/logUtils";
-import { handleMessage, ifNewReleaseThenShowChanges } from "./message/handlers";
+import { _1sec, displayAndLog, displayAndLogError, StatusMessages, _5sec } from "src/utils/logUtils";
+import { handleMessageOrPost } from "./message/handlers";
 import { reconnect } from "../user/user";
-import { getFileObject } from "./message/getters";
-import { enqueue } from "src/utils/queues";
 
 // Initialize the Telegram bot and set up message handling
 export async function connect(plugin: TelegramSyncPlugin) {
@@ -27,48 +25,13 @@ export async function connect(plugin: TelegramSyncPlugin) {
 		handlePollingError(plugin, error);
 	});
 
+	// TODO handling channel posts
+	bot.on("channel_post", async (msg) => {
+		await handleMessageOrPost(plugin, msg, "post");
+	});
+
 	bot.on("message", async (msg) => {
-		if (!plugin.botConnected) {
-			plugin.botConnected = true;
-			plugin.lastPollingErrors = [];
-		}
-
-		// if user disconnected and should be connected then reconnect it
-		if (!plugin.userConnected) await enqueue(plugin, plugin.restartTelegram, "user");
-
-		const { fileObject, fileType } = getFileObject(msg);
-		// skip system messages
-
-		if (!msg.text && !fileType) {
-			displayAndLog(plugin, `Got a system message from Telegram Bot`, 0);
-			return;
-		}
-		let fileInfo = "binary";
-		if (fileType && fileObject)
-			fileInfo = `${fileType} ${
-				fileObject instanceof Array ? fileObject[0]?.file_unique_id : fileObject.file_unique_id
-			}`;
-
-		displayAndLog(plugin, `Got a message from Telegram Bot: ${msg.text || fileInfo}`, 0);
-
-		// Skip processing if the message is a "/start" command
-		// https://github.com/soberhacker/obsidian-telegram-sync/issues/109
-		if (msg.text === "/start") {
-			return;
-		}
-
-		// Store topic name if "/topicName " command
-		if (msg.text?.includes("/topicName")) {
-			await plugin.settingsTab.storeTopicName(msg);
-			return;
-		}
-
-		try {
-			await handleMessage(plugin, msg);
-			await enqueue(ifNewReleaseThenShowChanges, plugin, msg);
-		} catch (error) {
-			await displayAndLogError(plugin, error, "", "", msg, _15sec);
-		}
+		await handleMessageOrPost(plugin, msg, "message");
 	});
 
 	try {
