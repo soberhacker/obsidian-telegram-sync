@@ -196,15 +196,51 @@ function addLeadingForEveryLine(text: string, leadingChars?: string): string {
 function processText(text: string, leadingChars?: string, property?: string): string {
 	let finalText = "";
 	const lowerCaseProperty = (property && property.toLowerCase()) || "text";
+
 	if (lowerCaseProperty == "text") finalText = text;
-	if (lowerCaseProperty == "firstline") finalText = text.split("\n")[0];
-	if (lowerCaseProperty == "nofirstline") {
-		let lines = text.split("\n");
-		lines = lines.slice(1);
-		finalText = lines.join("\n");
-	}
+	// TODO in 2024: remove deprecated code
+	// deprecated
+	else if (lowerCaseProperty == "firstline") finalText = text.split("\n")[0];
+	// deprecated
+	else if (lowerCaseProperty == "nofirstline") finalText = text.split("\n").slice(1).join("\n");
 	// if property is length
-	if (Number.isInteger(parseFloat(lowerCaseProperty))) finalText = text.substring(0, Number(property));
+	else if (Number.isInteger(parseFloat(lowerCaseProperty))) finalText = text.substring(0, Number(property));
+
+	if (finalText) return addLeadingForEveryLine(finalText, leadingChars);
+
+	// if property is range
+	const rangePattern = /^\[\d+-\d+\]$/;
+	const singleLinePattern = /^\[\d+\]$/;
+	const lastLinePattern = /^\[-\d+\]$/;
+	const fromLineToEndPattern = /^\[\d+-\]$/;
+
+	let lines = text.split("\n");
+	let startLine = 0;
+	let endLine = lines.length;
+
+	if (rangePattern.test(lowerCaseProperty)) {
+		const range = lowerCaseProperty
+			.substring(1, lowerCaseProperty.length - 1)
+			.split("-")
+			.map(Number);
+		startLine = Math.max(0, range[0] - 1);
+		endLine = Math.min(lines.length, range[1]);
+	} else if (singleLinePattern.test(lowerCaseProperty)) {
+		startLine = Number(lowerCaseProperty.substring(1, lowerCaseProperty.length - 1)) - 1;
+		endLine = startLine + 1;
+	} else if (lastLinePattern.test(lowerCaseProperty)) {
+		startLine = Math.max(
+			0,
+			lines.length - Number(lowerCaseProperty.substring(2, lowerCaseProperty.length - 1)) - 1
+		);
+		endLine = startLine + 1;
+	} else if (fromLineToEndPattern.test(lowerCaseProperty)) {
+		startLine = Number(lowerCaseProperty.substring(1, lowerCaseProperty.length - 2)) - 1;
+		endLine = lines.length;
+	} else lines = [];
+
+	finalText = lines.slice(startLine, endLine).join("\n");
+
 	return addLeadingForEveryLine(finalText, leadingChars);
 }
 
