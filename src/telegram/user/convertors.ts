@@ -109,7 +109,7 @@ export async function getMessage(
 			await new Promise((resolve) => setTimeout(resolve, _2sec));
 		let messages = await client.getMessages(inputPeer, { limit, reverse: true, offsetDate: botMsg.date - 2 });
 		// remove bot messages (fromId != undefined)
-		messages = messages.filter((m) => m.fromId) || [];
+		messages = messages.filter((m) => m.fromId || m.peerId instanceof Api.PeerChannel) || [];
 		messagesRequests.push({ botChatId: botMsg.chat.id, msgDate: botMsg.date, messages, limit });
 		cachedMessagesRequests.push(messagesRequests[0]);
 	}
