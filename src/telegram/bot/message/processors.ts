@@ -12,7 +12,6 @@ import {
 	getUrl,
 	getUserLink,
 } from "./getters";
-import { getTelegramMdPath } from "src/utils/fsUtils";
 import { TFile, normalizePath } from "obsidian";
 import { formatDateTime } from "../../../utils/dateUtils";
 import { _15sec, _1h, _5sec, displayAndLog, displayAndLogError } from "src/utils/logUtils";
@@ -53,29 +52,6 @@ export async function finalizeMessageProcessing(plugin: TelegramSyncPlugin, msg:
 			});
 		}
 	}
-}
-
-export async function appendMessageToTelegramMd(
-	plugin: TelegramSyncPlugin,
-	msg: TelegramBot.Message,
-	formattedContent: string,
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	error?: Error
-) {
-	// Do not append messages if not connected
-	if (!plugin.botConnected) return;
-
-	const telegramMdPath = getTelegramMdPath(plugin.app.vault, plugin.settings.newNotesLocation);
-	let telegramMdFile = plugin.app.vault.getAbstractFileByPath(telegramMdPath) as TFile;
-
-	// Create or modify the Telegram.md file
-	if (!telegramMdFile) {
-		telegramMdFile = await plugin.app.vault.create(telegramMdPath, `${formattedContent}\n`);
-	} else {
-		const fileContent = await plugin.app.vault.read(telegramMdFile);
-		await plugin.app.vault.modify(telegramMdFile, `${fileContent}\n***\n\n${formattedContent}\n`);
-	}
-	await finalizeMessageProcessing(plugin, msg, error);
 }
 
 // Apply a template to a message's content

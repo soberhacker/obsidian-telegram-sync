@@ -1,18 +1,26 @@
 import TelegramSyncPlugin from "../../../main";
 import TelegramBot from "node-telegram-bot-api";
-import { createFolderIfNotExist, getTelegramMdPath, getUniqueFilePath } from "src/utils/fsUtils";
+import { appendContentToNote, createFolderIfNotExist, getTelegramMdPath, getUniqueFilePath } from "src/utils/fsUtils";
 import * as release from "../../../../release-notes.mjs";
 import { inlineKeyboard as donationInlineKeyboard } from "../../../settings/donation";
 import { SendMessageOptions } from "node-telegram-bot-api";
 import path from "path";
 import * as Client from "../../user/client";
 import { extension } from "mime-types";
-import { appendMessageToTelegramMd, applyNoteContentTemplate, finalizeMessageProcessing } from "./processors";
+import { applyNoteContentTemplate, finalizeMessageProcessing } from "./processors";
 import { ProgressBarType, _3MB, createProgressBar, deleteProgressBar, updateProgressBar } from "../progressBar";
 import { getFileObject } from "./getters";
 import { TFile } from "obsidian";
 import { enqueue } from "src/utils/queues";
 import { _15sec, displayAndLog, displayAndLogError } from "src/utils/logUtils";
+
+// interface MediaGroup {
+// 	id: number;
+// 	notePath: string;
+// 	fileLinks: string[];
+// }
+
+//const mediaGroups: MediaGroup[] = [];
 
 export async function handleMessageOrPost(
 	plugin: TelegramSyncPlugin,
@@ -110,19 +118,20 @@ export async function handleMessage(plugin: TelegramSyncPlugin, msg: TelegramBot
 	const appendAllToTelegramMd = plugin.settings.appendAllToTelegramMd;
 
 	if (appendAllToTelegramMd) {
-		await enqueue(appendMessageToTelegramMd, plugin, msg, formattedContent);
-		return;
+		const notePath = getTelegramMdPath(plugin.app.vault, plugin.settings.newNotesLocation);
+		await enqueue(appendContentToNote, plugin.app.vault, notePath, formattedContent);
+	} else {
+		const notePath = await getUniqueFilePath(
+			plugin.app.vault,
+			plugin.listOfNotePaths,
+			plugin.settings.newNotesLocation,
+			msg.text || "",
+			"md",
+			msg.date
+		);
+		await appendContentToNote(plugin.app.vault, notePath, formattedContent);
 	}
 
-	const notePath = await getUniqueFilePath(
-		plugin.app.vault,
-		plugin.listOfNotePaths,
-		plugin.settings.newNotesLocation,
-		msg.text || "",
-		"md",
-		msg.date
-	);
-	await plugin.app.vault.create(notePath, formattedContent);
 	await finalizeMessageProcessing(plugin, msg);
 }
 
@@ -239,24 +248,20 @@ export async function handleFiles(plugin: TelegramSyncPlugin, msg: TelegramBot.M
 		error = e;
 	}
 
+	const appendAllToTelegramMd = plugin.settings.appendAllToTelegramMd;
 	// exit if only file is needed
-	if (!plugin.settings.appendAllToTelegramMd && !plugin.settings.templateFileLocation) {
+	if (!appendAllToTelegramMd && !plugin.settings.templateFileLocation) {
 		await finalizeMessageProcessing(plugin, msg, error);
 		return;
 	}
 
-	if (plugin.settings.appendAllToTelegramMd) {
-		const noteContent = await createNoteContent(
-			plugin,
-			filePath,
-			getTelegramMdPath(plugin.app.vault, plugin.settings.newNotesLocation),
-			msg,
-			error
-		);
-		await enqueue(appendMessageToTelegramMd, plugin, msg, noteContent, error);
-		return;
-	} else if (msg.caption || telegramFileName) {
-		// Save caption as a separate note
+	if (appendAllToTelegramMd) {
+		const notePath = getTelegramMdPath(plugin.app.vault, plugin.settings.newNotesLocation);
+		const noteContent = await createNoteContent(plugin, filePath, notePath, msg, error);
+		await enqueue(appendContentToNote, plugin.app.vault, notePath, noteContent);
+	}
+	// Save caption as a separate note
+	else if (msg.caption || telegramFileName) {
 		const notePath = await getUniqueFilePath(
 			plugin.app.vault,
 			plugin.listOfNotePaths,
@@ -265,9 +270,8 @@ export async function handleFiles(plugin: TelegramSyncPlugin, msg: TelegramBot.M
 			"md",
 			msg.date
 		);
-
 		const noteContent = await createNoteContent(plugin, filePath, notePath, msg, error);
-		await plugin.app.vault.create(notePath, noteContent);
+		await appendContentToNote(plugin.app.vault, notePath, noteContent);
 	}
 
 	await finalizeMessageProcessing(plugin, msg, error);

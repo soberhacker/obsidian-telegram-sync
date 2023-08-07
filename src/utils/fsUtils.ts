@@ -68,6 +68,26 @@ export function getTelegramMdPath(vault: Vault, location: string) {
 	return telegramMdPath;
 }
 
+export async function appendContentToNote(
+	vault: Vault,
+	notePath: string,
+	newContent: string,
+	delimiter = "\n\n***\n\n",
+	reversedOrder = false
+) {
+	let noteFile: TFile = vault.getAbstractFileByPath(notePath) as TFile;
+
+	if (!noteFile) {
+		noteFile = await vault.create(notePath, newContent);
+	} else {
+		const currentContent = await vault.read(noteFile);
+		const sortedContent = reversedOrder
+			? newContent + delimiter + currentContent
+			: currentContent + delimiter + newContent;
+		await vault.modify(noteFile, sortedContent);
+	}
+}
+
 export function base64ToString(base64: string): string {
 	return Buffer.from(base64, "base64").toString("utf-8");
 }
