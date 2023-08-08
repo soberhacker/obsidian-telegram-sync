@@ -3,7 +3,7 @@ import { Api, TelegramClient } from "telegram";
 import { getFileObject } from "../bot/message/getters";
 import { extractMediaId } from "./convertBotFileToMessageMedia";
 import { TotalList } from "telegram/Helpers";
-import { _1h, _1sec, _2h, _2sec } from "src/utils/logUtils";
+import { _1h, _1sec, _2h } from "src/utils/logUtils";
 
 const cantFindTheMessage = "Can't find the message for connected user.";
 
@@ -106,7 +106,7 @@ export async function getMessage(
 	if (!messagesRequests.find((rq) => rq.limit == limit)) {
 		// wait 1 sec for history updates in Telegram
 		if (new Date().getTime() - new Date(botMsg.date * 1000).getTime() < _1sec)
-			await new Promise((resolve) => setTimeout(resolve, _2sec));
+			await new Promise((resolve) => setTimeout(resolve, _1sec));
 		let messages = await client.getMessages(inputPeer, { limit, reverse: true, offsetDate: botMsg.date - 2 });
 		// remove bot messages (fromId != undefined)
 		messages = messages.filter((m) => m.fromId || m.peerId instanceof Api.PeerChannel) || [];

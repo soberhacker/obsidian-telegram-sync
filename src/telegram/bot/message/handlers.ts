@@ -1,3 +1,4 @@
+/* eslint-disable no-mixed-spaces-and-tabs */
 import TelegramSyncPlugin from "../../../main";
 import TelegramBot from "node-telegram-bot-api";
 import {
@@ -17,7 +18,7 @@ import { applyNoteContentTemplate, finalizeMessageProcessing } from "./processor
 import { ProgressBarType, _3MB, createProgressBar, deleteProgressBar, updateProgressBar } from "../progressBar";
 import { getFileObject } from "./getters";
 import { TFile } from "obsidian";
-import { enqueue } from "src/utils/queues";
+import { enqueue, enqueueByCondition } from "src/utils/queues";
 import { _15sec, displayAndLog, displayAndLogError } from "src/utils/logUtils";
 
 export interface MediaGroup {
@@ -120,24 +121,19 @@ export async function handleMessage(plugin: TelegramSyncPlugin, msg: TelegramBot
 	}
 
 	formattedContent = await applyNoteContentTemplate(plugin, plugin.settings.templateFileLocation, msg);
-
 	const appendAllToTelegramMd = plugin.settings.appendAllToTelegramMd;
+	const notePath = appendAllToTelegramMd
+		? getTelegramMdPath(plugin.app.vault, plugin.settings.newNotesLocation)
+		: await getUniqueFilePath(
+				plugin.app.vault,
+				plugin.listOfNotePaths,
+				plugin.settings.newNotesLocation,
+				msg.text || "",
+				"md",
+				msg.date
+		  );
 
-	if (appendAllToTelegramMd) {
-		const notePath = getTelegramMdPath(plugin.app.vault, plugin.settings.newNotesLocation);
-		await enqueue(appendContentToNote, plugin.app.vault, notePath, formattedContent);
-	} else {
-		const notePath = await getUniqueFilePath(
-			plugin.app.vault,
-			plugin.listOfNotePaths,
-			plugin.settings.newNotesLocation,
-			msg.text || "",
-			"md",
-			msg.date
-		);
-		await appendContentToNote(plugin.app.vault, notePath, formattedContent);
-	}
-
+	await enqueueByCondition(appendAllToTelegramMd, appendContentToNote, plugin.app.vault, notePath, formattedContent);
 	await finalizeMessageProcessing(plugin, msg);
 }
 
@@ -259,39 +255,53 @@ export async function handleFiles(plugin: TelegramSyncPlugin, msg: TelegramBot.M
 		error = e;
 	}
 
-	const appendAllToTelegramMd = plugin.settings.appendAllToTelegramMd;
 	// exit if only file is needed
-	if (!appendAllToTelegramMd && !plugin.settings.templateFileLocation) {
+	if (!plugin.settings.appendAllToTelegramMd && !plugin.settings.templateFileLocation) {
 		await finalizeMessageProcessing(plugin, msg, error);
 		return;
 	}
 
+	await enqueueByCondition(!!msg.media_group_id, appendFileToNote, plugin, msg, filePath, telegramFileName, error);
+
+	await finalizeMessageProcessing(plugin, msg, error);
+}
+
+async function appendFileToNote(
+	plugin: TelegramSyncPlugin,
+	msg: TelegramBot.Message,
+	filePath: string,
+	fileName: string,
+	error?: Error
+) {
+	const appendAllToTelegramMd = plugin.settings.appendAllToTelegramMd;
 	const mediaGroup = mediaGroups.find((mg) => mg.id == msg.media_group_id);
 	const startLine = mediaGroup && mediaGroup.fileLinks.last();
 	const delimiter = startLine ? "\n" : defaultDelimiter;
 
-	if (appendAllToTelegramMd) {
-		const notePath = getTelegramMdPath(plugin.app.vault, plugin.settings.newNotesLocation);
-		const noteContent = await createNoteContent(plugin, filePath, notePath, msg, error);
-		await enqueue(appendContentToNote, plugin.app.vault, notePath, noteContent, startLine, delimiter);
-	}
-	// Save caption as a separate note
-	else if (msg.caption || telegramFileName) {
-		const notePath =
-			mediaGroup?.notePath ||
-			(await getUniqueFilePath(
+	const notePath = appendAllToTelegramMd
+		? getTelegramMdPath(plugin.app.vault, plugin.settings.newNotesLocation)
+		: // Save caption as a separate note
+		  mediaGroup?.notePath ||
+		  (await getUniqueFilePath(
 				plugin.app.vault,
 				plugin.listOfNotePaths,
 				plugin.settings.newNotesLocation,
-				msg.caption || telegramFileName,
+				msg.caption || fileName,
 				"md",
 				msg.date
-			));
-		const noteContent = await createNoteContent(plugin, filePath, notePath, msg, error);
-		await appendContentToNote(plugin.app.vault, notePath, noteContent, startLine, delimiter);
-	}
+		  ));
 
-	await finalizeMessageProcessing(plugin, msg, error);
+	const noteContent = await createNoteContent(plugin, filePath, notePath, msg, error);
+
+	await enqueueByCondition(
+		appendAllToTelegramMd,
+		appendContentToNote,
+		plugin.app.vault,
+		notePath,
+		noteContent,
+		startLine,
+		delimiter
+	);
 }
 
 // show changes about new release
