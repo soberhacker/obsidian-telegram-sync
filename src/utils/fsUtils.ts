@@ -1,6 +1,8 @@
 import { TFile, TFolder, Vault, normalizePath } from "obsidian";
 import { date2DateString, date2TimeString } from "./dateUtils";
 
+export const defaultDelimiter = "\n\n***\n\n";
+
 // Create a folder path if it does not exist
 export async function createFolderIfNotExist(vault: Vault, folderPath: string) {
 	if (!vault || !folderPath) {
@@ -72,7 +74,8 @@ export async function appendContentToNote(
 	vault: Vault,
 	notePath: string,
 	newContent: string,
-	delimiter = "\n\n***\n\n",
+	startLine = "",
+	delimiter = defaultDelimiter,
 	reversedOrder = false
 ) {
 	let noteFile: TFile = vault.getAbstractFileByPath(notePath) as TFile;
@@ -81,10 +84,12 @@ export async function appendContentToNote(
 		noteFile = await vault.create(notePath, newContent);
 	} else {
 		const currentContent = await vault.read(noteFile);
-		const sortedContent = reversedOrder
+		const content = startLine
+			? currentContent.replace(startLine, startLine + delimiter + newContent)
+			: reversedOrder
 			? newContent + delimiter + currentContent
 			: currentContent + delimiter + newContent;
-		await vault.modify(noteFile, sortedContent);
+		if (currentContent != content) await vault.modify(noteFile, content);
 	}
 }
 

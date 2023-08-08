@@ -1,6 +1,12 @@
 import TelegramSyncPlugin from "../../../main";
 import TelegramBot from "node-telegram-bot-api";
-import { appendContentToNote, createFolderIfNotExist, getTelegramMdPath, getUniqueFilePath } from "src/utils/fsUtils";
+import {
+	appendContentToNote,
+	createFolderIfNotExist,
+	defaultDelimiter,
+	getTelegramMdPath,
+	getUniqueFilePath,
+} from "src/utils/fsUtils";
 import * as release from "../../../../release-notes.mjs";
 import { inlineKeyboard as donationInlineKeyboard } from "../../../settings/donation";
 import { SendMessageOptions } from "node-telegram-bot-api";
@@ -14,13 +20,13 @@ import { TFile } from "obsidian";
 import { enqueue } from "src/utils/queues";
 import { _15sec, displayAndLog, displayAndLogError } from "src/utils/logUtils";
 
-// interface MediaGroup {
-// 	id: number;
-// 	notePath: string;
-// 	fileLinks: string[];
-// }
+export interface MediaGroup {
+	id: string;
+	notePath: string;
+	fileLinks: string[];
+}
 
-//const mediaGroups: MediaGroup[] = [];
+const mediaGroups: MediaGroup[] = [];
 
 export async function handleMessageOrPost(
 	plugin: TelegramSyncPlugin,
@@ -151,7 +157,12 @@ async function createNoteContent(
 		fileLink = `[❌ error while handling file](${error})`;
 	}
 
-	return await applyNoteContentTemplate(plugin, plugin.settings.templateFileLocation, msg, fileLink);
+	const mediaGroup = mediaGroups.find((mg) => mg.id == msg.media_group_id);
+	if (mediaGroup) mediaGroup.fileLinks.push(fileLink);
+	else if (msg.media_group_id) mediaGroups.push({ id: msg.media_group_id, notePath, fileLinks: [fileLink] });
+
+	if (mediaGroup && mediaGroup.fileLinks.length > 1) return fileLink;
+	else return await applyNoteContentTemplate(plugin, plugin.settings.templateFileLocation, msg, fileLink);
 }
 
 // Handle files received in messages
@@ -255,23 +266,29 @@ export async function handleFiles(plugin: TelegramSyncPlugin, msg: TelegramBot.M
 		return;
 	}
 
+	const mediaGroup = mediaGroups.find((mg) => mg.id == msg.media_group_id);
+	const startLine = mediaGroup && mediaGroup.fileLinks.last();
+	const delimiter = startLine ? "\n" : defaultDelimiter;
+
 	if (appendAllToTelegramMd) {
 		const notePath = getTelegramMdPath(plugin.app.vault, plugin.settings.newNotesLocation);
 		const noteContent = await createNoteContent(plugin, filePath, notePath, msg, error);
-		await enqueue(appendContentToNote, plugin.app.vault, notePath, noteContent);
+		await enqueue(appendContentToNote, plugin.app.vault, notePath, noteContent, startLine, delimiter);
 	}
 	// Save caption as a separate note
 	else if (msg.caption || telegramFileName) {
-		const notePath = await getUniqueFilePath(
-			plugin.app.vault,
-			plugin.listOfNotePaths,
-			plugin.settings.newNotesLocation,
-			msg.caption || telegramFileName,
-			"md",
-			msg.date
-		);
+		const notePath =
+			mediaGroup?.notePath ||
+			(await getUniqueFilePath(
+				plugin.app.vault,
+				plugin.listOfNotePaths,
+				plugin.settings.newNotesLocation,
+				msg.caption || telegramFileName,
+				"md",
+				msg.date
+			));
 		const noteContent = await createNoteContent(plugin, filePath, notePath, msg, error);
-		await appendContentToNote(plugin.app.vault, notePath, noteContent);
+		await appendContentToNote(plugin.app.vault, notePath, noteContent, startLine, delimiter);
 	}
 
 	await finalizeMessageProcessing(plugin, msg, error);
