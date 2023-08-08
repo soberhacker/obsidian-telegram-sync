@@ -298,6 +298,11 @@ export async function handleFiles(plugin: TelegramSyncPlugin, msg: TelegramBot.M
 export async function ifNewReleaseThenShowChanges(plugin: TelegramSyncPlugin, msg: TelegramBot.Message) {
 	if (plugin.settings.pluginVersion == release.version) return;
 
+	plugin.settings.pluginVersion = release.version;
+	await plugin.saveSettings();
+
+	if (plugin.userConnected && (await Client.subscribedOnInsiderChannel())) return;
+
 	if (plugin.settings.pluginVersion && release.showNewFeatures) {
 		const options: SendMessageOptions = {
 			parse_mode: "HTML",
@@ -310,7 +315,4 @@ export async function ifNewReleaseThenShowChanges(plugin: TelegramSyncPlugin, ms
 	if (plugin.settings.pluginVersion && release.showBreakingChanges && !plugin.userConnected) {
 		await plugin.bot?.sendMessage(msg.chat.id, release.breakingChanges, { parse_mode: "HTML" });
 	}
-
-	plugin.settings.pluginVersion = release.version;
-	await plugin.saveSettings();
 }

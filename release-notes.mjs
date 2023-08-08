@@ -1,4 +1,4 @@
-export const version = "1.9.0";
+export const version = "1.10.0";
 // TODO add Demo gif and screenshots to readme.md
 // TODO add thanks for last patrons in donation section
 // TODO add notification about new version of Telegram Sync and link to the channel
@@ -9,7 +9,7 @@ export const showNewFeatures = true;
 export let showBreakingChanges = false;
 
 const newFeatures =
-	"This release introduces new template variables {{chat:name}}, {{forwardFrom:name}}, and {{topic:name}}, and also fixes unexpected connection loss along with many other bugs.";
+	"This release introduces a new template variable <code>{{content:[X-Y]}}</code> for retrieving specific lines from a message, along with a few other important features.";
 export const breakingChanges =
 	"⚠️ <b><i>If you were connected as a user, due to API changes, the user has been disconnected and needs to be reconnected! Apologies</i></b> ⚠️";
 

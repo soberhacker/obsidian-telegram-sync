@@ -12,6 +12,7 @@ import { formatDateTime } from "src/utils/dateUtils";
 import { LogLevel, Logger } from "telegram/extensions/Logger";
 import { _1min, _5sec } from "src/utils/logUtils";
 import * as config from "./config";
+import bigInt from "big-integer";
 
 export type SessionType = "bot" | "user";
 
@@ -293,4 +294,27 @@ export async function transcribeAudio(
 	if (!_voiceTranscripts.has(`${botMsg.chat.id}_${botMsg.message_id}`))
 		_voiceTranscripts.set(`${botMsg.chat.id}_${botMsg.message_id}`, transcribedAudio.text);
 	return transcribedAudio.text;
+}
+
+export async function subscribedOnInsiderChannel(): Promise<boolean> {
+	if (!client || !client.connected || _sessionType == "bot") return false;
+	try {
+		const { checkedClient } = await checkUserService();
+		const insiderChannel = new Api.InputPeerChannel({
+			channelId: bigInt("1913400014"),
+			accessHash: bigInt("-3471904725986943479"),
+		});
+		const inputDialogPeer = new Api.InputDialogPeer({
+			peer: insiderChannel,
+		});
+		const dialogs = await checkedClient.invoke(
+			new Api.messages.GetPeerDialogs({
+				peers: [inputDialogPeer],
+			})
+		);
+		return dialogs.dialogs.length > 0;
+	} catch (e) {
+		console.log(e);
+		return false;
+	}
 }
