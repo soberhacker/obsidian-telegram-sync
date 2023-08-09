@@ -16,7 +16,7 @@ export async function createFolderIfNotExist(vault: Vault, folderPath: string) {
 
 	if (folder && folder instanceof TFile) {
 		throw new URIError(
-			`Folder "${folderPath}" can't be created because there is a file with the same name. Change the path or rename the file.`
+			`Folder "${folderPath}" can't be created because there is a file with the same name. Change the path or rename the file.`,
 		);
 	}
 
@@ -39,7 +39,7 @@ export async function getUniqueFilePath(
 	locationPath: string,
 	baseForFileName: string,
 	fileExtension: string, // with dot
-	unixTime: number
+	unixTime: number,
 ): Promise<string> {
 	const _fileExtension = fileExtension.startsWith(".") ? fileExtension.slice(1) : fileExtension;
 	await createFolderIfNotExist(vault, locationPath);
@@ -76,7 +76,7 @@ export async function appendContentToNote(
 	newContent: string,
 	startLine = "",
 	delimiter = defaultDelimiter,
-	reversedOrder = false
+	reversedOrder = false,
 ) {
 	let noteFile: TFile = vault.getAbstractFileByPath(notePath) as TFile;
 

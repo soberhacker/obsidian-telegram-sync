@@ -59,7 +59,7 @@ export async function applyNoteContentTemplate(
 	plugin: TelegramSyncPlugin,
 	templatePath: string,
 	msg: TelegramBot.Message,
-	fileLink?: string
+	fileLink?: string,
 ): Promise<string> {
 	let templateContent = "";
 	try {
@@ -207,7 +207,7 @@ function processText(text: string, leadingChars?: string, property?: string): st
 	} else if (lastLinePattern.test(lowerCaseProperty)) {
 		startLine = Math.max(
 			0,
-			lines.length - Number(lowerCaseProperty.substring(2, lowerCaseProperty.length - 1)) - 1
+			lines.length - Number(lowerCaseProperty.substring(2, lowerCaseProperty.length - 1)) - 1,
 		);
 		endLine = startLine + 1;
 	} else if (fromLineToEndPattern.test(lowerCaseProperty)) {
@@ -225,7 +225,7 @@ function pasteText(
 	pasteType: "content" | "voiceTranscript",
 	pasteHere: string,
 	pasteContent: string,
-	pasteText: string
+	pasteText: string,
 ) {
 	const leadingRE = new RegExp(`^([>\\s]+){{${pasteType}}}`);
 	const leadingAndPropertyRE = new RegExp(`^([>\\s]+){{${pasteType}:(.*?)}}`);

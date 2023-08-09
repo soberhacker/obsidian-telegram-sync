@@ -48,7 +48,7 @@ export async function connect(plugin: TelegramSyncPlugin) {
 				plugin,
 				error,
 				StatusMessages.botDisconnected,
-				"Check internet(proxy) connection, the functionality of Telegram using the official app. If everything is ok, restart Obsidian."
+				"Check internet(proxy) connection, the functionality of Telegram using the official app. If everything is ok, restart Obsidian.",
 			);
 	}
 }

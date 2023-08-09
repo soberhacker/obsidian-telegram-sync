@@ -72,7 +72,7 @@ export default class TelegramSyncPlugin extends Plugin {
 				clearInterval(this.restartingIntervalId);
 				this.restartingIntervalId = setInterval(
 					async () => await enqueue(this, this.restartTelegram, sessionType),
-					this.restartingIntervalTime
+					this.restartingIntervalTime,
 				);
 			}
 		} catch {
@@ -80,7 +80,7 @@ export default class TelegramSyncPlugin extends Plugin {
 			clearInterval(this.restartingIntervalId);
 			this.restartingIntervalId = setInterval(
 				async () => await enqueue(this, this.restartTelegram, sessionType),
-				this.restartingIntervalTime
+				this.restartingIntervalTime,
 			);
 		}
 	}
@@ -106,7 +106,7 @@ export default class TelegramSyncPlugin extends Plugin {
 			// restart telegram bot or user if needed
 			this.restartingIntervalId = setInterval(
 				async () => await enqueue(this, this.restartTelegram),
-				this.restartingIntervalTime
+				this.restartingIntervalTime,
 			);
 		});
 	}

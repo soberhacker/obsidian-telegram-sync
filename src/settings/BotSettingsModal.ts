@@ -41,7 +41,7 @@ export class BotSettingsModal extends Modal {
 		const allowedChatsSetting = new Setting(this.botSettingsDiv)
 			.setName("Allowed chats (required)")
 			.setDesc(
-				"Enter list of usernames or chat ids that should be processed. At least your username must be entered."
+				"Enter list of usernames or chat ids that should be processed. At least your username must be entered.",
 			)
 			.addTextArea((text) => {
 				const textArea = text
@@ -71,13 +71,13 @@ export class BotSettingsModal extends Modal {
 		const deviceIdSetting = new Setting(this.botSettingsDiv)
 			.setName("Main device id")
 			.setDesc(
-				"Specify the device to be used for sync when running Obsidian simultaneously on multiple desktops. If not specified, the priority will shift unpredictably."
+				"Specify the device to be used for sync when running Obsidian simultaneously on multiple desktops. If not specified, the priority will shift unpredictably.",
 			)
 			.addText((text) =>
 				text
 					.setPlaceholder("example: 98912984-c4e9-5ceb-8000-03882a0485e4")
 					.setValue(this.plugin.settings.mainDeviceId)
-					.onChange((value) => (this.plugin.settings.mainDeviceId = value))
+					.onChange((value) => (this.plugin.settings.mainDeviceId = value)),
 			);
 
 		// current device id copy to settings

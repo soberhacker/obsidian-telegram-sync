@@ -31,10 +31,10 @@
         "builtin-modules": "3.3.0",
         "esbuild": "0.17.3",
         "eslint": "^8.40.0",
-        "eslint-config-prettier": "^8.8.0",
-        "eslint-plugin-prettier": "^4.2.1",
+        "eslint-config-prettier": "latest",
+        "eslint-plugin-prettier": "latest",
         "obsidian": "latest",
-        "prettier": "^2.8.8",
+        "prettier": "latest",
         "release-please": "^15.10.3",
         "tslib": "2.4.0",
         "typescript": "4.7.4"
@@ -42,7 +42,6 @@
     "dependencies": {
         "@popperjs/core": "^2.11.7",
         "@types/qrcode": "^1.5.0",
-        "async": "^3.2.4",
         "linkify-it": "^4.0.1",
         "mime-types": "^2.1.35",
         "node-machine-id": "^1.1.12",

@@ -36,11 +36,11 @@ export async function enqueue<C, A extends unknown[], R>(
 		queueKey,
 		(queues.get(queueKey) || Promise.resolve())
 			.then(async () =>
-				context ? await fn.call(context, ...args) : await (fn as AsyncStaticFunction<A, R>)(...args)
+				context ? await fn.call(context, ...args) : await (fn as AsyncStaticFunction<A, R>)(...args),
 			)
 			.catch((e) => {
 				error = e;
-			})
+			}),
 	);
 
 	const result = (await queues.get(queueKey)) as R;

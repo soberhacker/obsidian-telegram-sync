@@ -168,7 +168,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 					displayAndLog(
 						this.plugin,
 						"Successfully logged out.\n\nBut you should also terminate the session manually in the Telegram app.",
-						_15sec
+						_15sec,
 					);
 					userStatusConstructor.call(this, userStatusComponent);
 					userLogInConstructor.call(this, userLogInButton);
@@ -273,13 +273,13 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 		new Setting(this.containerEl)
 			.setName("Append all to Telegram.md")
 			.setDesc(
-				"All messages will be appended into a single file, Telegram.md. If disabled, a separate file will be created for each message"
+				"All messages will be appended into a single file, Telegram.md. If disabled, a separate file will be created for each message",
 			)
 			.addToggle((toggle) =>
 				toggle.setValue(this.plugin.settings.appendAllToTelegramMd).onChange(async (value: boolean) => {
 					this.plugin.settings.appendAllToTelegramMd = value;
 					await this.plugin.saveSettings();
-				})
+				}),
 			);
 	}
 
@@ -300,7 +300,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 		new Setting(this.containerEl)
 			.setName("Delete messages from Telegram")
 			.setDesc(
-				"The Telegram messages will be deleted after processing them. If disabled, the Telegram messages will be marked as processed"
+				"The Telegram messages will be deleted after processing them. If disabled, the Telegram messages will be marked as processed",
 			)
 			.addToggle((toggle) => {
 				toggle.setValue(this.plugin.settings.deleteMessagesFromTelegram);
@@ -319,7 +319,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 
 		const donationText = createEl("p");
 		donationText.appendText(
-			"If you like this Plugin and are considering donating to support continued development, use the buttons below!"
+			"If you like this Plugin and are considering donating to support continued development, use the buttons below!",
 		);
 		donationDiv.appendChild(donationText);
 
@@ -347,7 +347,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 				topicId: topicId,
 			};
 			const topicNameIndex = this.plugin.settings.topicNames.findIndex(
-				(tn) => tn.topicId == newTopic.topicId && tn.chatId == newTopic.chatId
+				(tn) => tn.topicId == newTopic.topicId && tn.chatId == newTopic.chatId,
 			);
 			if (topicNameIndex > -1) {
 				this.plugin.settings.topicNames[topicNameIndex].name = newTopic.name;

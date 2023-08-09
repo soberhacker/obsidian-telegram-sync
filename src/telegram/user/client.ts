@@ -1,6 +1,5 @@
 import { Api, TelegramClient } from "telegram";
 import { StoreSession } from "telegram/sessions";
-import { PromisedWebSockets } from "telegram/extensions/PromisedWebSockets";
 import { version } from "release-notes.mjs";
 import TelegramBot from "node-telegram-bot-api";
 import QRCode from "qrcode";
@@ -13,6 +12,7 @@ import { LogLevel, Logger } from "telegram/extensions/Logger";
 import { _1min, _5sec } from "src/utils/logUtils";
 import * as config from "./config";
 import bigInt from "big-integer";
+import { PromisedWebSockets } from "telegram/extensions";
 
 export type SessionType = "bot" | "user";
 
@@ -111,7 +111,7 @@ export async function signInAsBot(botToken: string) {
 			},
 			{
 				botAuthToken: botToken,
-			}
+			},
 		)
 		.then(async (botUser) => {
 			_botToken = botToken;
@@ -153,7 +153,7 @@ export async function signInAsUserWithQrCode(container: HTMLDivElement, password
 					container.setText(error.message);
 					console.log(error);
 				},
-			}
+			},
 		)
 		.then((clientUser) => {
 			_clientUser = clientUser as Api.User;
@@ -182,7 +182,7 @@ export async function downloadMedia(
 	botMsg: TelegramBot.Message,
 	fileId: string,
 	fileSize: number,
-	botUser?: TelegramBot.User
+	botUser?: TelegramBot.User,
 ) {
 	const checkedClient = await checkBotService();
 
@@ -205,7 +205,7 @@ export async function downloadMedia(
 					progressBarMessage,
 					totalBytes.toJSNumber() || fileSize,
 					receivedBytes.toJSNumber(),
-					stage
+					stage,
 				);
 			},
 		})
@@ -233,7 +233,7 @@ export async function sendReaction(botUser: TelegramBot.User, botMsg: TelegramBo
 				peer: inputPeer,
 				msgId: message.id,
 				reaction: [new Api.ReactionEmoji({ emoticon })],
-			})
+			}),
 		);
 	} catch (error) {
 		if (botMsg.media_group_id && error.message == "400: MESSAGE_NOT_MODIFIED (caused by messages.SendReaction)")
@@ -248,7 +248,7 @@ export async function transcribeAudio(
 	botMsg: TelegramBot.Message,
 	botUser?: TelegramBot.User,
 	mediaId?: string,
-	limit = 15 // minutes for waiting transcribing (not for the audio)
+	limit = 15, // minutes for waiting transcribing (not for the audio)
 ): Promise<string> {
 	if (botMsg.text || !(botMsg.voice || botMsg.video_note)) {
 		return "";
@@ -261,7 +261,7 @@ export async function transcribeAudio(
 	const { checkedClient, checkedUser } = await checkUserService();
 	if (!checkedUser.premium) {
 		throw new Error(
-			"Transcribing voices available only for Telegram Premium subscribers! Remove {{voiceTranscript}} from current template or login with a premium user."
+			"Transcribing voices available only for Telegram Premium subscribers! Remove {{voiceTranscript}} from current template or login with a premium user.",
 		);
 	}
 	if (!botUser) return "";
@@ -278,7 +278,7 @@ export async function transcribeAudio(
 				new Api.messages.TranscribeAudio({
 					peer: inputPeer,
 					msgId: message.id,
-				})
+				}),
 			);
 			stage = await updateProgressBar(bot, botMsg, progressBarMessage, 14, i, stage);
 			if (transcribedAudio.pending)
@@ -310,7 +310,7 @@ export async function subscribedOnInsiderChannel(): Promise<boolean> {
 		const dialogs = await checkedClient.invoke(
 			new Api.messages.GetPeerDialogs({
 				peers: [inputDialogPeer],
-			})
+			}),
 		);
 		return dialogs.dialogs.length > 0;
 	} catch (e) {

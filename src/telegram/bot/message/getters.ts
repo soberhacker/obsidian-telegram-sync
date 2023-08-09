@@ -130,7 +130,7 @@ export async function getTopic(plugin: TelegramSyncPlugin, msg: TelegramBot.Mess
 	}
 	if (!topic) {
 		throw new Error(
-			"Telegram bot has a limitation to get topic names. if the topic name displays incorrect, set the name manually using bot command `/topicName NAME`"
+			"Telegram bot has a limitation to get topic names. if the topic name displays incorrect, set the name manually using bot command `/topicName NAME`",
 		);
 	}
 	return topic;

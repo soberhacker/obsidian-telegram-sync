@@ -32,7 +32,7 @@ const mediaGroups: MediaGroup[] = [];
 export async function handleMessageOrPost(
 	plugin: TelegramSyncPlugin,
 	msg: TelegramBot.Message,
-	msgType: "post" | "message"
+	msgType: "post" | "message",
 ) {
 	if (!plugin.botConnected) {
 		plugin.botConnected = true;
@@ -78,7 +78,7 @@ export async function handleMessageOrPost(
 		plugin.bot?.sendMessage(
 			msg.chat.id,
 			`Access denied. Add ${telegramUserNameFull} this chat id "${msg.chat.id}" in the plugin setting "Allowed Chats".`,
-			{ reply_to_message_id: msg.message_id }
+			{ reply_to_message_id: msg.message_id },
 		);
 		return;
 	}
@@ -103,7 +103,7 @@ export async function handleMessage(plugin: TelegramSyncPlugin, msg: TelegramBot
 			topicId: msg.message_thread_id || 1,
 		};
 		const topicNameIndex = plugin.settings.topicNames.findIndex(
-			(tn) => tn.chatId == msg.chat.id && tn.topicId == msg.message_thread_id
+			(tn) => tn.chatId == msg.chat.id && tn.topicId == msg.message_thread_id,
 		);
 		if (topicNameIndex == -1) {
 			plugin.settings.topicNames.push(topicName);
@@ -130,7 +130,7 @@ export async function handleMessage(plugin: TelegramSyncPlugin, msg: TelegramBot
 				plugin.settings.newNotesLocation,
 				msg.text || "",
 				"md",
-				msg.date
+				msg.date,
 		  );
 
 	await enqueueByCondition(appendAllToTelegramMd, appendContentToNote, plugin.app.vault, notePath, formattedContent);
@@ -142,7 +142,7 @@ async function createNoteContent(
 	filePath: string,
 	notePath: string,
 	msg: TelegramBot.Message,
-	error?: Error
+	error?: Error,
 ) {
 	let fileLink: string;
 
@@ -207,7 +207,7 @@ export async function handleFiles(plugin: TelegramSyncPlugin, msg: TelegramBot.M
 						progressBarMessage,
 						totalBytes,
 						receivedBytes,
-						stage
+						stage,
 					);
 				}
 			} finally {
@@ -218,22 +218,20 @@ export async function handleFiles(plugin: TelegramSyncPlugin, msg: TelegramBot.M
 				fileChunks.reduce<number[]>((acc, val) => {
 					acc.push(...val);
 					return acc;
-				}, [])
+				}, []),
 			);
 		} catch (e) {
-			if (e.message == "ETELEGRAM: 400 Bad Request: file is too big") {
-				const media = await Client.downloadMedia(
-					plugin.bot,
-					msg,
-					fileId,
-					fileObjectToUse.file_size,
-					plugin.botUser
-				);
-				fileByteArray = media instanceof Buffer ? media : Buffer.alloc(0);
-				telegramFileName = telegramFileName || `${fileType}_${msg.chat.id}_${msg.message_id}`;
-			} else {
-				throw e;
-			}
+			error = e;
+			const media = await Client.downloadMedia(
+				plugin.bot,
+				msg,
+				fileId,
+				fileObjectToUse.file_size,
+				plugin.botUser,
+			);
+			fileByteArray = media instanceof Buffer ? media : Buffer.alloc(0);
+			telegramFileName = telegramFileName || `${fileType}_${msg.chat.id}_${msg.message_id}`;
+			error = undefined;
 		}
 		telegramFileName = (msg.document && msg.document.file_name) || telegramFileName;
 		const fileExtension = path.extname(telegramFileName) || `.${extension(fileObject.mime_type)}`;
@@ -248,11 +246,12 @@ export async function handleFiles(plugin: TelegramSyncPlugin, msg: TelegramBot.M
 			specificFolder,
 			fileName,
 			fileExtension,
-			msg.date
+			msg.date,
 		);
 		await plugin.app.vault.createBinary(filePath, fileByteArray);
 	} catch (e) {
-		error = e;
+		if (error) (error as Error).message = (error as Error).message + " | " + e;
+		else error = e;
 	}
 
 	// exit if only file is needed
@@ -271,7 +270,7 @@ async function appendFileToNote(
 	msg: TelegramBot.Message,
 	filePath: string,
 	fileName: string,
-	error?: Error
+	error?: Error,
 ) {
 	const appendAllToTelegramMd = plugin.settings.appendAllToTelegramMd;
 	const mediaGroup = mediaGroups.find((mg) => mg.id == msg.media_group_id);
@@ -288,7 +287,7 @@ async function appendFileToNote(
 				plugin.settings.newNotesLocation,
 				msg.caption || fileName,
 				"md",
-				msg.date
+				msg.date,
 		  ));
 
 	const noteContent = await createNoteContent(plugin, filePath, notePath, msg, error);
@@ -300,7 +299,7 @@ async function appendFileToNote(
 		notePath,
 		noteContent,
 		startLine,
-		delimiter
+		delimiter,
 	);
 }
 
