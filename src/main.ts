@@ -7,6 +7,8 @@ import * as Client from "./telegram/user/client";
 import * as Bot from "./telegram/bot/bot";
 import * as User from "./telegram/user/user";
 import { enqueue } from "./utils/queues";
+import { tooManyRequestsIntervalId } from "./telegram/bot/tooManyRequests";
+import { cachedMessagesIntervalId } from "./telegram/user/convertors";
 
 // Main class for the Telegram Sync plugin
 export default class TelegramSyncPlugin extends Plugin {
@@ -112,6 +114,9 @@ export default class TelegramSyncPlugin extends Plugin {
 	}
 
 	async onunload(): Promise<void> {
+		clearInterval(this.restartingIntervalId);
+		clearInterval(tooManyRequestsIntervalId);
+		clearInterval(cachedMessagesIntervalId);
 		await Bot.disconnect(this);
 		await User.disconnect(this);
 	}

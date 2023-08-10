@@ -33,7 +33,7 @@ let cachedMessagesRequests: MessagesRequests[] = [];
 const cachedUserCouples: UserCouple[] = [];
 
 // clean every 2 hours message request and couples if needed
-setInterval(() => {
+export const cachedMessagesIntervalId = setInterval(() => {
 	if (cachedMessageCouples.length < 5000) return;
 	const lastMessageCouple = cachedMessageCouples.last();
 	if (lastMessageCouple && new Date().getTime() - lastMessageCouple.creationTime.getTime() > _1h) {

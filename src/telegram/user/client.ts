@@ -75,6 +75,7 @@ export async function init(sessionId: number, sessionType: SessionType, deviceId
 			if (!authorized) _clientUser = undefined;
 			else if (!_clientUser && authorized) _clientUser = (await client.getMe()) as Api.User;
 		} catch (e) {
+			localStorage.removeItem("GramJs:apiCache");
 			if (sessionType == "user") {
 				await init(_sessionId, "bot", deviceId);
 				throw new Error(`Login as user failed. Error: ${e}`);

@@ -2,7 +2,7 @@ import { _5sec } from "src/utils/logUtils";
 
 export let isTooManyRequests = false;
 // reset isTooManyRequests
-setInterval(() => {
+export const tooManyRequestsIntervalId = setInterval(() => {
 	isTooManyRequests = false;
 }, _5sec);
 
