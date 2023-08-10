@@ -32,18 +32,17 @@ export async function enqueue<C, A extends unknown[], R>(
 	const queueKey = fn.name;
 	if (!queueKey) throw new Error("Function should have a name");
 
-	queues.set(
-		queueKey,
-		(queues.get(queueKey) || Promise.resolve())
-			.then(async () =>
-				context ? await fn.call(context, ...args) : await (fn as AsyncStaticFunction<A, R>)(...args),
-			)
-			.catch((e) => {
-				error = e;
-			}),
-	);
+	const queue = (queues.get(queueKey) || Promise.resolve())
+		.then(async () =>
+			context ? await fn.call(context, ...args) : await (fn as AsyncStaticFunction<A, R>)(...args),
+		)
+		.catch((e) => {
+			error = e;
+		});
 
-	const result = (await queues.get(queueKey)) as R;
+	queues.set(queueKey, queue);
+
+	const result = await queue;
 	if (error) throw error;
 	return result;
 }
