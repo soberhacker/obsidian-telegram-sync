@@ -35,6 +35,8 @@ export interface TelegramSyncSettings {
 	telegramSessionType: Client.SessionType;
 	telegramSessionId: number;
 	topicNames: Topic[];
+	showStatusBar: boolean;
+	hideConnectedStatusBar: boolean;
 }
 
 export const DEFAULT_SETTINGS: TelegramSyncSettings = {
@@ -52,6 +54,8 @@ export const DEFAULT_SETTINGS: TelegramSyncSettings = {
 	telegramSessionType: "bot",
 	telegramSessionId: Client.getNewSessionId(),
 	topicNames: [],
+	showStatusBar: true,
+	hideConnectedStatusBar: false
 };
 
 export class TelegramSyncSettingTab extends PluginSettingTab {
@@ -75,6 +79,8 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 		this.addAppendAllToTelegramMd();
 		this.addSaveFilesCheckbox();
 		this.addDeleteMessagesFromTelegram();
+		this.addShowStatusBar();
+		this.hideConnectedStatusBar();
 		this.addDonation();
 	}
 
@@ -95,7 +101,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 			botStatus.setDisabled(true);
 			if (this.plugin.checkingBotConnection) {
 				botStatus.setValue("⏳ connecting...");
-			} else if (this.plugin.settings.botToken && this.plugin.botConnected) botStatus.setValue("🤖 connected");
+			} else if (this.plugin.settings.botToken && this.plugin.botIsConnected()) botStatus.setValue("🤖 connected");
 			else botStatus.setValue("❌ disconnected");
 			new Promise((resolve) => {
 				setTimeout(() => resolve(botStatusConstructor.call(this, botStatus)), _5sec);
@@ -104,7 +110,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 
 		const botSettingsConstructor = (botSettingsButton: ButtonComponent) => {
 			if (this.plugin.checkingBotConnection) botSettingsButton.setButtonText("Restart");
-			else if (this.plugin.settings.botToken && this.plugin.botConnected)
+			else if (this.plugin.settings.botToken && this.plugin.botIsConnected())
 				botSettingsButton.setButtonText("Settings");
 			else botSettingsButton.setButtonText("Connect");
 			botSettingsButton.onClick(async () => {
@@ -309,6 +315,33 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				});
 			});
+	}
+
+	addShowStatusBar() {
+		new Setting(this.containerEl)
+		.setName("Show telegram icon in status bar")
+		.setDesc("Unchek if you do not want to see status icon in status bar")
+		.addToggle((toggle) => {
+			toggle.setValue(this.plugin.settings.showStatusBar);
+			toggle.onChange(async (value) => {
+				this.plugin.settings.showStatusBar = value;
+				await this.plugin.saveSettings();
+			});
+		});
+	}
+
+	hideConnectedStatusBar() {
+		new Setting(this.containerEl)
+		.setName("Do not show status bar if bot is connected")
+		.setDesc("If you want to be informed only about issue and do not see successful status then enable this parameter")
+		.addToggle((toggle) => {
+			toggle.setValue(this.plugin.settings.hideConnectedStatusBar);
+			toggle.onChange(async (value) => {
+				this.plugin.settings.hideConnectedStatusBar = value;
+				await this.plugin.saveSettings();
+				this.plugin.updatePluginStatusIcon();
+			});
+		});
 	}
 
 	addDonation() {

@@ -34,8 +34,8 @@ export async function handleMessageOrPost(
 	msg: TelegramBot.Message,
 	msgType: "post" | "message",
 ) {
-	if (!plugin.botConnected) {
-		plugin.botConnected = true;
+	if (!plugin.botIsConnected()) {
+		plugin.botStateSetToConnected();
 		plugin.lastPollingErrors = [];
 	}
 

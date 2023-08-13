@@ -41,7 +41,7 @@ export async function connect(plugin: TelegramSyncPlugin) {
 		} finally {
 			await bot.startPolling();
 		}
-		plugin.botConnected = true;
+		plugin.botStateSetToConnected();
 	} catch (error) {
 		if (!bot || !bot.isPolling())
 			await displayAndLogError(
@@ -60,7 +60,7 @@ export async function disconnect(plugin: TelegramSyncPlugin) {
 	} finally {
 		plugin.bot = undefined;
 		plugin.botUser = undefined;
-		plugin.botConnected = false;
+		plugin.botStateSetToDisconnected();
 	}
 }
 
@@ -89,7 +89,7 @@ async function handlePollingError(plugin: TelegramSyncPlugin, error: any) {
 	if (plugin.lastPollingErrors.length == 0 || !plugin.lastPollingErrors.includes(pollingError)) {
 		plugin.lastPollingErrors.push(pollingError);
 		if (!(pollingError == "twoBotInstances")) {
-			plugin.botConnected = false;
+			plugin.botStateSetToDisconnected();
 			await displayAndLogError(plugin, error, StatusMessages.botDisconnected);
 		}
 	}
@@ -99,12 +99,12 @@ async function handlePollingError(plugin: TelegramSyncPlugin, error: any) {
 
 async function checkConnectionAfterError(plugin: TelegramSyncPlugin, intervalInSeconds = 15) {
 	if (plugin.checkingBotConnection || !plugin.bot || !plugin.bot.isPolling()) return;
-	if (!plugin.checkingBotConnection && plugin.botConnected) plugin.lastPollingErrors = [];
+	if (!plugin.checkingBotConnection && plugin.botIsConnected()) plugin.lastPollingErrors = [];
 	try {
 		plugin.checkingBotConnection = true;
 		await new Promise((resolve) => setTimeout(resolve, intervalInSeconds * _1sec));
 		plugin.botUser = await plugin.bot.getMe();
-		plugin.botConnected = true;
+		plugin.botStateSetToConnected();
 		plugin.lastPollingErrors = [];
 		plugin.checkingBotConnection = false;
 		displayAndLog(plugin, StatusMessages.botReconnected, _5sec);

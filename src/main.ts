@@ -1,4 +1,4 @@
-import { Plugin } from "obsidian";
+import { Plugin, setIcon } from "obsidian";
 import { DEFAULT_SETTINGS, TelegramSyncSettings, TelegramSyncSettingTab } from "./settings/Settings";
 import TelegramBot from "node-telegram-bot-api";
 import { machineIdSync } from "node-machine-id";
@@ -14,7 +14,7 @@ import { cachedMessagesIntervalId } from "./telegram/user/convertors";
 export default class TelegramSyncPlugin extends Plugin {
 	settings: TelegramSyncSettings;
 	settingsTab: TelegramSyncSettingTab;
-	botConnected = false;
+	private botConnected = false;
 	userConnected = false;
 	checkingBotConnection = false;
 	checkingUserConnection = false;
@@ -25,6 +25,7 @@ export default class TelegramSyncPlugin extends Plugin {
 	lastPollingErrors: string[] = [];
 	restartingIntervalId: NodeJS.Timer;
 	restartingIntervalTime = _15sec;
+	statusIcon: HTMLElement | null;
 
 	async initTelegram(initType?: Client.SessionType) {
 		if (!initType || initType == "user") {
@@ -91,6 +92,7 @@ export default class TelegramSyncPlugin extends Plugin {
 	async onload() {
 		console.log(`Loading ${this.manifest.name} plugin`);
 		await this.loadSettings();
+		this.addStatusIcon();
 		// TODO in 2024: Remove allowedChatFromUsernames, because it is deprecated
 		if (this.settings.allowedChatFromUsernames.length != 0) {
 			this.settings.allowedChats = [...this.settings.allowedChatFromUsernames];
@@ -121,6 +123,15 @@ export default class TelegramSyncPlugin extends Plugin {
 		await User.disconnect(this);
 	}
 
+	addStatusIcon(): void {
+		this.statusIcon = this.addStatusBarItem();
+		this.statusIcon.setAttrs({
+			"style": "background-color: yellow;",
+			"data-tooltip-position": "top",
+			"aria-label": "bot is connecting"});
+		setIcon(this.statusIcon, "send");
+	}
+
 	// Load settings from the plugin's data
 	async loadSettings() {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
@@ -136,4 +147,44 @@ export default class TelegramSyncPlugin extends Plugin {
 		if (!this.botUser) throw new Error("Can't get access to bot info. Restart the Telegram Sync plugin");
 		return this.botUser;
 	}
+
+	botIsConnected(): boolean {
+		return this.botConnected;
+	}
+
+	botStateSetToConnected(): void {
+		this.botConnected = true;
+		this.updatePluginStatusIcon();
+	}
+
+	botStateSetToDisconnected(): void {
+		this.botConnected = false;
+		this.updatePluginStatusIcon();
+	}
+
+	botStateSetTo(state: boolean): void {
+		this.botConnected = state;
+		this.updatePluginStatusIcon();
+	}
+
+	updatePluginStatusIcon(): void {
+		if(this.statusIcon === null && !this.settings.hideConnectedStatusBar) this.addStatusIcon();
+		if(this.statusIcon !== null && this.settings.hideConnectedStatusBar) {
+			this.statusIcon.remove();
+			this.statusIcon = null;
+			return;
+		}
+		if(this.botIsConnected()) {
+			this.statusIcon?.removeAttribute("style");
+			this.statusIcon?.removeAttribute("data-tooltip-position");
+			this.statusIcon?.removeAttribute("aria-label");
+			return;
+		}
+		// Bot is disconnected
+		this.statusIcon?.setAttrs({
+			"style": "background-color: red;",
+			"data-tooltip-position": "top",
+			"aria-label": "telegram bot is disconnected"});
+	}
+
 }
