@@ -1,4 +1,5 @@
 export const version = "1.10.0";
+// TODO getting messages one by one instead of parallel processing
 // TODO add Demo gif and screenshots to readme.md
 // ## Demo
 //![](https://raw.githubusercontent.com/vslinko/obsidian-outliner/main/demos/demo1.gif)<br>
