@@ -1,6 +1,6 @@
 {
-	"id": "telegram beta",
-	"name": "Telegram beta (development)",
+	"id": "telegram",
+	"name": "Telegram",
 	"version": "1.9.0",
 	"minAppVersion": "1.0.0",
 	"description": "Transfer messages and files from Telegram to Obsidian.",
