@@ -26,6 +26,7 @@ export default class TelegramSyncPlugin extends Plugin {
 	restartingIntervalId: NodeJS.Timer;
 	restartingIntervalTime = _15sec;
 	statusIcon: HTMLElement | null;
+	unloadingPlugin = false;
 
 	async initTelegram(initType?: Client.SessionType) {
 		if (!initType || initType == "user") {
@@ -116,20 +117,28 @@ export default class TelegramSyncPlugin extends Plugin {
 	}
 
 	async onunload(): Promise<void> {
+		this.unloadingPlugin = true;
 		clearInterval(this.restartingIntervalId);
 		clearInterval(tooManyRequestsIntervalId);
 		clearInterval(cachedMessagesIntervalId);
+		this.clearStatusIcon();
 		await Bot.disconnect(this);
 		await User.disconnect(this);
 	}
 
 	addStatusIcon(): void {
+		if(this.unloadingPlugin) return;
 		this.statusIcon = this.addStatusBarItem();
 		this.statusIcon.setAttrs({
 			"style": "background-color: red;",
 			"data-tooltip-position": "top",
 			"aria-label": "telegram bot is disconnected"});
 		setIcon(this.statusIcon, "send");
+	}
+
+	clearStatusIcon(): void {
+		this.statusIcon?.remove();
+		this.statusIcon = null;
 	}
 
 	// Load settings from the plugin's data
@@ -172,8 +181,7 @@ export default class TelegramSyncPlugin extends Plugin {
 			&& !(this.settings.hideConnectedStatusBar
 				&& this.botIsConnected())) this.addStatusIcon();
 		if(this.statusIcon !== null && this.settings.hideConnectedStatusBar && this.botIsConnected()) {
-			this.statusIcon.remove();
-			this.statusIcon = null;
+			this.clearStatusIcon();
 			return;
 		}
 		if(this.botIsConnected()) {
