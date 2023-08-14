@@ -126,9 +126,9 @@ export default class TelegramSyncPlugin extends Plugin {
 	addStatusIcon(): void {
 		this.statusIcon = this.addStatusBarItem();
 		this.statusIcon.setAttrs({
-			"style": "background-color: yellow;",
+			"style": "background-color: red;",
 			"data-tooltip-position": "top",
-			"aria-label": "bot is connecting"});
+			"aria-label": "telegram bot is disconnected"});
 		setIcon(this.statusIcon, "send");
 	}
 
@@ -168,8 +168,10 @@ export default class TelegramSyncPlugin extends Plugin {
 	}
 
 	updatePluginStatusIcon(): void {
-		if(this.statusIcon === null && !this.settings.hideConnectedStatusBar) this.addStatusIcon();
-		if(this.statusIcon !== null && this.settings.hideConnectedStatusBar) {
+		if(this.statusIcon === null
+			&& !(this.settings.hideConnectedStatusBar
+				&& this.botIsConnected())) this.addStatusIcon();
+		if(this.statusIcon !== null && this.settings.hideConnectedStatusBar && this.botIsConnected()) {
 			this.statusIcon.remove();
 			this.statusIcon = null;
 			return;
