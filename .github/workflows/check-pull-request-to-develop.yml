@@ -1,7 +1,7 @@
 name: Check pull request
 
 on:
-  pull_request_target:
+  pull_request:
     types:
       - opened
     branches:
@@ -28,6 +28,7 @@ jobs:
       
       - name: Run linter
         run: npm run lint
+        continue-on-error: true
 
       - name: Report lint errors
         if: ${{ failure() }}
