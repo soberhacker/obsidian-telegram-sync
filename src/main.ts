@@ -15,7 +15,7 @@ import { handleMediaGroupIntervalId } from "./telegram/bot/message/handlers";
 export default class TelegramSyncPlugin extends Plugin {
 	settings: TelegramSyncSettings;
 	settingsTab: TelegramSyncSettingTab;
-	private botConnected: "connected" | "disconnected";
+	private botConnected: "connected" | "disconnected" = "disconnected";
 	userConnected = false;
 	checkingBotConnection = false;
 	checkingUserConnection = false;
