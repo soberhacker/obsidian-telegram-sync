@@ -174,8 +174,9 @@ export default class TelegramSyncPlugin extends Plugin {
 	}
 
 	updatePluginStatusIcon(): void {
-		if (this.statusIcon === null && !this.connectedStatusBarShouldBeHidden()) this.addStatusIcon();
-		if (this.statusIcon !== null && this.connectedStatusBarShouldBeHidden()) {
+		if (this.statusIcon === undefined && !this.connectedStatusBarShouldBeHidden())
+			this.addStatusIcon();
+		if (this.statusIcon !== undefined && this.connectedStatusBarShouldBeHidden()) {
 			this.clearStatusIcon();
 			return;
 		}
