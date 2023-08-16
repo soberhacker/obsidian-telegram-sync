@@ -40,7 +40,7 @@ export async function connect(plugin: TelegramSyncPlugin, sessionType: client.Se
 			plugin.currentDeviceId,
 		);
 
-		plugin.botStateSetTo(await client.isAuthorizedAsUser())
+		plugin.botStateSetTo(await client.isAuthorizedAsUser());
 
 		if (
 			plugin.settings.telegramSessionType == "bot" ||

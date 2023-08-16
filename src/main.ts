@@ -14,7 +14,7 @@ import { cachedMessagesIntervalId } from "./telegram/user/convertors";
 export default class TelegramSyncPlugin extends Plugin {
 	settings: TelegramSyncSettings;
 	settingsTab: TelegramSyncSettingTab;
-	private botConnected = false;
+	private botConnected: "connected" | "disconnected";
 	userConnected = false;
 	checkingBotConnection = false;
 	checkingUserConnection = false;
@@ -25,8 +25,8 @@ export default class TelegramSyncPlugin extends Plugin {
 	lastPollingErrors: string[] = [];
 	restartingIntervalId: NodeJS.Timer;
 	restartingIntervalTime = _15sec;
-	statusIcon: HTMLElement | null;
-	unloadingPlugin = false;
+	statusIcon?: HTMLElement;
+	pluginStatus: "unloading" | "unloaded";
 
 	async initTelegram(initType?: Client.SessionType) {
 		if (!initType || initType == "user") {
@@ -117,28 +117,30 @@ export default class TelegramSyncPlugin extends Plugin {
 	}
 
 	async onunload(): Promise<void> {
-		this.unloadingPlugin = true;
+		this.pluginStatus = "unloading";
 		clearInterval(this.restartingIntervalId);
 		clearInterval(tooManyRequestsIntervalId);
 		clearInterval(cachedMessagesIntervalId);
 		this.clearStatusIcon();
 		await Bot.disconnect(this);
 		await User.disconnect(this);
+		this.pluginStatus = "unloaded";
 	}
 
 	addStatusIcon(): void {
-		if(this.unloadingPlugin) return;
+		if (this.pluginStatus == "unloading") return;
 		this.statusIcon = this.addStatusBarItem();
 		this.statusIcon.setAttrs({
-			"style": "background-color: red;",
+			style: "background-color: red;",
 			"data-tooltip-position": "top",
-			"aria-label": "telegram bot is disconnected"});
+			"aria-label": "telegram bot is disconnected",
+		});
 		setIcon(this.statusIcon, "send");
 	}
 
 	clearStatusIcon(): void {
 		this.statusIcon?.remove();
-		this.statusIcon = null;
+		this.statusIcon = undefined;
 	}
 
 	// Load settings from the plugin's data
@@ -158,33 +160,21 @@ export default class TelegramSyncPlugin extends Plugin {
 	}
 
 	botIsConnected(): boolean {
-		return this.botConnected;
+		return this.botConnected === "connected";
 	}
 
-	botStateSetToConnected(): void {
-		this.botConnected = true;
-		this.updatePluginStatusIcon();
-	}
-
-	botStateSetToDisconnected(): void {
-		this.botConnected = false;
-		this.updatePluginStatusIcon();
-	}
-
-	botStateSetTo(state: boolean): void {
+	botStateSetTo(state: "connected" | "disconnected"): void {
 		this.botConnected = state;
 		this.updatePluginStatusIcon();
 	}
 
 	updatePluginStatusIcon(): void {
-		if(this.statusIcon === null
-			&& !(this.settings.hideConnectedStatusBar
-				&& this.botIsConnected())) this.addStatusIcon();
-		if(this.statusIcon !== null && this.settings.hideConnectedStatusBar && this.botIsConnected()) {
+		if (this.statusIcon === null && !this.connectedStatusBarShouldBeHidden()) this.addStatusIcon();
+		if (this.statusIcon !== null && this.connectedStatusBarShouldBeHidden()) {
 			this.clearStatusIcon();
 			return;
 		}
-		if(this.botIsConnected()) {
+		if (this.botIsConnected()) {
 			this.statusIcon?.removeAttribute("style");
 			this.statusIcon?.removeAttribute("data-tooltip-position");
 			this.statusIcon?.removeAttribute("aria-label");
@@ -192,9 +182,13 @@ export default class TelegramSyncPlugin extends Plugin {
 		}
 		// Bot is disconnected
 		this.statusIcon?.setAttrs({
-			"style": "background-color: red;",
+			style: "background-color: red;",
 			"data-tooltip-position": "top",
-			"aria-label": "telegram bot is disconnected"});
+			"aria-label": "telegram bot is disconnected",
+		});
 	}
 
+	private connectedStatusBarShouldBeHidden() {
+		return this.settings.hideConnectedStatusBar && this.botIsConnected();
+	}
 }

@@ -55,7 +55,7 @@ export const DEFAULT_SETTINGS: TelegramSyncSettings = {
 	telegramSessionId: Client.getNewSessionId(),
 	topicNames: [],
 	showStatusBar: true,
-	hideConnectedStatusBar: false
+	hideConnectedStatusBar: false,
 };
 
 export class TelegramSyncSettingTab extends PluginSettingTab {
@@ -101,7 +101,8 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 			botStatus.setDisabled(true);
 			if (this.plugin.checkingBotConnection) {
 				botStatus.setValue("⏳ connecting...");
-			} else if (this.plugin.settings.botToken && this.plugin.botIsConnected()) botStatus.setValue("🤖 connected");
+			} else if (this.plugin.settings.botToken && this.plugin.botIsConnected())
+				botStatus.setValue("🤖 connected");
 			else botStatus.setValue("❌ disconnected");
 			new Promise((resolve) => {
 				setTimeout(() => resolve(botStatusConstructor.call(this, botStatus)), _5sec);
@@ -319,29 +320,31 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 
 	addShowStatusBar() {
 		new Setting(this.containerEl)
-		.setName("Show telegram icon in status bar")
-		.setDesc("Unchek if you do not want to see status icon in status bar")
-		.addToggle((toggle) => {
-			toggle.setValue(this.plugin.settings.showStatusBar);
-			toggle.onChange(async (value) => {
-				this.plugin.settings.showStatusBar = value;
-				await this.plugin.saveSettings();
+			.setName("Show telegram icon in status bar")
+			.setDesc("Unchek if you do not want to see status icon in status bar")
+			.addToggle((toggle) => {
+				toggle.setValue(this.plugin.settings.showStatusBar);
+				toggle.onChange(async (value) => {
+					this.plugin.settings.showStatusBar = value;
+					await this.plugin.saveSettings();
+				});
 			});
-		});
 	}
 
 	hideConnectedStatusBar() {
 		new Setting(this.containerEl)
-		.setName("Do not show status bar if bot is connected")
-		.setDesc("If you want to be informed only about issue and do not see successful status then enable this parameter")
-		.addToggle((toggle) => {
-			toggle.setValue(this.plugin.settings.hideConnectedStatusBar);
-			toggle.onChange(async (value) => {
-				this.plugin.settings.hideConnectedStatusBar = value;
-				await this.plugin.saveSettings();
-				this.plugin.updatePluginStatusIcon();
+			.setName("Do not show status bar if bot is connected")
+			.setDesc(
+				"If you want to be informed only about issue and do not see successful status then enable this parameter",
+			)
+			.addToggle((toggle) => {
+				toggle.setValue(this.plugin.settings.hideConnectedStatusBar);
+				toggle.onChange(async (value) => {
+					this.plugin.settings.hideConnectedStatusBar = value;
+					await this.plugin.saveSettings();
+					this.plugin.updatePluginStatusIcon();
+				});
 			});
-		});
 	}
 
 	addDonation() {
