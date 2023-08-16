@@ -33,7 +33,7 @@ export async function handleMessageOrPost(
 	msgType: "post" | "message",
 ) {
 	if (!plugin.botIsConnected()) {
-		plugin.botStateSetToConnected();
+		plugin.botStateSetTo("connected");
 		plugin.lastPollingErrors = [];
 	}
 
