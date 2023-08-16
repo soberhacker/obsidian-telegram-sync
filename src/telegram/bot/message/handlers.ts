@@ -10,7 +10,7 @@ import * as Client from "../../user/client";
 import { extension } from "mime-types";
 import { applyNoteContentTemplate, finalizeMessageProcessing } from "./processors";
 import { ProgressBarType, _3MB, createProgressBar, deleteProgressBar, updateProgressBar } from "../progressBar";
-import { getFileObject } from "./getters";
+import { getFileObject, getMediaGroupFileName } from "./getters";
 import { TFile } from "obsidian";
 import { enqueue, enqueueByCondition } from "src/utils/queues";
 import { _15sec, _1sec, displayAndLog, displayAndLogError } from "src/utils/logUtils";
@@ -305,7 +305,7 @@ async function appendFileToNote(
 				plugin.app.vault,
 				plugin.listOfNotePaths,
 				plugin.settings.newNotesLocation,
-				msg.caption || fileName,
+				msg.caption || getMediaGroupFileName(msg) || fileName,
 				"md",
 				msg.date,
 		  );

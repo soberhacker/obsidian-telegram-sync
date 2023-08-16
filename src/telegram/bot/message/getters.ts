@@ -163,3 +163,7 @@ export function getFileObject(msg: TelegramBot.Message): { fileType?: string; fi
 	}
 	return {};
 }
+
+export function getMediaGroupFileName(msg: TelegramBot.Message) {
+	return msg.media_group_id ? "mediaGroup_" + msg.media_group_id : "";
+}
