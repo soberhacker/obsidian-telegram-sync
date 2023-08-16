@@ -112,8 +112,8 @@ export async function applyNoteContentTemplate(
 	let processedContent = lines.join("\n");
 
 	processedContent = processedContent
-		.replace(/{{file}}/g, allEmbeddedFilesLinks) // TODO deprecated in 2024
-		.replace(/{{file:link}}/g, allFilesLinks) // TODO deprecated in 2024
+		.replace(/{{file}}/g, allEmbeddedFilesLinks) // TODO in 2024: deprecated, remove
+		.replace(/{{file:link}}/g, allFilesLinks) // TODO in 2024: deprecated, remove
 
 		.replace(/{{files}}/g, allEmbeddedFilesLinks)
 		.replace(/{{files:links}}/g, allFilesLinks)
