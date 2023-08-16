@@ -40,7 +40,7 @@ export async function connect(plugin: TelegramSyncPlugin, sessionType: client.Se
 			plugin.currentDeviceId,
 		);
 
-		plugin.botStateSetTo(await client.isAuthorizedAsUser());
+		plugin.userConnected = await client.isAuthorizedAsUser();
 
 		if (
 			plugin.settings.telegramSessionType == "bot" ||
@@ -64,10 +64,10 @@ export async function reconnect(plugin: TelegramSyncPlugin, displayError = false
 	plugin.checkingUserConnection = true;
 	try {
 		await client.reconnect(false);
-		plugin.botStateSetTo(await client.isAuthorizedAsUser());
+		plugin.userConnected = await client.isAuthorizedAsUser();
 	} catch (error) {
-		plugin.botStateSetToDisconnected();
-		if (displayError && plugin.botIsConnected() && plugin.settings.telegramSessionType == "user") {
+		plugin.userConnected = false;
+		if (displayError && plugin.botConnected && plugin.settings.telegramSessionType == "user") {
 			await displayAndLogError(
 				plugin,
 				error,
@@ -85,7 +85,7 @@ export async function disconnect(plugin: TelegramSyncPlugin) {
 	try {
 		await client.stop();
 	} finally {
-		plugin.botStateSetToDisconnected();
+		plugin.userConnected = false;
 		plugin.checkingUserConnection = false;
 	}
 }
