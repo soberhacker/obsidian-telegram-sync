@@ -54,7 +54,7 @@ export async function displayAndLogError(
 	status?: string,
 	action?: string,
 	msg?: TelegramBot.Message,
-	timeout?: number,
+	timeout?: number, // 0 - do not show in obsidian | undefined - never hide
 ) {
 	let beautyError = `${error.name}: ${error.message.replace(/Error: /g, "")}\n\n${status || ""}\n\n${action || ""}`;
 	beautyError = beautyError.trim();

@@ -218,30 +218,17 @@ export async function downloadMedia(
 		});
 }
 
-const sendReactionMsgGroupsToSkip: string[] = [];
-
 export async function sendReaction(botUser: TelegramBot.User, botMsg: TelegramBot.Message, emoticon: string) {
-	// if files are grouped they can have only one reaction
-	if (botMsg.media_group_id)
-		if (sendReactionMsgGroupsToSkip.contains(botMsg.media_group_id)) return;
-		else sendReactionMsgGroupsToSkip.push(botMsg.media_group_id);
-	try {
-		const { checkedClient, checkedUser } = await checkUserService();
-		const inputPeer = await getInputPeer(checkedClient, checkedUser, botUser, botMsg);
-		const message = await getMessage(checkedClient, inputPeer, botMsg);
-		await checkedClient.invoke(
-			new Api.messages.SendReaction({
-				peer: inputPeer,
-				msgId: message.id,
-				reaction: [new Api.ReactionEmoji({ emoticon })],
-			}),
-		);
-	} catch (error) {
-		if (botMsg.media_group_id && error.message == "400: MESSAGE_NOT_MODIFIED (caused by messages.SendReaction)")
-			return;
-		else if (botMsg.media_group_id) sendReactionMsgGroupsToSkip.remove(botMsg.media_group_id);
-		throw error;
-	}
+	const { checkedClient, checkedUser } = await checkUserService();
+	const inputPeer = await getInputPeer(checkedClient, checkedUser, botUser, botMsg);
+	const message = await getMessage(checkedClient, inputPeer, botMsg);
+	await checkedClient.invoke(
+		new Api.messages.SendReaction({
+			peer: inputPeer,
+			msgId: message.id,
+			reaction: [new Api.ReactionEmoji({ emoticon })],
+		}),
+	);
 }
 
 export async function transcribeAudio(

@@ -61,6 +61,7 @@ export async function disconnect(plugin: TelegramSyncPlugin) {
 		plugin.bot = undefined;
 		plugin.botUser = undefined;
 		plugin.botStateSetToDisconnected();
+		plugin.checkingBotConnection = false;
 	}
 }
 

@@ -6,8 +6,8 @@
 {{content:text}} - only message text
 {{content:XX}} - XX characters of the message text
 {{content:[X-Y]}} - all lines from line number X to Y, inclusive
-{{file}} - file|image content ![]()
-{{file:link}} - link to the file|image []()
+{{files}} - files | images  ![]()
+{{files:links}} - links to files | images []()
 {{voiceTranscript}} - transcribing voice(video notes!) to text (same limits as for Telegram Premium subscribers)
 {{chat}} - link to the chat (bot / group / channel)
 {{chatId}} - id of the chat (bot / group / channel)
