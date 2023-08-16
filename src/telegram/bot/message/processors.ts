@@ -59,7 +59,7 @@ export async function applyNoteContentTemplate(
 	plugin: TelegramSyncPlugin,
 	templatePath: string,
 	msg: TelegramBot.Message,
-	fileLink?: string,
+	filesLinks: string[] = [],
 ): Promise<string> {
 	let templateContent = "";
 	try {
@@ -72,11 +72,14 @@ export async function applyNoteContentTemplate(
 	}
 
 	const textContentMd = await convertMessageTextToMarkdown(msg);
+	const allEmbeddedFilesLinks = filesLinks.length > 0 ? filesLinks.join("\n") : "";
+	const allFilesLinks = allEmbeddedFilesLinks.replace("![", "[");
+
 	// Check if the message is forwarded and extract the required information
 	const forwardFromLink = getForwardFromLink(msg);
 	const fullContentMd =
 		(forwardFromLink ? `**Forwarded from ${forwardFromLink}**\n\n` : "") +
-		(fileLink ? fileLink + "\n\n" : "") +
+		(allEmbeddedFilesLinks ? allEmbeddedFilesLinks + "\n\n" : "") +
 		textContentMd;
 
 	if (!templateContent) {
@@ -109,8 +112,11 @@ export async function applyNoteContentTemplate(
 	let processedContent = lines.join("\n");
 
 	processedContent = processedContent
-		.replace(/{{file}}/g, fileLink || "")
-		.replace(/{{file:link}}/g, fileLink?.startsWith("!") ? fileLink.slice(1) : fileLink || "")
+		.replace(/{{file}}/g, allEmbeddedFilesLinks) // TODO deprecated in 2024
+		.replace(/{{file:link}}/g, allFilesLinks) // TODO deprecated in 2024
+
+		.replace(/{{files}}/g, allEmbeddedFilesLinks)
+		.replace(/{{files:links}}/g, allFilesLinks)
 		.replace(/{{messageDate:(.*?)}}/g, (_, format) => formatDateTime(messageDateTime, format))
 		.replace(/{{messageTime:(.*?)}}/g, (_, format) => formatDateTime(messageDateTime, format))
 		.replace(/{{date:(.*?)}}/g, (_, format) => formatDateTime(dateTimeNow, format))

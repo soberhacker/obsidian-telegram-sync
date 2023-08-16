@@ -9,6 +9,7 @@ import * as User from "./telegram/user/user";
 import { enqueue } from "./utils/queues";
 import { tooManyRequestsIntervalId } from "./telegram/bot/tooManyRequests";
 import { cachedMessagesIntervalId } from "./telegram/user/convertors";
+import { handleMediaGroupIntervalId } from "./telegram/bot/message/handlers";
 
 // Main class for the Telegram Sync plugin
 export default class TelegramSyncPlugin extends Plugin {
@@ -25,8 +26,11 @@ export default class TelegramSyncPlugin extends Plugin {
 	lastPollingErrors: string[] = [];
 	restartingIntervalId: NodeJS.Timer;
 	restartingIntervalTime = _15sec;
+	messagesLeftCnt = 0;
 
 	async initTelegram(initType?: Client.SessionType) {
+		this.lastPollingErrors = [];
+		this.messagesLeftCnt = 0;
 		if (!initType || initType == "user") {
 			try {
 				this.checkingUserConnection = true;
@@ -117,6 +121,7 @@ export default class TelegramSyncPlugin extends Plugin {
 		clearInterval(this.restartingIntervalId);
 		clearInterval(tooManyRequestsIntervalId);
 		clearInterval(cachedMessagesIntervalId);
+		clearInterval(handleMediaGroupIntervalId);
 		await Bot.disconnect(this);
 		await User.disconnect(this);
 	}
