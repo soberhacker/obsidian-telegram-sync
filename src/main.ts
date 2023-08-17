@@ -15,7 +15,7 @@ import { handleMediaGroupIntervalId } from "./telegram/bot/message/handlers";
 export default class TelegramSyncPlugin extends Plugin {
 	settings: TelegramSyncSettings;
 	settingsTab: TelegramSyncSettingTab;
-	private botConnected: "connected" | "disconnected" = "disconnected";
+	private botState: "connected" | "disconnected" = "disconnected";
 	userConnected = false;
 	checkingBotConnection = false;
 	checkingUserConnection = false;
@@ -66,7 +66,7 @@ export default class TelegramSyncPlugin extends Plugin {
 
 			if (
 				(!sessionType || sessionType == "bot") &&
-				!this.botConnected &&
+				!this.botState &&
 				!this.checkingBotConnection &&
 				this.settings?.botToken
 			) {
@@ -165,11 +165,11 @@ export default class TelegramSyncPlugin extends Plugin {
 	}
 
 	botIsConnected(): boolean {
-		return this.botConnected === "connected";
+		return this.botState === "connected";
 	}
 
 	botStateSetTo(state: "connected" | "disconnected"): void {
-		this.botConnected = state;
+		this.botState = state;
 		this.updatePluginStatusIcon();
 	}
 
