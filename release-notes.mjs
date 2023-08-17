@@ -3,7 +3,6 @@ export const version = "1.10.0";
 // TODO add Demo gif and screenshots to readme.md
 // TODO add automatic installing beta versions from channel
 // TODO check, if plugin restarts quickly then everything should be fully loaded or fully unloaded
-// TODO fix .github/workflows/check-pull-request-to-develop.yml, line "if: ${{ failure() }}" is wrong
 // ## Demo
 //![](https://raw.githubusercontent.com/vslinko/obsidian-outliner/main/demos/demo1.gif)<br>
 export const showNewFeatures = true;
