@@ -353,7 +353,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 							break;
 						default:
 							throw new Error(
-								`Parameter How to inform about bot staus has unknown type of value ${value}`,
+								`Parameter How to inform about bot status has unknown type of value ${value}`,
 							);
 					}
 					await this.plugin.saveSettings();
