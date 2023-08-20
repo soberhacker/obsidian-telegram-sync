@@ -106,7 +106,7 @@ export default class TelegramSyncPlugin extends Plugin {
 	async onload() {
 		console.log(`Loading ${this.manifest.name} plugin`);
 		await this.loadSettings();
-		this.addStatusIcon();
+		this.addStatusIconIdneeded();
 		// TODO in 2024: Remove allowedChatFromUsernames, because it is deprecated
 		if (this.settings.allowedChatFromUsernames.length != 0) {
 			this.settings.allowedChats = [...this.settings.allowedChatFromUsernames];
@@ -157,26 +157,27 @@ export default class TelegramSyncPlugin extends Plugin {
 		}
 	}
 
-	addStatusIcon(): void {
-		if (this.pluginStatus == "unloading") return;
-		if (!this.needToShowStatusBar()) return;
-		this.statusIcon = this.addStatusBarItem();
-		this.statusIcon.setAttrs({
+	setStatusIconDisonnectedStyleProperties(): void {
+		this?.statusIcon?.setAttrs({
 			style: "background-color: red;",
 			"data-tooltip-position": "top",
 			"aria-label": MessageCheckConnection,
 		});
+	}
+
+	addStatusIconIdneeded(): void {
+		if (this.statusIcon !== undefined) return; // status icon resource has already been allocated
+		if (this.pluginStatus == "unloading") return;
+		if (!this.needToShowStatusBar()) return;
+		this.statusIcon = this.addStatusBarItem();
 		setIcon(this.statusIcon, "send");
+		if (this.botIsConnected()) this.setStatusIconConnectedStyleProperties();
+		else this.setStatusIconDisonnectedStyleProperties();
 	}
 
 	clearStatusIcon(): void {
 		this.statusIcon?.remove();
 		this.statusIcon = undefined;
-	}
-
-	updateStatusIcon(): void {
-		this.clearStatusIcon();
-		this.addStatusIcon();
 	}
 
 	// Load settings from the plugin's data
@@ -204,9 +205,9 @@ export default class TelegramSyncPlugin extends Plugin {
 		this.updatePluginStatusIcon();
 	}
 
-	updatePluginStatusIcon(): void {
-		// if icon resource is not allocated but icon should be shown then allocate icon resouce
-		if (this.statusIcon === undefined && !this.connectedStatusBarShouldBeHidden()) this.addStatusIcon();
+	updatePluginStatusIcon(recreateStatusIcon = false): void {
+		if (recreateStatusIcon) this.clearStatusIcon();
+		this.addStatusIconIdneeded();
 
 		// if icon resource is not allocated but icon should not be shown then allocate icon resouce
 		if (this.statusIcon !== undefined && this.connectedStatusBarShouldBeHidden()) {
@@ -215,20 +216,20 @@ export default class TelegramSyncPlugin extends Plugin {
 		}
 
 		if (this.botIsConnected()) {
-			this.statusIcon?.removeAttribute("style");
-			this.statusIcon?.removeAttribute("data-tooltip-position");
-			this.statusIcon?.removeAttribute("aria-label");
+			this.setStatusIconConnectedStyleProperties();
 			return;
 		}
 		// Bot is disconnected
-		this.statusIcon?.setAttrs({
-			style: "background-color: red;",
-			"data-tooltip-position": "top",
-			"aria-label": MessageCheckConnection,
-		});
+		this.setStatusIconDisonnectedStyleProperties();
+	}
+
+	private setStatusIconConnectedStyleProperties() {
+		this.statusIcon?.removeAttribute("style");
+		this.statusIcon?.removeAttribute("data-tooltip-position");
+		this.statusIcon?.removeAttribute("aria-label");
 	}
 
 	private connectedStatusBarShouldBeHidden() {
-		return this.needToShowStatusBar() && this.botIsConnected();
+		return !this.needToShowStatusBar() && this.botIsConnected();
 	}
 }

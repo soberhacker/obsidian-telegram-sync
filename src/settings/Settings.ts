@@ -357,7 +357,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 							);
 					}
 					await this.plugin.saveSettings();
-					this.plugin.updateStatusIcon();
+					this.plugin.updatePluginStatusIcon(true /*recreate status icon*/);
 				});
 			});
 	}
