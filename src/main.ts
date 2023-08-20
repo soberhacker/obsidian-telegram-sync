@@ -134,11 +134,13 @@ export default class TelegramSyncPlugin extends Plugin {
 
 	addStatusIcon(): void {
 		if (this.pluginStatus == "unloading") return;
+		if (!this.settings.needToShowStatusBar()) return;
 		this.statusIcon = this.addStatusBarItem();
 		this.statusIcon.setAttrs({
 			style: "background-color: red;",
 			"data-tooltip-position": "top",
-			"aria-label": "telegram bot is disconnected",
+			"aria-label":
+				"Check internet(proxy) connection, the functionality of Telegram using the official app. If everything is ok, restart Obsidian.",
 		});
 		setIcon(this.statusIcon, "send");
 	}
@@ -174,8 +176,7 @@ export default class TelegramSyncPlugin extends Plugin {
 	}
 
 	updatePluginStatusIcon(): void {
-		if (this.statusIcon === undefined && !this.connectedStatusBarShouldBeHidden())
-			this.addStatusIcon();
+		if (this.statusIcon === undefined && !this.connectedStatusBarShouldBeHidden()) this.addStatusIcon();
 		if (this.statusIcon !== undefined && this.connectedStatusBarShouldBeHidden()) {
 			this.clearStatusIcon();
 			return;
@@ -195,6 +196,6 @@ export default class TelegramSyncPlugin extends Plugin {
 	}
 
 	private connectedStatusBarShouldBeHidden() {
-		return this.settings.hideConnectedStatusBar && this.botIsConnected();
+		return this.settings.needToShowStatusBar() && this.botIsConnected();
 	}
 }

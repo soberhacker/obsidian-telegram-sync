@@ -43,7 +43,7 @@ export async function connect(plugin: TelegramSyncPlugin) {
 		}
 		plugin.botStateSetTo("connected");
 	} catch (error) {
-		if (!bot || !bot.isPolling())
+		if (plugin.settings.needToLogBotError() && (!bot || !bot.isPolling()))
 			await displayAndLogError(
 				plugin,
 				error,
@@ -91,7 +91,8 @@ async function handlePollingError(plugin: TelegramSyncPlugin, error: any) {
 		plugin.lastPollingErrors.push(pollingError);
 		if (!(pollingError == "twoBotInstances")) {
 			plugin.botStateSetTo("disconnected");
-			await displayAndLogError(plugin, error, StatusMessages.botDisconnected);
+			if (plugin.settings.needToLogBotError())
+				await displayAndLogError(plugin, error, StatusMessages.botDisconnected);
 		}
 	}
 

@@ -14,6 +14,12 @@ import { getTopicId } from "src/telegram/bot/message/getters";
 import * as Bot from "../telegram/bot/bot";
 import * as User from "../telegram/user/user";
 
+enum HowToInformAboutBotStatus {
+	showBotLogs = "show-bot-logs",
+	showBotStatusBar = "show-bot-status-bar",
+	showBotStatusBarErrorsOnly = "show-bot-status-bar-errors-only",
+}
+
 export interface Topic {
 	name: string;
 	chatId: number;
@@ -35,8 +41,9 @@ export interface TelegramSyncSettings {
 	telegramSessionType: Client.SessionType;
 	telegramSessionId: number;
 	topicNames: Topic[];
-	showStatusBar: boolean;
-	hideConnectedStatusBar: boolean;
+	howToInformAboutBotStatus: HowToInformAboutBotStatus;
+	needToLogBotError(): boolean;
+	needToShowStatusBar(): boolean;
 }
 
 export const DEFAULT_SETTINGS: TelegramSyncSettings = {
@@ -54,8 +61,15 @@ export const DEFAULT_SETTINGS: TelegramSyncSettings = {
 	telegramSessionType: "bot",
 	telegramSessionId: Client.getNewSessionId(),
 	topicNames: [],
-	showStatusBar: true,
-	hideConnectedStatusBar: false,
+	howToInformAboutBotStatus: HowToInformAboutBotStatus.showBotLogs,
+
+	needToLogBotError(): boolean {
+		return this.howToInformAboutBotStatus === HowToInformAboutBotStatus.showBotLogs;
+	},
+
+	needToShowStatusBar(): boolean {
+		return true;
+	},
 };
 
 export class TelegramSyncSettingTab extends PluginSettingTab {
@@ -79,8 +93,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 		this.addAppendAllToTelegramMd();
 		this.addSaveFilesCheckbox();
 		this.addDeleteMessagesFromTelegram();
-		this.addShowStatusBar();
-		this.hideConnectedStatusBar();
+		this.addInformAboutBotStatus();
 		this.addDonation();
 	}
 
@@ -318,31 +331,36 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 			});
 	}
 
-	addShowStatusBar() {
+	addInformAboutBotStatus() {
 		new Setting(this.containerEl)
-			.setName("Show telegram icon in status bar")
-			.setDesc("Unchek if you do not want to see status icon in status bar")
-			.addToggle((toggle) => {
-				toggle.setValue(this.plugin.settings.showStatusBar);
-				toggle.onChange(async (value) => {
-					this.plugin.settings.showStatusBar = value;
-					await this.plugin.saveSettings();
+			.setName("How to inform about bot staus")
+			//.setDesc("")
+			.addDropdown((dropDown) => {
+				dropDown.addOptions({
+					"show-bot-logs": "show only messages about bot status change",
+					"show-bot-status-bar": "show telegram bot status at status bar",
+					"show-bot-status-bar-errors-only":
+						"show telegram status bot(show only errros and hide connected status)",
 				});
-			});
-	}
-
-	hideConnectedStatusBar() {
-		new Setting(this.containerEl)
-			.setName("Do not show status bar if bot is connected")
-			.setDesc(
-				"If you want to be informed only about issue and do not see successful status then enable this parameter",
-			)
-			.addToggle((toggle) => {
-				toggle.setValue(this.plugin.settings.hideConnectedStatusBar);
-				toggle.onChange(async (value) => {
-					this.plugin.settings.hideConnectedStatusBar = value;
+				dropDown.setValue(this.plugin.settings.howToInformAboutBotStatus);
+				dropDown.onChange(async (value) => {
+					switch (value) {
+						case "show-bot-logs":
+							this.plugin.settings.howToInformAboutBotStatus = HowToInformAboutBotStatus.showBotLogs;
+							break;
+						case "show-bot-status-bar":
+							this.plugin.settings.howToInformAboutBotStatus = HowToInformAboutBotStatus.showBotStatusBar;
+							break;
+						case "show-bot-status-bar-errors-only":
+							this.plugin.settings.howToInformAboutBotStatus =
+								HowToInformAboutBotStatus.showBotStatusBarErrorsOnly;
+							break;
+						default:
+							throw new Error(
+								`Parameter How to inform about bot staus has unknown type of value ${value}`,
+							);
+					}
 					await this.plugin.saveSettings();
-					this.plugin.updatePluginStatusIcon();
 				});
 			});
 	}
