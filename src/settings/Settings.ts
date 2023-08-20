@@ -330,7 +330,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 	addInformAboutBotStatus() {
 		new Setting(this.containerEl)
 			.setName(ParameterNameHowToInformAboutBotStatus)
-			.setDesc("Please choose how do what to be informed about bot connection status")
+			.setDesc("Choose how you want to be informed about the bot's connection status")
 			.addDropdown((dropDown) => {
 				dropDown.addOptions({
 					"show-bot-logs": "show only messages about bot status change",
@@ -345,7 +345,8 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 							this.plugin.settings.howToInformAboutBotStatus = HowToInformAboutBotStatusType.showBotLogs;
 							break;
 						case "show-bot-status-bar":
-							this.plugin.settings.howToInformAboutBotStatus = HowToInformAboutBotStatusType.showBotStatusBar;
+							this.plugin.settings.howToInformAboutBotStatus =
+								HowToInformAboutBotStatusType.showBotStatusBar;
 							break;
 						case "show-bot-status-bar-errors-only":
 							this.plugin.settings.howToInformAboutBotStatus =
