@@ -16,9 +16,9 @@ import * as User from "../telegram/user/user";
 
 export const ParameterNameHowToInformAboutBotStatus = "Connection status indicator";
 export enum HowToInformAboutBotStatusType {
-	showBotLogs = "show-bot-logs",
-	showBotStatusBar = "show-bot-status-bar",
-	showBotStatusBarErrorsOnly = "show-bot-status-bar-errors-only",
+	withLogs = "show-bot-logs",
+	statusBarAllStates = "show-bot-status-bar",
+	statusBarErrorsOnly = "show-bot-status-bar-errors-only",
 }
 
 export interface Topic {
