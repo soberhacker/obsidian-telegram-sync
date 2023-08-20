@@ -205,11 +205,15 @@ export default class TelegramSyncPlugin extends Plugin {
 	}
 
 	updatePluginStatusIcon(): void {
+		// if icon resource is not allocated but icon should be shown then allocate icon resouce
 		if (this.statusIcon === undefined && !this.connectedStatusBarShouldBeHidden()) this.addStatusIcon();
+
+		// if icon resource is not allocated but icon should not be shown then allocate icon resouce
 		if (this.statusIcon !== undefined && this.connectedStatusBarShouldBeHidden()) {
 			this.clearStatusIcon();
 			return;
 		}
+
 		if (this.botIsConnected()) {
 			this.statusIcon?.removeAttribute("style");
 			this.statusIcon?.removeAttribute("data-tooltip-position");
