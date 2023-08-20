@@ -14,7 +14,8 @@ import { getTopicId } from "src/telegram/bot/message/getters";
 import * as Bot from "../telegram/bot/bot";
 import * as User from "../telegram/user/user";
 
-enum HowToInformAboutBotStatus {
+export const ParameterNameHowToInformAboutBotStatus = "How to inform about bot staus";
+export enum HowToInformAboutBotStatus {
 	showBotLogs = "show-bot-logs",
 	showBotStatusBar = "show-bot-status-bar",
 	showBotStatusBarErrorsOnly = "show-bot-status-bar-errors-only",
@@ -43,7 +44,6 @@ export interface TelegramSyncSettings {
 	topicNames: Topic[];
 	howToInformAboutBotStatus: HowToInformAboutBotStatus;
 	needToLogBotError(): boolean;
-	needToShowStatusBar(): boolean;
 }
 
 export const DEFAULT_SETTINGS: TelegramSyncSettings = {
@@ -65,10 +65,6 @@ export const DEFAULT_SETTINGS: TelegramSyncSettings = {
 
 	needToLogBotError(): boolean {
 		return this.howToInformAboutBotStatus === HowToInformAboutBotStatus.showBotLogs;
-	},
-
-	needToShowStatusBar(): boolean {
-		return true;
 	},
 };
 
@@ -333,7 +329,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 
 	addInformAboutBotStatus() {
 		new Setting(this.containerEl)
-			.setName("How to inform about bot staus")
+			.setName(ParameterNameHowToInformAboutBotStatus)
 			//.setDesc("")
 			.addDropdown((dropDown) => {
 				dropDown.addOptions({
@@ -361,6 +357,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 							);
 					}
 					await this.plugin.saveSettings();
+					this.plugin.updateStatusIcon();
 				});
 			});
 	}

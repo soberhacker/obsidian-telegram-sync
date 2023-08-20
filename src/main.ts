@@ -1,5 +1,11 @@
 import { Plugin, setIcon } from "obsidian";
-import { DEFAULT_SETTINGS, TelegramSyncSettings, TelegramSyncSettingTab } from "./settings/Settings";
+import {
+	DEFAULT_SETTINGS,
+	TelegramSyncSettings,
+	TelegramSyncSettingTab,
+	HowToInformAboutBotStatus,
+	ParameterNameHowToInformAboutBotStatus,
+} from "./settings/Settings";
 import TelegramBot from "node-telegram-bot-api";
 import { machineIdSync } from "node-machine-id";
 import { _15sec, _2min, displayAndLog, StatusMessages, _5sec } from "./utils/logUtils";
@@ -10,6 +16,9 @@ import { enqueue } from "./utils/queues";
 import { tooManyRequestsIntervalId } from "./telegram/bot/tooManyRequests";
 import { cachedMessagesIntervalId } from "./telegram/user/convertors";
 import { handleMediaGroupIntervalId } from "./telegram/bot/message/handlers";
+
+export const MessageCheckConnection =
+	"Check internet(proxy) connection, the functionality of Telegram using the official app. If everything is ok, restart Obsidian.";
 
 // Main class for the Telegram Sync plugin
 export default class TelegramSyncPlugin extends Plugin {
@@ -132,15 +141,30 @@ export default class TelegramSyncPlugin extends Plugin {
 		this.pluginStatus = "unloaded";
 	}
 
+	needToShowStatusBar(): boolean {
+		switch (this.settings.howToInformAboutBotStatus) {
+			case HowToInformAboutBotStatus.showBotLogs:
+				return false;
+			case HowToInformAboutBotStatus.showBotStatusBar:
+				return true;
+			case HowToInformAboutBotStatus.showBotStatusBarErrorsOnly:
+				if (this.botIsConnected()) return false;
+				else return true;
+			default:
+				throw new Error(
+					`Unknown configuration value ${this.settings.howToInformAboutBotStatus} for parameter ${ParameterNameHowToInformAboutBotStatus}`,
+				);
+		}
+	}
+
 	addStatusIcon(): void {
 		if (this.pluginStatus == "unloading") return;
-		if (!this.settings.needToShowStatusBar()) return;
+		if (!this.needToShowStatusBar()) return;
 		this.statusIcon = this.addStatusBarItem();
 		this.statusIcon.setAttrs({
 			style: "background-color: red;",
 			"data-tooltip-position": "top",
-			"aria-label":
-				"Check internet(proxy) connection, the functionality of Telegram using the official app. If everything is ok, restart Obsidian.",
+			"aria-label": MessageCheckConnection,
 		});
 		setIcon(this.statusIcon, "send");
 	}
@@ -148,6 +172,11 @@ export default class TelegramSyncPlugin extends Plugin {
 	clearStatusIcon(): void {
 		this.statusIcon?.remove();
 		this.statusIcon = undefined;
+	}
+
+	updateStatusIcon(): void {
+		this.clearStatusIcon();
+		this.addStatusIcon();
 	}
 
 	// Load settings from the plugin's data
@@ -191,11 +220,11 @@ export default class TelegramSyncPlugin extends Plugin {
 		this.statusIcon?.setAttrs({
 			style: "background-color: red;",
 			"data-tooltip-position": "top",
-			"aria-label": "telegram bot is disconnected",
+			"aria-label": MessageCheckConnection,
 		});
 	}
 
 	private connectedStatusBarShouldBeHidden() {
-		return this.settings.needToShowStatusBar() && this.botIsConnected();
+		return this.needToShowStatusBar() && this.botIsConnected();
 	}
 }

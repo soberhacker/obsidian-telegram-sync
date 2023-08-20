@@ -1,5 +1,5 @@
 import TelegramBot from "node-telegram-bot-api";
-import TelegramSyncPlugin from "src/main";
+import TelegramSyncPlugin, { MessageCheckConnection } from "src/main";
 import { _1sec, displayAndLog, displayAndLogError, StatusMessages, _5sec } from "src/utils/logUtils";
 import { handleMessageOrPost } from "./message/handlers";
 import { reconnect } from "../user/user";
@@ -44,12 +44,7 @@ export async function connect(plugin: TelegramSyncPlugin) {
 		plugin.botStateSetTo("connected");
 	} catch (error) {
 		if (plugin.settings.needToLogBotError() && (!bot || !bot.isPolling()))
-			await displayAndLogError(
-				plugin,
-				error,
-				StatusMessages.botDisconnected,
-				"Check internet(proxy) connection, the functionality of Telegram using the official app. If everything is ok, restart Obsidian.",
-			);
+			await displayAndLogError(plugin, error, StatusMessages.botDisconnected, MessageCheckConnection);
 	}
 }
 
