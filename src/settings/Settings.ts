@@ -110,7 +110,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 			botStatus.setDisabled(true);
 			if (this.plugin.checkingBotConnection) {
 				botStatus.setValue("⏳ connecting...");
-			} else if (this.plugin.settings.botToken && this.plugin.botIsConnected())
+			} else if (this.plugin.settings.botToken && this.plugin.isBotConnected())
 				botStatus.setValue("🤖 connected");
 			else botStatus.setValue("❌ disconnected");
 			new Promise((resolve) => {
@@ -120,7 +120,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 
 		const botSettingsConstructor = (botSettingsButton: ButtonComponent) => {
 			if (this.plugin.checkingBotConnection) botSettingsButton.setButtonText("Restart");
-			else if (this.plugin.settings.botToken && this.plugin.botIsConnected())
+			else if (this.plugin.settings.botToken && this.plugin.isBotConnected())
 				botSettingsButton.setButtonText("Settings");
 			else botSettingsButton.setButtonText("Connect");
 			botSettingsButton.onClick(async () => {

@@ -96,7 +96,7 @@ async function handlePollingError(plugin: TelegramSyncPlugin, error: any) {
 
 async function checkConnectionAfterError(plugin: TelegramSyncPlugin, intervalInSeconds = 15) {
 	if (plugin.checkingBotConnection || !plugin.bot || !plugin.bot.isPolling()) return;
-	if (!plugin.checkingBotConnection && plugin.botIsConnected()) plugin.lastPollingErrors = [];
+	if (!plugin.checkingBotConnection && plugin.isBotConnected()) plugin.lastPollingErrors = [];
 	try {
 		plugin.checkingBotConnection = true;
 		await new Promise((resolve) => setTimeout(resolve, intervalInSeconds * _1sec));

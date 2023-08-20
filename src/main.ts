@@ -75,7 +75,7 @@ export default class TelegramSyncPlugin extends Plugin {
 
 			if (
 				(!sessionType || sessionType == "bot") &&
-				!this.botIsConnected() &&
+				!this.isBotConnected() &&
 				!this.checkingBotConnection &&
 				this.settings?.botToken
 			) {
@@ -148,7 +148,7 @@ export default class TelegramSyncPlugin extends Plugin {
 			case HowToInformAboutBotStatus.showBotStatusBar:
 				return true;
 			case HowToInformAboutBotStatus.showBotStatusBarErrorsOnly:
-				if (this.botIsConnected()) return false;
+				if (this.isBotConnected()) return false;
 				else return true;
 			default:
 				throw new Error(
@@ -171,7 +171,7 @@ export default class TelegramSyncPlugin extends Plugin {
 		if (!this.needToShowStatusBar()) return;
 		this.statusIcon = this.addStatusBarItem();
 		setIcon(this.statusIcon, "send");
-		if (this.botIsConnected()) this.setStatusIconConnectedStyleProperties();
+		if (this.isBotConnected()) this.setStatusIconConnectedStyleProperties();
 		else this.setStatusIconDisonnectedStyleProperties();
 	}
 
@@ -196,7 +196,7 @@ export default class TelegramSyncPlugin extends Plugin {
 		return this.botUser;
 	}
 
-	botIsConnected(): boolean {
+	isBotConnected(): boolean {
 		return this.botStatus === "connected";
 	}
 
@@ -215,7 +215,7 @@ export default class TelegramSyncPlugin extends Plugin {
 			return;
 		}
 
-		if (this.botIsConnected()) {
+		if (this.isBotConnected()) {
 			this.setStatusIconConnectedStyleProperties();
 			return;
 		}
@@ -230,6 +230,6 @@ export default class TelegramSyncPlugin extends Plugin {
 	}
 
 	private connectedStatusBarShouldBeHidden() {
-		return !this.needToShowStatusBar() && this.botIsConnected();
+		return !this.needToShowStatusBar() && this.isBotConnected();
 	}
 }
