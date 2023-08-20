@@ -75,7 +75,7 @@ export default class TelegramSyncPlugin extends Plugin {
 
 			if (
 				(!sessionType || sessionType == "bot") &&
-				!this.botState &&
+				!this.botIsConnected() &&
 				!this.checkingBotConnection &&
 				this.settings?.botToken
 			) {
