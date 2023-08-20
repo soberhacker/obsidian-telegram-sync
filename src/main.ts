@@ -24,7 +24,7 @@ export const MessageCheckConnection =
 export default class TelegramSyncPlugin extends Plugin {
 	settings: TelegramSyncSettings;
 	settingsTab: TelegramSyncSettingTab;
-	private botState: "connected" | "disconnected" = "disconnected";
+	private botStatus: "connected" | "disconnected" = "disconnected";
 	userConnected = false;
 	checkingBotConnection = false;
 	checkingUserConnection = false;
@@ -196,11 +196,11 @@ export default class TelegramSyncPlugin extends Plugin {
 	}
 
 	botIsConnected(): boolean {
-		return this.botState === "connected";
+		return this.botStatus === "connected";
 	}
 
 	botStateSetTo(state: "connected" | "disconnected"): void {
-		this.botState = state;
+		this.botStatus = state;
 		this.updatePluginStatusIcon();
 	}
 
