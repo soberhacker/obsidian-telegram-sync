@@ -3,7 +3,7 @@ import {
 	DEFAULT_SETTINGS,
 	TelegramSyncSettings,
 	TelegramSyncSettingTab,
-	HowToInformAboutBotStatus,
+	HowToInformAboutBotStatusType,
 	ParameterNameHowToInformAboutBotStatus,
 } from "./settings/Settings";
 import TelegramBot from "node-telegram-bot-api";
@@ -143,11 +143,11 @@ export default class TelegramSyncPlugin extends Plugin {
 
 	needToShowStatusBar(): boolean {
 		switch (this.settings.howToInformAboutBotStatus) {
-			case HowToInformAboutBotStatus.showBotLogs:
+			case HowToInformAboutBotStatusType.showBotLogs:
 				return false;
-			case HowToInformAboutBotStatus.showBotStatusBar:
+			case HowToInformAboutBotStatusType.showBotStatusBar:
 				return true;
-			case HowToInformAboutBotStatus.showBotStatusBarErrorsOnly:
+			case HowToInformAboutBotStatusType.showBotStatusBarErrorsOnly:
 				if (this.isBotConnected()) return false;
 				else return true;
 			default:

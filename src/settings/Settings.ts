@@ -15,7 +15,7 @@ import * as Bot from "../telegram/bot/bot";
 import * as User from "../telegram/user/user";
 
 export const ParameterNameHowToInformAboutBotStatus = "Connection status indicator";
-export enum HowToInformAboutBotStatus {
+export enum HowToInformAboutBotStatusType {
 	showBotLogs = "show-bot-logs",
 	showBotStatusBar = "show-bot-status-bar",
 	showBotStatusBarErrorsOnly = "show-bot-status-bar-errors-only",
@@ -42,7 +42,7 @@ export interface TelegramSyncSettings {
 	telegramSessionType: Client.SessionType;
 	telegramSessionId: number;
 	topicNames: Topic[];
-	howToInformAboutBotStatus: HowToInformAboutBotStatus;
+	howToInformAboutBotStatus: HowToInformAboutBotStatusType;
 	needToLogBotError(): boolean;
 }
 
@@ -61,10 +61,10 @@ export const DEFAULT_SETTINGS: TelegramSyncSettings = {
 	telegramSessionType: "bot",
 	telegramSessionId: Client.getNewSessionId(),
 	topicNames: [],
-	howToInformAboutBotStatus: HowToInformAboutBotStatus.showBotLogs,
+	howToInformAboutBotStatus: HowToInformAboutBotStatusType.showBotLogs,
 
 	needToLogBotError(): boolean {
-		return this.howToInformAboutBotStatus === HowToInformAboutBotStatus.showBotLogs;
+		return this.howToInformAboutBotStatus === HowToInformAboutBotStatusType.showBotLogs;
 	},
 };
 
@@ -342,14 +342,14 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 				dropDown.onChange(async (value) => {
 					switch (value) {
 						case "show-bot-logs":
-							this.plugin.settings.howToInformAboutBotStatus = HowToInformAboutBotStatus.showBotLogs;
+							this.plugin.settings.howToInformAboutBotStatus = HowToInformAboutBotStatusType.showBotLogs;
 							break;
 						case "show-bot-status-bar":
-							this.plugin.settings.howToInformAboutBotStatus = HowToInformAboutBotStatus.showBotStatusBar;
+							this.plugin.settings.howToInformAboutBotStatus = HowToInformAboutBotStatusType.showBotStatusBar;
 							break;
 						case "show-bot-status-bar-errors-only":
 							this.plugin.settings.howToInformAboutBotStatus =
-								HowToInformAboutBotStatus.showBotStatusBarErrorsOnly;
+								HowToInformAboutBotStatusType.showBotStatusBarErrorsOnly;
 							break;
 						default:
 							throw new Error(
