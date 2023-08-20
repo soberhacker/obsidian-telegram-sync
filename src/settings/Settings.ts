@@ -14,6 +14,13 @@ import { getTopicId } from "src/telegram/bot/message/getters";
 import * as Bot from "../telegram/bot/bot";
 import * as User from "../telegram/user/user";
 
+export const ParameterNameHowToInformAboutBotStatus = "Connection status indicator";
+export enum HowToInformAboutBotStatusType {
+	withLogs = "show-bot-logs",
+	statusBarAllStates = "show-bot-status-bar",
+	statusBarErrorsOnly = "show-bot-status-bar-errors-only",
+}
+
 export interface Topic {
 	name: string;
 	chatId: number;
@@ -35,6 +42,8 @@ export interface TelegramSyncSettings {
 	telegramSessionType: Client.SessionType;
 	telegramSessionId: number;
 	topicNames: Topic[];
+	howToInformAboutBotStatus: HowToInformAboutBotStatusType;
+	needToLogBotError(): boolean;
 }
 
 export const DEFAULT_SETTINGS: TelegramSyncSettings = {
@@ -52,6 +61,11 @@ export const DEFAULT_SETTINGS: TelegramSyncSettings = {
 	telegramSessionType: "bot",
 	telegramSessionId: Client.getNewSessionId(),
 	topicNames: [],
+	howToInformAboutBotStatus: HowToInformAboutBotStatusType.showBotLogs,
+
+	needToLogBotError(): boolean {
+		return this.howToInformAboutBotStatus === HowToInformAboutBotStatusType.showBotLogs;
+	},
 };
 
 export class TelegramSyncSettingTab extends PluginSettingTab {
@@ -75,6 +89,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 		this.addAppendAllToTelegramMd();
 		this.addSaveFilesCheckbox();
 		this.addDeleteMessagesFromTelegram();
+		this.addInformAboutBotStatus();
 		this.addDonation();
 	}
 
@@ -95,7 +110,8 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 			botStatus.setDisabled(true);
 			if (this.plugin.checkingBotConnection) {
 				botStatus.setValue("⏳ connecting...");
-			} else if (this.plugin.settings.botToken && this.plugin.botConnected) botStatus.setValue("🤖 connected");
+			} else if (this.plugin.settings.botToken && this.plugin.isBotConnected())
+				botStatus.setValue("🤖 connected");
 			else botStatus.setValue("❌ disconnected");
 			new Promise((resolve) => {
 				setTimeout(() => resolve(botStatusConstructor.call(this, botStatus)), _5sec);
@@ -104,7 +120,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 
 		const botSettingsConstructor = (botSettingsButton: ButtonComponent) => {
 			if (this.plugin.checkingBotConnection) botSettingsButton.setButtonText("Restart");
-			else if (this.plugin.settings.botToken && this.plugin.botConnected)
+			else if (this.plugin.settings.botToken && this.plugin.isBotConnected())
 				botSettingsButton.setButtonText("Settings");
 			else botSettingsButton.setButtonText("Connect");
 			botSettingsButton.onClick(async () => {
@@ -307,6 +323,42 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 				toggle.onChange(async (value) => {
 					this.plugin.settings.deleteMessagesFromTelegram = value;
 					await this.plugin.saveSettings();
+				});
+			});
+	}
+
+	addInformAboutBotStatus() {
+		new Setting(this.containerEl)
+			.setName(ParameterNameHowToInformAboutBotStatus)
+			.setDesc("Choose how you want to be informed about the bot's connection status")
+			.addDropdown((dropDown) => {
+				dropDown.addOptions({
+					"show-bot-logs": "show only messages about bot status change",
+					"show-bot-status-bar": "show telegram bot status at status bar",
+					"show-bot-status-bar-errors-only":
+						"show telegram status bot(show only errros and hide connected status)",
+				});
+				dropDown.setValue(this.plugin.settings.howToInformAboutBotStatus);
+				dropDown.onChange(async (value) => {
+					switch (value) {
+						case "show-bot-logs":
+							this.plugin.settings.howToInformAboutBotStatus = HowToInformAboutBotStatusType.showBotLogs;
+							break;
+						case "show-bot-status-bar":
+							this.plugin.settings.howToInformAboutBotStatus =
+								HowToInformAboutBotStatusType.showBotStatusBar;
+							break;
+						case "show-bot-status-bar-errors-only":
+							this.plugin.settings.howToInformAboutBotStatus =
+								HowToInformAboutBotStatusType.showBotStatusBarErrorsOnly;
+							break;
+						default:
+							throw new Error(
+								`Parameter How to inform about bot status has unknown type of value ${value}`,
+							);
+					}
+					await this.plugin.saveSettings();
+					this.plugin.updatePluginStatusIcon(true /*recreate status icon*/);
 				});
 			});
 	}

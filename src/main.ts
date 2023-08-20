@@ -1,5 +1,11 @@
-import { Plugin } from "obsidian";
-import { DEFAULT_SETTINGS, TelegramSyncSettings, TelegramSyncSettingTab } from "./settings/Settings";
+import { Plugin, setIcon } from "obsidian";
+import {
+	DEFAULT_SETTINGS,
+	TelegramSyncSettings,
+	TelegramSyncSettingTab,
+	HowToInformAboutBotStatusType,
+	ParameterNameHowToInformAboutBotStatus,
+} from "./settings/Settings";
 import TelegramBot from "node-telegram-bot-api";
 import { machineIdSync } from "node-machine-id";
 import { _15sec, _2min, displayAndLog, StatusMessages, _5sec } from "./utils/logUtils";
@@ -11,11 +17,14 @@ import { tooManyRequestsIntervalId } from "./telegram/bot/tooManyRequests";
 import { cachedMessagesIntervalId } from "./telegram/user/convertors";
 import { handleMediaGroupIntervalId } from "./telegram/bot/message/handlers";
 
+export const MessageCheckConnection =
+	"Check internet(proxy) connection, the functionality of Telegram using the official app. If everything is ok, restart Obsidian.";
+
 // Main class for the Telegram Sync plugin
 export default class TelegramSyncPlugin extends Plugin {
 	settings: TelegramSyncSettings;
 	settingsTab: TelegramSyncSettingTab;
-	botConnected = false;
+	private botStatus: "connected" | "disconnected" = "disconnected";
 	userConnected = false;
 	checkingBotConnection = false;
 	checkingUserConnection = false;
@@ -27,6 +36,8 @@ export default class TelegramSyncPlugin extends Plugin {
 	restartingIntervalId: NodeJS.Timer;
 	restartingIntervalTime = _15sec;
 	messagesLeftCnt = 0;
+	statusIcon?: HTMLElement;
+	pluginStatus: "unloading" | "unloaded";
 
 	async initTelegram(initType?: Client.SessionType) {
 		this.lastPollingErrors = [];
@@ -64,7 +75,7 @@ export default class TelegramSyncPlugin extends Plugin {
 
 			if (
 				(!sessionType || sessionType == "bot") &&
-				!this.botConnected &&
+				!this.isBotConnected() &&
 				!this.checkingBotConnection &&
 				this.settings?.botToken
 			) {
@@ -95,6 +106,7 @@ export default class TelegramSyncPlugin extends Plugin {
 	async onload() {
 		console.log(`Loading ${this.manifest.name} plugin`);
 		await this.loadSettings();
+		this.addStatusIconIdneeded();
 		// TODO in 2024: Remove allowedChatFromUsernames, because it is deprecated
 		if (this.settings.allowedChatFromUsernames.length != 0) {
 			this.settings.allowedChats = [...this.settings.allowedChatFromUsernames];
@@ -118,12 +130,54 @@ export default class TelegramSyncPlugin extends Plugin {
 	}
 
 	async onunload(): Promise<void> {
+		this.pluginStatus = "unloading";
 		clearInterval(this.restartingIntervalId);
 		clearInterval(tooManyRequestsIntervalId);
 		clearInterval(cachedMessagesIntervalId);
 		clearInterval(handleMediaGroupIntervalId);
+		this.clearStatusIcon();
 		await Bot.disconnect(this);
 		await User.disconnect(this);
+		this.pluginStatus = "unloaded";
+	}
+
+	needToShowStatusBar(): boolean {
+		switch (this.settings.howToInformAboutBotStatus) {
+			case HowToInformAboutBotStatusType.showBotLogs:
+				return false;
+			case HowToInformAboutBotStatusType.showBotStatusBar:
+				return true;
+			case HowToInformAboutBotStatusType.showBotStatusBarErrorsOnly:
+				if (this.isBotConnected()) return false;
+				else return true;
+			default:
+				throw new Error(
+					`Unknown configuration value ${this.settings.howToInformAboutBotStatus} for parameter ${ParameterNameHowToInformAboutBotStatus}`,
+				);
+		}
+	}
+
+	setStatusIconDisonnectedStyleProperties(): void {
+		this?.statusIcon?.setAttrs({
+			style: "background-color: red;",
+			"data-tooltip-position": "top",
+			"aria-label": MessageCheckConnection,
+		});
+	}
+
+	addStatusIconIdneeded(): void {
+		if (this.statusIcon !== undefined) return; // status icon resource has already been allocated
+		if (this.pluginStatus == "unloading") return;
+		if (!this.needToShowStatusBar()) return;
+		this.statusIcon = this.addStatusBarItem();
+		setIcon(this.statusIcon, "send");
+		if (this.isBotConnected()) this.setStatusIconConnectedStyleProperties();
+		else this.setStatusIconDisonnectedStyleProperties();
+	}
+
+	clearStatusIcon(): void {
+		this.statusIcon?.remove();
+		this.statusIcon = undefined;
 	}
 
 	// Load settings from the plugin's data
@@ -140,5 +194,39 @@ export default class TelegramSyncPlugin extends Plugin {
 		this.botUser = this.botUser || (await this.bot?.getMe());
 		if (!this.botUser) throw new Error("Can't get access to bot info. Restart the Telegram Sync plugin");
 		return this.botUser;
+	}
+
+	isBotConnected(): boolean {
+		return this.botStatus === "connected";
+	}
+
+	setBotState(state: "connected" | "disconnected"): void {
+		this.botStatus = state;
+		this.updatePluginStatusIcon();
+	}
+
+	updatePluginStatusIcon(recreateStatusIcon = false): void {
+		if (recreateStatusIcon) this.clearStatusIcon();
+		this.addStatusIconIdneeded();
+
+		// if icon resource is not allocated but icon should not be shown then allocate icon resouce
+		if (this.statusIcon !== undefined && this.connectedStatusBarShouldBeHidden()) {
+			this.clearStatusIcon();
+			return;
+		}
+
+		if (this.isBotConnected()) {
+			this.setStatusIconConnectedStyleProperties();
+		} else this.setStatusIconDisonnectedStyleProperties();
+	}
+
+	private setStatusIconConnectedStyleProperties() {
+		this.statusIcon?.removeAttribute("style");
+		this.statusIcon?.removeAttribute("data-tooltip-position");
+		this.statusIcon?.removeAttribute("aria-label");
+	}
+
+	private connectedStatusBarShouldBeHidden(): boolean {
+		return !this.needToShowStatusBar() && this.isBotConnected();
 	}
 }
