@@ -200,7 +200,7 @@ export default class TelegramSyncPlugin extends Plugin {
 		return this.botStatus === "connected";
 	}
 
-	botStateSetTo(state: "connected" | "disconnected"): void {
+	setBotState(state: "connected" | "disconnected"): void {
 		this.botStatus = state;
 		this.updatePluginStatusIcon();
 	}
