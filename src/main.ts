@@ -217,10 +217,7 @@ export default class TelegramSyncPlugin extends Plugin {
 
 		if (this.isBotConnected()) {
 			this.setStatusIconConnectedStyleProperties();
-			return;
-		}
-		// Bot is disconnected
-		this.setStatusIconDisonnectedStyleProperties();
+		} else this.setStatusIconDisonnectedStyleProperties();
 	}
 
 	private setStatusIconConnectedStyleProperties() {
