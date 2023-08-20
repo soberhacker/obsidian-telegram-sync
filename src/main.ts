@@ -226,7 +226,7 @@ export default class TelegramSyncPlugin extends Plugin {
 		this.statusIcon?.removeAttribute("aria-label");
 	}
 
-	private connectedStatusBarShouldBeHidden() {
+	private connectedStatusBarShouldBeHidden() : boolean {
 		return !this.needToShowStatusBar() && this.isBotConnected();
 	}
 }
