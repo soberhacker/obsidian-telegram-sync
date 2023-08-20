@@ -14,7 +14,7 @@ import { getTopicId } from "src/telegram/bot/message/getters";
 import * as Bot from "../telegram/bot/bot";
 import * as User from "../telegram/user/user";
 
-export const ParameterNameHowToInformAboutBotStatus = "How to inform about bot staus";
+export const ParameterNameHowToInformAboutBotStatus = "Bot connection staus";
 export enum HowToInformAboutBotStatus {
 	showBotLogs = "show-bot-logs",
 	showBotStatusBar = "show-bot-status-bar",
@@ -330,7 +330,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 	addInformAboutBotStatus() {
 		new Setting(this.containerEl)
 			.setName(ParameterNameHowToInformAboutBotStatus)
-			//.setDesc("")
+			.setDesc("Please choose how do what to be informed about bot connection status")
 			.addDropdown((dropDown) => {
 				dropDown.addOptions({
 					"show-bot-logs": "show only messages about bot status change",
