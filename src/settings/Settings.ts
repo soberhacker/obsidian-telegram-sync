@@ -14,7 +14,7 @@ import { getTopicId } from "src/telegram/bot/message/getters";
 import * as Bot from "../telegram/bot/bot";
 import * as User from "../telegram/user/user";
 
-export const ParameterNameHowToInformAboutBotStatus = "Bot connection staus";
+export const ParameterNameHowToInformAboutBotStatus = "Connection status indicator";
 export enum HowToInformAboutBotStatus {
 	showBotLogs = "show-bot-logs",
 	showBotStatusBar = "show-bot-status-bar",
