@@ -49,6 +49,15 @@ export default class TelegramSyncPlugin extends Plugin {
 		}
 	}
 
+	setRestartTelegramInterval(newRestartingIntervalTime: number, sessionType?: Client.SessionType) {
+		this.restartingIntervalTime = newRestartingIntervalTime;
+		clearInterval(this.restartingIntervalId);
+		this.restartingIntervalId = setInterval(
+			async () => await enqueue(this, this.restartTelegram, sessionType),
+			this.restartingIntervalTime,
+		);
+	}
+
 	async restartTelegram(sessionType?: Client.SessionType) {
 		let needRestartInterval = false;
 		try {
@@ -73,28 +82,18 @@ export default class TelegramSyncPlugin extends Plugin {
 				needRestartInterval = true;
 			}
 
-			if (needRestartInterval) {
-				this.restartingIntervalTime = _15sec;
-				clearInterval(this.restartingIntervalId);
-				this.restartingIntervalId = setInterval(
-					async () => await enqueue(this, this.restartTelegram, sessionType),
-					this.restartingIntervalTime,
-				);
-			}
+			if (needRestartInterval) this.setRestartTelegramInterval(_15sec);
 		} catch {
-			if (this.restartingIntervalTime < _2min) this.restartingIntervalTime = this.restartingIntervalTime * 2;
-			clearInterval(this.restartingIntervalId);
-			this.restartingIntervalId = setInterval(
-				async () => await enqueue(this, this.restartTelegram, sessionType),
-				this.restartingIntervalTime,
+			this.setRestartTelegramInterval(
+				this.restartingIntervalTime < _2min ? this.restartingIntervalTime * 2 : this.restartingIntervalTime,
 			);
 		}
 	}
 
 	// Load the plugin, settings, and initialize the bot
 	async onload() {
-		console.log(`Loading ${this.manifest.name} plugin`);
 		await this.loadSettings();
+
 		// TODO in 2024: Remove allowedChatFromUsernames, because it is deprecated
 		if (this.settings.allowedChatFromUsernames.length != 0) {
 			this.settings.allowedChats = [...this.settings.allowedChatFromUsernames];
@@ -103,18 +102,17 @@ export default class TelegramSyncPlugin extends Plugin {
 		}
 
 		// Add a settings tab for this plugin
-		this.settingsTab = new TelegramSyncSettingTab(this);
+		this.settingsTab = new TelegramSyncSettingTab(this.app, this);
 		this.addSettingTab(this.settingsTab);
 
 		// Initialize the Telegram bot when Obsidian layout is fully loaded
 		this.app.workspace.onLayoutReady(async () => {
-			await this.initTelegram();
+			enqueue(this, this.initTelegram);
 			// restart telegram bot or user if needed
-			this.restartingIntervalId = setInterval(
-				async () => await enqueue(this, this.restartTelegram),
-				this.restartingIntervalTime,
-			);
+			this.setRestartTelegramInterval(this.restartingIntervalTime);
 		});
+
+		console.log(`${this.manifest.name}: loaded`);
 	}
 
 	async onunload(): Promise<void> {
@@ -122,8 +120,14 @@ export default class TelegramSyncPlugin extends Plugin {
 		clearInterval(tooManyRequestsIntervalId);
 		clearInterval(cachedMessagesIntervalId);
 		clearInterval(handleMediaGroupIntervalId);
-		await Bot.disconnect(this);
-		await User.disconnect(this);
+		try {
+			Bot.disconnect(this);
+		} catch (e) {
+			console.log(e);
+			User.disconnect(this);
+		} finally {
+			console.log(`${this.manifest.name}: unloaded`);
+		}
 	}
 
 	// Load settings from the plugin's data

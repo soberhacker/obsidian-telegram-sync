@@ -1,5 +1,5 @@
 import TelegramSyncPlugin from "src/main";
-import { ButtonComponent, PluginSettingTab, Setting, TextComponent, normalizePath } from "obsidian";
+import { App, ButtonComponent, Notice, PluginSettingTab, Setting, TextComponent, normalizePath } from "obsidian";
 import { FileSuggest } from "./suggesters/FileSuggester";
 import { FolderSuggest } from "./suggesters/FolderSuggester";
 import { boostyButton, paypalButton, buyMeACoffeeButton, kofiButton } from "./donation";
@@ -8,11 +8,12 @@ import { createProgressBar, updateProgressBar, deleteProgressBar, ProgressBarTyp
 import * as Client from "src/telegram/user/client";
 import { BotSettingsModal } from "./BotSettingsModal";
 import { UserLogInModal } from "./UserLogInModal";
-import { version } from "release-notes.mjs";
-import { _15sec, _5sec, displayAndLog } from "src/utils/logUtils";
+import { version, versionALessThanVersionB } from "release-notes.mjs";
+import { _15sec, _5sec, displayAndLog, doNotHide } from "src/utils/logUtils";
 import { getTopicId } from "src/telegram/bot/message/getters";
 import * as Bot from "../telegram/bot/bot";
 import * as User from "../telegram/user/user";
+import { replaceMainJs } from "src/utils/fsUtils";
 
 export interface Topic {
 	name: string;
@@ -28,12 +29,14 @@ export interface TelegramSyncSettings {
 	deleteMessagesFromTelegram: boolean;
 	needToSaveFiles: boolean;
 	newFilesLocation: string;
-	allowedChatFromUsernames: string[]; // deprecated, use allowedChats
+	allowedChatFromUsernames: string[]; //TODO in 2024: deprecated, use allowedChats
 	allowedChats: string[];
 	mainDeviceId: string;
 	pluginVersion: string;
 	telegramSessionType: Client.SessionType;
 	telegramSessionId: number;
+	betaVersion: string;
+	// add new settings above this line
 	topicNames: Topic[];
 }
 
@@ -45,21 +48,28 @@ export const DEFAULT_SETTINGS: TelegramSyncSettings = {
 	deleteMessagesFromTelegram: false,
 	needToSaveFiles: true,
 	newFilesLocation: "",
-	allowedChatFromUsernames: [""], // deprecated, use allowedChats
+	allowedChatFromUsernames: [""], //TODO in 2024: deprecated, use allowedChats
 	allowedChats: [""],
 	mainDeviceId: "",
 	pluginVersion: "",
 	telegramSessionType: "bot",
 	telegramSessionId: Client.getNewSessionId(),
+	betaVersion: "",
+	// add new settings above this line
 	topicNames: [],
 };
 
 export class TelegramSyncSettingTab extends PluginSettingTab {
-	constructor(private plugin: TelegramSyncPlugin) {
+	plugin: TelegramSyncPlugin;
+	botStatusTimeOut: NodeJS.Timeout;
+	botSettingsTimeOut: NodeJS.Timeout;
+
+	constructor(app: App, plugin: TelegramSyncPlugin) {
 		super(app, plugin);
+		this.plugin = plugin;
 	}
 
-	display(): void {
+	async display(): Promise<void> {
 		this.containerEl.empty();
 		this.addSettingsHeader();
 
@@ -75,11 +85,26 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 		this.addAppendAllToTelegramMd();
 		this.addSaveFilesCheckbox();
 		this.addDeleteMessagesFromTelegram();
+		this.containerEl.createEl("br");
+		this.containerEl.createEl("h2", { text: "System settings" });
+		await this.addBetaRelease();
 		this.addDonation();
 	}
 
+	hide() {
+		super.hide();
+		clearTimeout(this.botStatusTimeOut);
+		clearTimeout(this.botSettingsTimeOut);
+	}
+
 	addSettingsHeader() {
-		this.containerEl.createEl("h1", { text: `Telegram Sync ${version}` });
+		this.containerEl.createEl("h1", {
+			text: `Telegram Sync ${
+				versionALessThanVersionB(version, this.plugin.settings.betaVersion)
+					? this.plugin.settings.betaVersion
+					: version
+			}`,
+		});
 		this.containerEl.createEl("p", { text: "Created by " }).createEl("a", {
 			text: "soberhacker🍃🧘💻",
 			href: "https://github.com/soberhacker",
@@ -98,7 +123,8 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 			} else if (this.plugin.settings.botToken && this.plugin.botConnected) botStatus.setValue("🤖 connected");
 			else botStatus.setValue("❌ disconnected");
 			new Promise((resolve) => {
-				setTimeout(() => resolve(botStatusConstructor.call(this, botStatus)), _5sec);
+				clearTimeout(this.botStatusTimeOut);
+				this.botStatusTimeOut = setTimeout(() => resolve(botStatusConstructor.call(this, botStatus)), _5sec);
 			});
 		};
 
@@ -129,14 +155,18 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 			});
 
 			new Promise((resolve) => {
-				setTimeout(() => resolve(botSettingsConstructor.call(this, botSettingsButton)), _5sec);
+				clearTimeout(this.botSettingsTimeOut);
+				this.botSettingsTimeOut = setTimeout(
+					() => resolve(botSettingsConstructor.call(this, botSettingsButton)),
+					_5sec,
+				);
 			});
 		};
 		const botSettings = new Setting(this.containerEl)
 			.setName("Bot (required)")
 			.setDesc("Connect your telegram bot. It's required for all features.")
-			.addText(botStatusConstructor)
-			.addButton(botSettingsConstructor);
+			.addText(botStatusConstructor.bind(this))
+			.addButton(botSettingsConstructor.bind(this));
 		// add link to botFather
 		const botFatherLink = document.createElement("div");
 		botFatherLink.textContent = "To create a new bot click on -> ";
@@ -192,8 +222,8 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 		const userSettings = new Setting(this.containerEl)
 			.setName("User (optionally)")
 			.setDesc("Connect your telegram user. It's required only for ")
-			.addText(userStatusConstructor)
-			.addButton(userLogInConstructor);
+			.addText(userStatusConstructor.bind(this))
+			.addButton(userLogInConstructor.bind(this));
 		// TODO removing Refresh button if this.plugin.settings.telegramSessionType changed to "bot" (when Log out, etc)
 		if (this.plugin.settings.telegramSessionType == "user" && !this.plugin.userConnected) {
 			userSettings.addExtraButton((refreshButton) => {
@@ -307,6 +337,53 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 				toggle.onChange(async (value) => {
 					this.plugin.settings.deleteMessagesFromTelegram = value;
 					await this.plugin.saveSettings();
+				});
+			});
+	}
+
+	async addBetaRelease() {
+		if (!this.plugin.userConnected || !(await Client.subscribedOnInsiderChannel())) return;
+
+		const installed = "Installed\n\nRestart the plugin or Obsidian to apply the changes";
+
+		new Setting(this.containerEl)
+			.setName("Beta release")
+			.setDesc("The release installation will be completed during the next loading of the plugin")
+			.addButton((btn) => {
+				btn.setTooltip("Install Beta Release");
+				btn.setWarning();
+				btn.setIcon("install");
+				btn.onClick(async () => {
+					const notice = new Notice("Downloading...", doNotHide);
+					try {
+						const betaRelease = await Client.getLastBetaRelease(this.plugin.settings.pluginVersion);
+						notice.setMessage(`Installing...`);
+						await replaceMainJs(this.app.vault, betaRelease.mainJs);
+						this.plugin.settings.betaVersion = betaRelease.version;
+						await this.plugin.saveSettings();
+						notice.setMessage(installed);
+					} catch (e) {
+						notice.setMessage(e);
+					}
+				});
+			})
+			.addButton(async (btn) => {
+				btn.setTooltip("Return to production release");
+				btn.setIcon("undo-glyph");
+				btn.onClick(async () => {
+					if (!this.plugin.settings.betaVersion) {
+						new Notice(`You already have the production version of the plugin installed`, _5sec);
+						return;
+					}
+					const notice = new Notice("Installing...", doNotHide);
+					try {
+						await replaceMainJs(this.app.vault, "main-prod.js");
+						this.plugin.settings.betaVersion = "";
+						await this.plugin.saveSettings();
+						notice.setMessage(installed);
+					} catch (e) {
+						notice.setMessage("Error during return to production release: " + e);
+					}
 				});
 			});
 	}

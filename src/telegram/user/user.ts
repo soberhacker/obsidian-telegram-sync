@@ -86,6 +86,5 @@ export async function disconnect(plugin: TelegramSyncPlugin) {
 		await client.stop();
 	} finally {
 		plugin.userConnected = false;
-		plugin.checkingUserConnection = false;
 	}
 }

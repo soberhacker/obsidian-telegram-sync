@@ -1,6 +1,6 @@
 import { Api, TelegramClient } from "telegram";
 import { StoreSession } from "telegram/sessions";
-import { version } from "release-notes.mjs";
+import { version, versionALessThanVersionB } from "release-notes.mjs";
 import TelegramBot from "node-telegram-bot-api";
 import QRCode from "qrcode";
 import os from "os";
@@ -31,6 +31,11 @@ const NotAuthorizedAsUser = new Error("Not authorized as user. You have to conne
 export function getNewSessionId(): number {
 	return Number(formatDateTime(new Date(), "YYYYMMDDHHmmssSSS"));
 }
+
+export const insiderChannel = new Api.InputPeerChannel({
+	channelId: bigInt("1913400014"),
+	accessHash: bigInt("-3471904725986943479"),
+});
 
 // Stop the bot polling
 export async function stop() {
@@ -288,10 +293,6 @@ export async function subscribedOnInsiderChannel(): Promise<boolean> {
 	if (!client || !client.connected || _sessionType == "bot") return false;
 	try {
 		const { checkedClient } = await checkUserService();
-		const insiderChannel = new Api.InputPeerChannel({
-			channelId: bigInt("1913400014"),
-			accessHash: bigInt("-3471904725986943479"),
-		});
 		const inputDialogPeer = new Api.InputDialogPeer({
 			peer: insiderChannel,
 		});
@@ -305,4 +306,24 @@ export async function subscribedOnInsiderChannel(): Promise<boolean> {
 		console.log(e);
 		return false;
 	}
+}
+export async function getLastBetaRelease(currentVersion: string): Promise<{ version: string; mainJs: Buffer }> {
+	const { checkedClient } = await checkUserService();
+	const messages = await checkedClient.getMessages(insiderChannel, {
+		limit: 10,
+		filter: new Api.InputMessagesFilterDocument(),
+		search: ".Beta", // TODO change to -beta.
+	});
+	if (messages.length == 0) throw new Error("No beta versions in Insider channel!");
+	const message = messages[0];
+	const match = message.message.match(/Obsidian Telegram Sync (\S+)/);
+	const version = (match ? match[1] : "").replace("1.10.0.Beta", "1.10.1-beta.1");
+	if (!version) throw new Error("Can't find the version label in the message: " + message.message);
+	if (versionALessThanVersionB(version, currentVersion))
+		throw new Error(
+			`The last beta version ${version} can't be installed because it less than current version ${currentVersion}!`,
+		);
+	const mainJs = (await messages[0].downloadMedia()) as Buffer;
+	if (!mainJs) throw new Error("Can't find main.js in the last 10 messages of Insider channel");
+	return { version, mainJs };
 }

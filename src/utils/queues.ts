@@ -1,3 +1,5 @@
+import TelegramSyncPlugin from "src/main";
+
 type AsyncStaticFunction<A extends unknown[] = unknown[], R = unknown> = (...args: A) => Promise<R>;
 type AsyncInstanceFunction<C = undefined, A extends unknown[] = unknown[], R = unknown> = (
 	this: C,
@@ -29,7 +31,11 @@ export async function enqueue<C, A extends unknown[], R>(
 	}
 	const args = rest;
 
-	const queueKey = fn.name;
+	const queueKey =
+		context instanceof TelegramSyncPlugin && fn.name == context.restartTelegram.name
+			? context.initTelegram.name
+			: fn.name;
+
 	if (!queueKey) throw new Error("Function should have a name");
 
 	const queue = (queues.get(queueKey) || Promise.resolve())
