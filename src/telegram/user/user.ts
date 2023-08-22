@@ -67,7 +67,7 @@ export async function reconnect(plugin: TelegramSyncPlugin, displayError = false
 		plugin.userConnected = await client.isAuthorizedAsUser();
 	} catch (error) {
 		plugin.userConnected = false;
-		if (displayError && plugin.botConnected && plugin.settings.telegramSessionType == "user") {
+		if (displayError && plugin.isBotConnected() && plugin.settings.telegramSessionType == "user") {
 			await displayAndLogError(
 				plugin,
 				error,

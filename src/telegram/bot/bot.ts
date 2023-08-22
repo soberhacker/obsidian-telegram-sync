@@ -1,6 +1,6 @@
 import TelegramBot from "node-telegram-bot-api";
 import TelegramSyncPlugin from "src/main";
-import { _1sec, displayAndLog, StatusMessages, _5sec } from "src/utils/logUtils";
+import { _1sec, displayAndLog } from "src/utils/logUtils";
 import { handleMessageOrPost } from "./message/handlers";
 import { reconnect } from "../user/user";
 
@@ -102,7 +102,6 @@ async function checkConnectionAfterError(plugin: TelegramSyncPlugin, intervalInS
 		plugin.setBotStatus("connected");
 		plugin.lastPollingErrors = [];
 		plugin.checkingBotConnection = false;
-		displayAndLog(plugin, StatusMessages.botReconnected, _5sec);
 		reconnect(plugin);
 	} catch {
 		plugin.checkingBotConnection = false;

@@ -2,7 +2,7 @@ import { Plugin } from "obsidian";
 import { DEFAULT_SETTINGS, TelegramSyncSettings, TelegramSyncSettingTab } from "./settings/Settings";
 import TelegramBot from "node-telegram-bot-api";
 import { machineIdSync } from "node-machine-id";
-import { _15sec, _2min, displayAndLog, StatusMessages, _5sec, displayAndLogError } from "./utils/logUtils";
+import { _15sec, _2min, displayAndLog, StatusMessages, displayAndLogError } from "./utils/logUtils";
 import * as Client from "./telegram/user/client";
 import * as Bot from "./telegram/bot/bot";
 import * as User from "./telegram/user/user";
@@ -84,7 +84,6 @@ export default class TelegramSyncPlugin extends Plugin {
 				this.settings?.botToken
 			) {
 				await this.initTelegram("bot");
-				displayAndLog(this, StatusMessages.botReconnected, _5sec);
 				needRestartInterval = true;
 			}
 
