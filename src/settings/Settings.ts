@@ -14,6 +14,7 @@ import { getTopicId } from "src/telegram/bot/message/getters";
 import * as Bot from "../telegram/bot/bot";
 import * as User from "../telegram/user/user";
 import { replaceMainJs } from "src/utils/fsUtils";
+import { ConnectionStatusIndicatorType, connectionStatusIndicatorSettingName } from "src/ConnectionStatusIndicator";
 
 export interface Topic {
 	name: string;
@@ -36,6 +37,7 @@ export interface TelegramSyncSettings {
 	telegramSessionType: Client.SessionType;
 	telegramSessionId: number;
 	betaVersion: string;
+	connectionStatusIndicatorType: ConnectionStatusIndicatorType;
 	// add new settings above this line
 	topicNames: Topic[];
 }
@@ -55,6 +57,7 @@ export const DEFAULT_SETTINGS: TelegramSyncSettings = {
 	telegramSessionType: "bot",
 	telegramSessionId: Client.getNewSessionId(),
 	betaVersion: "",
+	connectionStatusIndicatorType: ConnectionStatusIndicatorType.CONSTANT,
 	// add new settings above this line
 	topicNames: [],
 };
@@ -88,6 +91,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 		this.containerEl.createEl("br");
 		this.containerEl.createEl("h2", { text: "System settings" });
 		await this.addBetaRelease();
+		this.addConnectionStatusIndicator();
 		this.addDonation();
 	}
 
@@ -120,7 +124,8 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 			botStatus.setDisabled(true);
 			if (this.plugin.checkingBotConnection) {
 				botStatus.setValue("⏳ connecting...");
-			} else if (this.plugin.settings.botToken && this.plugin.botConnected) botStatus.setValue("🤖 connected");
+			} else if (this.plugin.settings.botToken && this.plugin.isBotConnected())
+				botStatus.setValue("🤖 connected");
 			else botStatus.setValue("❌ disconnected");
 			new Promise((resolve) => {
 				clearTimeout(this.botStatusTimeOut);
@@ -130,7 +135,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 
 		const botSettingsConstructor = (botSettingsButton: ButtonComponent) => {
 			if (this.plugin.checkingBotConnection) botSettingsButton.setButtonText("Restart");
-			else if (this.plugin.settings.botToken && this.plugin.botConnected)
+			else if (this.plugin.settings.botToken && this.plugin.isBotConnected())
 				botSettingsButton.setButtonText("Settings");
 			else botSettingsButton.setButtonText("Connect");
 			botSettingsButton.onClick(async () => {
@@ -384,6 +389,22 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 					} catch (e) {
 						notice.setMessage("Error during return to production release: " + e);
 					}
+				});
+			});
+	}
+
+	addConnectionStatusIndicator() {
+		new Setting(this.containerEl)
+			.setName(connectionStatusIndicatorSettingName)
+			.setDesc("Choose when you want to see the connection status indicator")
+			.addDropdown((dropDown) => {
+				dropDown.addOptions(ConnectionStatusIndicatorType);
+				dropDown.setValue(this.plugin.settings.connectionStatusIndicatorType);
+				dropDown.onChange(async (value) => {
+					this.plugin.settings.connectionStatusIndicatorType =
+						ConnectionStatusIndicatorType[value as keyof typeof ConnectionStatusIndicatorType];
+					this.plugin.connectionStatusIndicator?.updateType();
+					await this.plugin.saveSettings();
 				});
 			});
 	}

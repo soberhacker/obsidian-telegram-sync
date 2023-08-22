@@ -1,6 +1,6 @@
 import TelegramBot from "node-telegram-bot-api";
 import TelegramSyncPlugin from "src/main";
-import { _1sec, displayAndLog, displayAndLogError, StatusMessages, _5sec } from "src/utils/logUtils";
+import { _1sec, displayAndLog, StatusMessages, _5sec } from "src/utils/logUtils";
 import { handleMessageOrPost } from "./message/handlers";
 import { reconnect } from "../user/user";
 
@@ -41,15 +41,11 @@ export async function connect(plugin: TelegramSyncPlugin) {
 		} finally {
 			await bot.startPolling();
 		}
-		plugin.botConnected = true;
+		plugin.setBotStatus("connected");
 	} catch (error) {
-		if (!bot || !bot.isPolling())
-			await displayAndLogError(
-				plugin,
-				error,
-				StatusMessages.botDisconnected,
-				"Check internet(proxy) connection, the functionality of Telegram using the official app. If everything is ok, restart Obsidian.",
-			);
+		if (!bot || !bot.isPolling()) {
+			plugin.setBotStatus("disconnected", error);
+		}
 	}
 }
 
@@ -60,7 +56,7 @@ export async function disconnect(plugin: TelegramSyncPlugin) {
 	} finally {
 		plugin.bot = undefined;
 		plugin.botUser = undefined;
-		plugin.botConnected = false;
+		plugin.setBotStatus("disconnected");
 	}
 }
 
@@ -89,8 +85,7 @@ async function handlePollingError(plugin: TelegramSyncPlugin, error: any) {
 	if (plugin.lastPollingErrors.length == 0 || !plugin.lastPollingErrors.includes(pollingError)) {
 		plugin.lastPollingErrors.push(pollingError);
 		if (!(pollingError == "twoBotInstances")) {
-			plugin.botConnected = false;
-			await displayAndLogError(plugin, error, StatusMessages.botDisconnected);
+			plugin.setBotStatus("disconnected");
 		}
 	}
 
@@ -99,12 +94,12 @@ async function handlePollingError(plugin: TelegramSyncPlugin, error: any) {
 
 async function checkConnectionAfterError(plugin: TelegramSyncPlugin, intervalInSeconds = 15) {
 	if (plugin.checkingBotConnection || !plugin.bot || !plugin.bot.isPolling()) return;
-	if (!plugin.checkingBotConnection && plugin.botConnected) plugin.lastPollingErrors = [];
+	if (!plugin.checkingBotConnection && plugin.isBotConnected()) plugin.lastPollingErrors = [];
 	try {
 		plugin.checkingBotConnection = true;
 		await new Promise((resolve) => setTimeout(resolve, intervalInSeconds * _1sec));
 		plugin.botUser = await plugin.bot.getMe();
-		plugin.botConnected = true;
+		plugin.setBotStatus("connected");
 		plugin.lastPollingErrors = [];
 		plugin.checkingBotConnection = false;
 		displayAndLog(plugin, StatusMessages.botReconnected, _5sec);
