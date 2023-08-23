@@ -20,12 +20,13 @@ export type PluginStatus = "unloading" | "unloaded" | "loading" | "loaded";
 // Main class for the Telegram Sync plugin
 export default class TelegramSyncPlugin extends Plugin {
 	settings: TelegramSyncSettings;
-	settingsTab: TelegramSyncSettingTab;
+	settingsTab?: TelegramSyncSettingTab;
 	private botStatus: ConnectionStatus = "disconnected";
 	// TODO: change to userStatus and display in status bar
 	userConnected = false;
 	checkingBotConnection = false;
 	checkingUserConnection = false;
+	// TODO: TelegramSyncBot extends TelegramBot
 	bot?: TelegramBot;
 	botUser?: TelegramBot.User;
 	listOfNotePaths: string[] = [];
@@ -35,7 +36,7 @@ export default class TelegramSyncPlugin extends Plugin {
 	restartingIntervalTime = _15sec;
 	// TODO: add messagesLeftCnt displaying in status bar
 	messagesLeftCnt = 0;
-	connectionStatusIndicator = new ConnectionStatusIndicator(this);
+	connectionStatusIndicator? = new ConnectionStatusIndicator(this);
 	status: PluginStatus = "loading";
 
 	async initTelegram(initType?: Client.SessionType) {
@@ -147,7 +148,9 @@ export default class TelegramSyncPlugin extends Plugin {
 			clearTooManyRequestsInterval();
 			clearCachedMessagesInterval();
 			clearHandleMediaGroupInterval();
-			this.connectionStatusIndicator.destroy();
+			this.connectionStatusIndicator?.destroy();
+			this.connectionStatusIndicator = undefined;
+			this.settingsTab = undefined;
 			this.stopTelegram();
 		} catch (e) {
 			displayAndLog(this, e, 0);
@@ -181,7 +184,7 @@ export default class TelegramSyncPlugin extends Plugin {
 		if (this.botStatus == status && !error) return;
 
 		this.botStatus = status;
-		this.connectionStatusIndicator.updateType(error);
+		this.connectionStatusIndicator?.update(error);
 
 		if (this.isBotConnected()) displayAndLog(this, StatusMessages.botConnected, 0);
 		else if (!error) displayAndLog(this, StatusMessages.botDisconnected, 0);

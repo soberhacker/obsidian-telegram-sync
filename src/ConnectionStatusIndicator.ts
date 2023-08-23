@@ -13,65 +13,58 @@ export const checkConnectionMessage =
 
 export default class ConnectionStatusIndicator {
 	plugin: TelegramSyncPlugin;
-	statusBarIcon?: HTMLElement;
-	statusBarLabel?: HTMLElement;
+	icon?: HTMLElement;
+	label?: HTMLLabelElement;
 
 	constructor(plugin: TelegramSyncPlugin) {
 		this.plugin = plugin;
 	}
 
+	private create() {
+		if (this.icon) return; // status icon resource has already been allocated
+		this.icon = this.plugin.addStatusBarItem();
+		this.icon.id = "connection-status-indicator";
+		setIcon(this.icon, "send");
+		this.label = this.icon.createEl("label");
+		this.label.setAttr("for", "connection-status-indicator");
+	}
+
 	destroy() {
-		this.removeStatusBarIcon();
+		this.label?.remove();
+		this.icon?.remove();
+		this.icon = undefined;
+		this.label = undefined;
 	}
 
-	private createStatusBarIcon() {
-		if (this.statusBarIcon) return; // status icon resource has already been allocated
-		this.statusBarIcon = this.plugin.addStatusBarItem();
-		this.statusBarIcon.id = "connection-status-indicator";
-		setIcon(this.statusBarIcon, "send");
-		this.statusBarLabel = this.statusBarIcon.createEl("label");
-		this.statusBarLabel.setAttr("for", "connection-status-indicator");
-	}
-
-	private removeStatusBarIcon() {
-		this.statusBarIcon?.remove();
-		this.statusBarLabel?.remove();
-		this.statusBarIcon = undefined;
-		this.statusBarLabel = undefined;
-	}
-
-	updateType(error?: Error) {
+	update(error?: Error) {
 		if (
 			this.plugin.settings.connectionStatusIndicatorType == "HIDDEN" ||
 			(this.plugin.settings.connectionStatusIndicatorType == "ONLY_WHEN_ERRORS" && !error)
 		) {
-			this.removeStatusBarIcon();
+			this.destroy();
 			return;
 		}
-		this.createStatusBarIcon();
+		this.create();
 
-		if (this.plugin.isBotConnected()) this.setStatusBarIconToConnected();
-		else this.setStatusBarIconToDisconnected(error?.message);
+		if (this.plugin.isBotConnected()) this.setConnected();
+		else this.setDisconnected(error?.message);
 	}
 
-	private setStatusBarIconToConnected() {
-		if (!this.statusBarIcon) return;
-		this.statusBarLabel?.setText("");
-		this.statusBarLabel?.removeAttribute("style");
-		this.statusBarIcon.removeAttribute("data-tooltip-position");
-		this.statusBarIcon.removeAttribute("aria-label");
+	private setConnected() {
+		if (!this.icon) return;
+		this.label?.setText("");
+		this.label?.removeAttribute("style");
+		this.icon.removeAttribute("data-tooltip-position");
+		this.icon.removeAttribute("aria-label");
 	}
 
-	private setStatusBarIconToDisconnected(error?: string): void {
-		if (!this.statusBarIcon) return;
-		this.statusBarIcon.setAttrs({
+	private setDisconnected(error?: string): void {
+		if (!this.icon) return;
+		this.icon.setAttrs({
 			"data-tooltip-position": "top",
 			"aria-label": `${error}\n${checkConnectionMessage}`.trimStart(),
 		});
-		this.statusBarLabel?.setAttr(
-			"style",
-			"position: relative; left: -3px; bottom: -3px; font-weight: bold; color:red;",
-		);
-		this.statusBarLabel?.setText("x");
+		this.label?.setAttr("style", "position: relative; left: -3px; bottom: -3px; font-weight: bold; color:red;");
+		this.label?.setText("x");
 	}
 }

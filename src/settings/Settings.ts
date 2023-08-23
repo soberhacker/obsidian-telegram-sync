@@ -108,7 +108,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 	addSettingsHeader() {
 		this.containerEl.createEl("h1", {
 			text: `Telegram Sync ${
-				versionALessThanVersionB(version, this.plugin.settings.betaVersion)
+				versionALessThanVersionB(this.plugin.manifest.version, this.plugin.settings.betaVersion)
 					? this.plugin.settings.betaVersion
 					: version
 			}`,
@@ -327,7 +327,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 			.addToggle((cb) => {
 				cb.setValue(this.plugin.settings.needToSaveFiles).onChange(async (value) => {
 					this.plugin.settings.needToSaveFiles = value;
-					this.plugin.settingsTab.display();
+					this.plugin.settingsTab?.display();
 				});
 			});
 		if (this.plugin.settings.needToSaveFiles === false) return;
@@ -363,7 +363,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 				btn.onClick(async () => {
 					const notice = new Notice("Downloading...", doNotHide);
 					try {
-						const betaRelease = await Client.getLastBetaRelease(this.plugin.settings.pluginVersion);
+						const betaRelease = await Client.getLastBetaRelease(this.plugin.manifest.version);
 						notice.setMessage(`Installing...`);
 						await replaceMainJs(this.app.vault, betaRelease.mainJs);
 						this.plugin.settings.betaVersion = betaRelease.version;
@@ -404,7 +404,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 				dropDown.setValue(this.plugin.settings.connectionStatusIndicatorType);
 				dropDown.onChange(async (value) => {
 					this.plugin.settings.connectionStatusIndicatorType = value as KeysOfConnectionStatusIndicatorType;
-					this.plugin.connectionStatusIndicator?.updateType();
+					this.plugin.connectionStatusIndicator?.update();
 					await this.plugin.saveSettings();
 				});
 			});

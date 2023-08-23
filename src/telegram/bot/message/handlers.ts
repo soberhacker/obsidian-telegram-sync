@@ -68,7 +68,7 @@ export async function handleMessageOrPost(
 
 	// Store topic name if "/topicName " command
 	if (msg.text?.includes("/topicName")) {
-		await plugin.settingsTab.storeTopicName(msg);
+		await plugin.settingsTab?.storeTopicName(msg);
 		return;
 	}
 
