@@ -25,7 +25,12 @@ export interface MediaGroup {
 
 const mediaGroups: MediaGroup[] = [];
 
-export let handleMediaGroupIntervalId: NodeJS.Timer;
+let handleMediaGroupIntervalId: NodeJS.Timer | undefined;
+
+export function clearHandleMediaGroupInterval() {
+	clearInterval(handleMediaGroupIntervalId);
+	handleMediaGroupIntervalId = undefined;
+}
 
 export async function handleMessageOrPost(
 	plugin: TelegramSyncPlugin,

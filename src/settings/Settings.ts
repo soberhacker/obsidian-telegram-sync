@@ -9,9 +9,8 @@ import * as Client from "src/telegram/user/client";
 import { BotSettingsModal } from "./BotSettingsModal";
 import { UserLogInModal } from "./UserLogInModal";
 import { version, versionALessThanVersionB } from "release-notes.mjs";
-import { _15sec, _5sec, displayAndLog, doNotHide } from "src/utils/logUtils";
+import { _15sec, _1sec, _5sec, displayAndLog, doNotHide } from "src/utils/logUtils";
 import { getTopicId } from "src/telegram/bot/message/getters";
-import * as Bot from "../telegram/bot/bot";
 import * as User from "../telegram/user/user";
 import { replaceMainJs } from "src/utils/fsUtils";
 import {
@@ -19,6 +18,7 @@ import {
 	KeysOfConnectionStatusIndicatorType,
 	connectionStatusIndicatorSettingName,
 } from "src/ConnectionStatusIndicator";
+import { enqueue } from "src/utils/queues";
 
 export interface Topic {
 	name: string;
@@ -133,7 +133,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 			else botStatus.setValue("❌ disconnected");
 			new Promise((resolve) => {
 				clearTimeout(this.botStatusTimeOut);
-				this.botStatusTimeOut = setTimeout(() => resolve(botStatusConstructor.call(this, botStatus)), _5sec);
+				this.botStatusTimeOut = setTimeout(() => resolve(botStatusConstructor.call(this, botStatus)), _1sec);
 			});
 		};
 
@@ -146,18 +146,16 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 				const botSettingsModal = new BotSettingsModal(this.plugin);
 				botSettingsModal.onClose = async () => {
 					if (botSettingsModal.saved) {
+						if (this.plugin.settings.telegramSessionType == "bot") {
+							this.plugin.settings.telegramSessionId = Client.getNewSessionId();
+							this.plugin.userConnected = false;
+						}
 						await this.plugin.saveSettings();
 						// Initialize the bot with the new token
-						this.plugin.checkingBotConnection = true;
-						try {
-							botStatusConstructor.call(this, botStatusComponent);
-							botSettingsConstructor.call(this, botSettingsButton);
-							if (this.plugin.settings.telegramSessionType == "bot")
-								await User.connect(this.plugin, this.plugin.settings.telegramSessionType);
-							await Bot.connect(this.plugin);
-						} finally {
-							this.plugin.checkingBotConnection = false;
-						}
+						this.plugin.setBotStatus("disconnected");
+						botStatusConstructor.call(this, botStatusComponent);
+						botSettingsConstructor.call(this, botSettingsButton);
+						await enqueue(this.plugin, this.plugin.initTelegram);
 					}
 				};
 				botSettingsModal.open();

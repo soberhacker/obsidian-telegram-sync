@@ -33,7 +33,7 @@ let cachedMessagesRequests: MessagesRequests[] = [];
 const cachedUserCouples: UserCouple[] = [];
 
 // clean every 2 hours message request and couples if needed
-export const cachedMessagesIntervalId = setInterval(() => {
+const cachedMessagesIntervalId = setInterval(() => {
 	if (cachedMessageCouples.length < 5000) return;
 	const lastMessageCouple = cachedMessageCouples.last();
 	if (lastMessageCouple && new Date().getTime() - lastMessageCouple.creationTime.getTime() > _1h) {
@@ -41,6 +41,10 @@ export const cachedMessagesIntervalId = setInterval(() => {
 		cachedMessageCouples = [];
 	}
 }, _2h);
+
+export function clearCachedMessagesInterval() {
+	clearInterval(cachedMessagesIntervalId);
+}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function getMediaId(media: any): bigint | undefined {

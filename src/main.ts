@@ -7,10 +7,11 @@ import * as Client from "./telegram/user/client";
 import * as Bot from "./telegram/bot/bot";
 import * as User from "./telegram/user/user";
 import { enqueue } from "./utils/queues";
-import { tooManyRequestsIntervalId } from "./telegram/bot/tooManyRequests";
-import { cachedMessagesIntervalId } from "./telegram/user/convertors";
-import { handleMediaGroupIntervalId } from "./telegram/bot/message/handlers";
+import { clearTooManyRequestsInterval } from "./telegram/bot/tooManyRequests";
+import { clearCachedMessagesInterval } from "./telegram/user/convertors";
+import { clearHandleMediaGroupInterval } from "./telegram/bot/message/handlers";
 import ConnectionStatusIndicator, { checkConnectionMessage } from "./ConnectionStatusIndicator";
+import { mainDeviceIdSettingName } from "./settings/BotSettingsModal";
 
 export type ConnectionStatus = "connected" | "disconnected";
 export type PluginStatus = "unloading" | "unloaded" | "loading" | "loaded";
@@ -28,7 +29,7 @@ export default class TelegramSyncPlugin extends Plugin {
 	listOfNotePaths: string[] = [];
 	currentDeviceId = machineIdSync(true);
 	lastPollingErrors: string[] = [];
-	restartingIntervalId: NodeJS.Timer;
+	restartingIntervalId?: NodeJS.Timer;
 	restartingIntervalTime = _15sec;
 	messagesLeftCnt = 0;
 	connectionStatusIndicator = new ConnectionStatusIndicator(this);
@@ -37,6 +38,15 @@ export default class TelegramSyncPlugin extends Plugin {
 	async initTelegram(initType?: Client.SessionType) {
 		this.lastPollingErrors = [];
 		this.messagesLeftCnt = 0;
+		if (this.settings.mainDeviceId && this.settings.mainDeviceId !== this.currentDeviceId) {
+			this.stopTelegram();
+			displayAndLog(
+				this,
+				`Paused on this device. If you want the plugin to work here, change the value of "${mainDeviceIdSettingName}" to the current device id in the bot settings.`,
+				0,
+			);
+			return;
+		}
 		if (!initType || initType == "user") {
 			try {
 				this.checkingUserConnection = true;
@@ -53,6 +63,8 @@ export default class TelegramSyncPlugin extends Plugin {
 				this.checkingBotConnection = false;
 			}
 		}
+		// restart telegram bot or user if needed
+		if (!this.restartingIntervalId) this.setRestartTelegramInterval(this.restartingIntervalTime);
 	}
 
 	setRestartTelegramInterval(newRestartingIntervalTime: number, sessionType?: Client.SessionType) {
@@ -94,6 +106,14 @@ export default class TelegramSyncPlugin extends Plugin {
 			);
 		}
 	}
+	stopTelegram() {
+		this.checkingBotConnection = false;
+		this.checkingUserConnection = false;
+		clearInterval(this.restartingIntervalId);
+		this.restartingIntervalId = undefined;
+		Bot.disconnect(this);
+		User.disconnect(this);
+	}
 
 	// Load the plugin, settings, and initialize the bot
 	async onload() {
@@ -113,8 +133,6 @@ export default class TelegramSyncPlugin extends Plugin {
 		// Initialize the Telegram bot when Obsidian layout is fully loaded
 		this.app.workspace.onLayoutReady(async () => {
 			enqueue(this, this.initTelegram);
-			// restart telegram bot or user if needed
-			this.setRestartTelegramInterval(this.restartingIntervalTime);
 		});
 		this.status = "loaded";
 		console.log(`${this.manifest.name}: ${this.status}`);
@@ -122,19 +140,17 @@ export default class TelegramSyncPlugin extends Plugin {
 
 	async onunload(): Promise<void> {
 		this.status = "unloading";
-		clearInterval(this.restartingIntervalId);
-		clearInterval(tooManyRequestsIntervalId);
-		clearInterval(cachedMessagesIntervalId);
-		clearInterval(handleMediaGroupIntervalId);
-		this.connectionStatusIndicator.destroy();
 		try {
-			Bot.disconnect(this);
+			clearTooManyRequestsInterval();
+			clearCachedMessagesInterval();
+			clearHandleMediaGroupInterval();
+			this.connectionStatusIndicator.destroy();
+			this.stopTelegram();
 		} catch (e) {
-			console.log(e);
-			User.disconnect(this);
+			displayAndLog(this, e, 0);
 		} finally {
 			this.status = "unloaded";
-			console.log(`${this.manifest.name}: ${this.status}`);
+			displayAndLog(this, this.status, 0);
 		}
 	}
 

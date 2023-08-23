@@ -8,10 +8,6 @@ import { reconnect } from "../user/user";
 export async function connect(plugin: TelegramSyncPlugin) {
 	await disconnect(plugin);
 
-	if (plugin.settings.mainDeviceId && plugin.settings.mainDeviceId !== plugin.currentDeviceId) {
-		return;
-	}
-
 	if (!plugin.settings.botToken) {
 		displayAndLog(plugin, "Telegram bot token is empty.\n\nSyncing is disabled.");
 		return;
