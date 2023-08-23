@@ -72,6 +72,6 @@ export default class ConnectionStatusIndicator {
 			"style",
 			"position: relative; left: -3px; bottom: -3px; font-weight: bold; color:red;",
 		);
-		this.statusBarLabel?.setText("х");
+		this.statusBarLabel?.setText("x");
 	}
 }

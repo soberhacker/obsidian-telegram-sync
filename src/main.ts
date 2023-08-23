@@ -13,6 +13,7 @@ import { clearHandleMediaGroupInterval } from "./telegram/bot/message/handlers";
 import ConnectionStatusIndicator, { checkConnectionMessage } from "./ConnectionStatusIndicator";
 import { mainDeviceIdSettingName } from "./settings/BotSettingsModal";
 
+// TODO: add "connecting"
 export type ConnectionStatus = "connected" | "disconnected";
 export type PluginStatus = "unloading" | "unloaded" | "loading" | "loaded";
 
@@ -21,6 +22,7 @@ export default class TelegramSyncPlugin extends Plugin {
 	settings: TelegramSyncSettings;
 	settingsTab: TelegramSyncSettingTab;
 	private botStatus: ConnectionStatus = "disconnected";
+	// TODO: change to userStatus and display in status bar
 	userConnected = false;
 	checkingBotConnection = false;
 	checkingUserConnection = false;
@@ -31,6 +33,7 @@ export default class TelegramSyncPlugin extends Plugin {
 	lastPollingErrors: string[] = [];
 	restartingIntervalId?: NodeJS.Timer;
 	restartingIntervalTime = _15sec;
+	// TODO: add messagesLeftCnt displaying in status bar
 	messagesLeftCnt = 0;
 	connectionStatusIndicator = new ConnectionStatusIndicator(this);
 	status: PluginStatus = "loading";
