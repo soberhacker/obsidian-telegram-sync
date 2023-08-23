@@ -85,7 +85,7 @@ async function handlePollingError(plugin: TelegramSyncPlugin, error: any) {
 	if (plugin.lastPollingErrors.length == 0 || !plugin.lastPollingErrors.includes(pollingError)) {
 		plugin.lastPollingErrors.push(pollingError);
 		if (!(pollingError == "twoBotInstances")) {
-			plugin.setBotStatus("disconnected");
+			plugin.setBotStatus("disconnected", error);
 		}
 	}
 

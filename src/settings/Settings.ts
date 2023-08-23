@@ -14,7 +14,11 @@ import { getTopicId } from "src/telegram/bot/message/getters";
 import * as Bot from "../telegram/bot/bot";
 import * as User from "../telegram/user/user";
 import { replaceMainJs } from "src/utils/fsUtils";
-import { ConnectionStatusIndicatorType, connectionStatusIndicatorSettingName } from "src/ConnectionStatusIndicator";
+import {
+	ConnectionStatusIndicatorType,
+	KeysOfConnectionStatusIndicatorType,
+	connectionStatusIndicatorSettingName,
+} from "src/ConnectionStatusIndicator";
 
 export interface Topic {
 	name: string;
@@ -37,7 +41,7 @@ export interface TelegramSyncSettings {
 	telegramSessionType: Client.SessionType;
 	telegramSessionId: number;
 	betaVersion: string;
-	connectionStatusIndicatorType: ConnectionStatusIndicatorType;
+	connectionStatusIndicatorType: KeysOfConnectionStatusIndicatorType;
 	// add new settings above this line
 	topicNames: Topic[];
 }
@@ -57,7 +61,7 @@ export const DEFAULT_SETTINGS: TelegramSyncSettings = {
 	telegramSessionType: "bot",
 	telegramSessionId: Client.getNewSessionId(),
 	betaVersion: "",
-	connectionStatusIndicatorType: ConnectionStatusIndicatorType.CONSTANT,
+	connectionStatusIndicatorType: "CONSTANT",
 	// add new settings above this line
 	topicNames: [],
 };
@@ -401,8 +405,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 				dropDown.addOptions(ConnectionStatusIndicatorType);
 				dropDown.setValue(this.plugin.settings.connectionStatusIndicatorType);
 				dropDown.onChange(async (value) => {
-					this.plugin.settings.connectionStatusIndicatorType =
-						ConnectionStatusIndicatorType[value as keyof typeof ConnectionStatusIndicatorType];
+					this.plugin.settings.connectionStatusIndicatorType = value as KeysOfConnectionStatusIndicatorType;
 					this.plugin.connectionStatusIndicator?.updateType();
 					await this.plugin.saveSettings();
 				});

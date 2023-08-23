@@ -159,8 +159,11 @@ export default class TelegramSyncPlugin extends Plugin {
 	}
 
 	async setBotStatus(status: ConnectionStatus, error?: Error) {
+		if (this.botStatus == status && !error) return;
+
 		this.botStatus = status;
 		this.connectionStatusIndicator.updateType(error);
+
 		if (this.isBotConnected()) displayAndLog(this, StatusMessages.botConnected, 0);
 		else if (!error) displayAndLog(this, StatusMessages.botDisconnected, 0);
 		else displayAndLogError(this, error, StatusMessages.botDisconnected, checkConnectionMessage, undefined, 0);

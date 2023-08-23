@@ -312,12 +312,12 @@ export async function getLastBetaRelease(currentVersion: string): Promise<{ vers
 	const messages = await checkedClient.getMessages(insiderChannel, {
 		limit: 10,
 		filter: new Api.InputMessagesFilterDocument(),
-		search: ".Beta", // TODO change to -beta.
+		search: "-beta.",
 	});
 	if (messages.length == 0) throw new Error("No beta versions in Insider channel!");
 	const message = messages[0];
 	const match = message.message.match(/Obsidian Telegram Sync (\S+)/);
-	const version = (match ? match[1] : "").replace("1.10.0.Beta", "1.10.1-beta.1");
+	const version = match ? match[1] : "";
 	if (!version) throw new Error("Can't find the version label in the message: " + message.message);
 	if (versionALessThanVersionB(version, currentVersion))
 		throw new Error(

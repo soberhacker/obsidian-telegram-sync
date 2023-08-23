@@ -3,8 +3,6 @@ import { compareVersions } from "compare-versions";
 export const version = "1.10.0";
 // TODO getting messages one by one instead of parallel processing
 // TODO add Demo gif and screenshots to readme.md
-// TODO add automatic installing beta versions from channel
-// TODO check, if plugin restarts quickly then everything should be fully loaded or fully unloaded
 // ## Demo
 //![](https://raw.githubusercontent.com/vslinko/obsidian-outliner/main/demos/demo1.gif)<br>
 export const showNewFeatures = true;
