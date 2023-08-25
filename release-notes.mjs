@@ -9,7 +9,7 @@ export const showNewFeatures = true;
 export let showBreakingChanges = false;
 
 const newFeatures =
-	"This release introduces a new template variable <code>{{content:[X-Y]}}</code> for retrieving specific lines from a message, along with a few other important features.";
+	"This release introduces connection status indicator instead of notifications, along with 5 other important features.";
 export const breakingChanges =
 	"⚠️ <b><i>If you were connected as a user, due to API changes, the user has been disconnected and needs to be reconnected! Apologies</i></b> ⚠️";
 
