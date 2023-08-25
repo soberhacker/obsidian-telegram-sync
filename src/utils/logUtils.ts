@@ -67,3 +67,26 @@ export async function displayAndLogError(
 		});
 	}
 }
+
+// changing GramJs version can cause cache issues and wrong alerts, so it's cure for it
+export function hideMTProtoAlerts(plugin: TelegramSyncPlugin) {
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	const originalAlert = window.alert as any;
+	if (!originalAlert.__isOverridden) {
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		window.alert = function (message?: any) {
+			if (message.includes("Missing MTProto Entity")) {
+				localStorage.removeItem("GramJs:apiCache");
+				plugin.settings.cacheCleanupAtStartup = true;
+				plugin.saveSettings();
+				displayAndLog(
+					plugin,
+					"Telegram Sync got errors during cache cleanup from the previous plugin version.\n\nPlease close all instances of Obsidian and restart it. You may need to repeat it twice.\n\nApologize for the inconvenience",
+				);
+				return;
+			}
+			originalAlert(message);
+		};
+		originalAlert.__isOverridden = true;
+	}
+}

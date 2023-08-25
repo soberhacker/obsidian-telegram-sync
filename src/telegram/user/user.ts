@@ -17,9 +17,6 @@ export async function connect(plugin: TelegramSyncPlugin, sessionType: client.Se
 		release.showBreakingChangesInReleaseNotes();
 	}
 
-	if (release.versionALessThanVersionB(plugin.settings.pluginVersion, "1.10.0"))
-		localStorage.removeItem("GramJs:apiCache");
-
 	if (!(sessionType == "user" || plugin.settings.botToken !== "")) return;
 
 	const initialSessionType = plugin.settings.telegramSessionType;

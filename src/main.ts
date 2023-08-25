@@ -2,7 +2,7 @@ import { Plugin } from "obsidian";
 import { DEFAULT_SETTINGS, TelegramSyncSettings, TelegramSyncSettingTab } from "./settings/Settings";
 import TelegramBot from "node-telegram-bot-api";
 import { machineIdSync } from "node-machine-id";
-import { _15sec, _2min, displayAndLog, StatusMessages, displayAndLogError } from "./utils/logUtils";
+import { _15sec, _2min, displayAndLog, StatusMessages, displayAndLogError, hideMTProtoAlerts } from "./utils/logUtils";
 import * as Client from "./telegram/user/client";
 import * as Bot from "./telegram/bot/bot";
 import * as User from "./telegram/user/user";
@@ -110,6 +110,7 @@ export default class TelegramSyncPlugin extends Plugin {
 			);
 		}
 	}
+
 	stopTelegram() {
 		this.checkingBotConnection = false;
 		this.checkingUserConnection = false;
@@ -122,24 +123,22 @@ export default class TelegramSyncPlugin extends Plugin {
 	// Load the plugin, settings, and initialize the bot
 	async onload() {
 		this.status = "loading";
+
 		await this.loadSettings();
-		// TODO in 2024: Remove allowedChatFromUsernames, because it is deprecated
-		if (this.settings.allowedChatFromUsernames.length != 0) {
-			this.settings.allowedChats = [...this.settings.allowedChatFromUsernames];
-			this.settings.allowedChatFromUsernames = [];
-			await this.saveSettings();
-		}
+		await this.upgradeSettings();
 
 		// Add a settings tab for this plugin
 		this.settingsTab = new TelegramSyncSettingTab(this.app, this);
 		this.addSettingTab(this.settingsTab);
 
+		hideMTProtoAlerts(this);
 		// Initialize the Telegram bot when Obsidian layout is fully loaded
 		this.app.workspace.onLayoutReady(async () => {
 			enqueue(this, this.initTelegram);
 		});
+
 		this.status = "loaded";
-		console.log(`${this.manifest.name}: ${this.status}`);
+		displayAndLog(this, this.status, 0);
 	}
 
 	async onunload(): Promise<void> {
@@ -168,6 +167,20 @@ export default class TelegramSyncPlugin extends Plugin {
 	// Save settings to the plugin's data
 	async saveSettings() {
 		await this.saveData(this.settings);
+	}
+
+	async upgradeSettings() {
+		if (this.settings.cacheCleanupAtStartup) {
+			localStorage.removeItem("GramJs:apiCache");
+			this.settings.cacheCleanupAtStartup = false;
+			await this.saveSettings();
+		}
+		// TODO in 2024: Remove allowedChatFromUsernames, because it is deprecated
+		if (this.settings.allowedChatFromUsernames.length != 0) {
+			this.settings.allowedChats = [...this.settings.allowedChatFromUsernames];
+			this.settings.allowedChatFromUsernames = [];
+			await this.saveSettings();
+		}
 	}
 
 	async getBotUser(msg: TelegramBot.Message): Promise<TelegramBot.User> {

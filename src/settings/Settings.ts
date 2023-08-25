@@ -42,6 +42,7 @@ export interface TelegramSyncSettings {
 	telegramSessionId: number;
 	betaVersion: string;
 	connectionStatusIndicatorType: KeysOfConnectionStatusIndicatorType;
+	cacheCleanupAtStartup: boolean;
 	// add new settings above this line
 	topicNames: Topic[];
 }
@@ -62,6 +63,7 @@ export const DEFAULT_SETTINGS: TelegramSyncSettings = {
 	telegramSessionId: Client.getNewSessionId(),
 	betaVersion: "",
 	connectionStatusIndicatorType: "CONSTANT",
+	cacheCleanupAtStartup: false,
 	// add new settings above this line
 	topicNames: [],
 };
