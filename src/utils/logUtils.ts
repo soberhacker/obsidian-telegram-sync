@@ -14,8 +14,9 @@ export const _1h = 60 * _1min;
 export const _2h = 2 * _1h;
 export const doNotHide = 24 * _1h;
 
+// TODO: connect with ConnectionStatus
 export enum StatusMessages {
-	botReconnected = "Telegram bot is reconnected!",
+	botConnected = "Telegram bot is connected!",
 	botDisconnected = "Telegram bot is disconnected!",
 	userDisconnected = "Telegram user is disconnected!",
 }
@@ -33,7 +34,7 @@ export function displayAndLog(plugin: TelegramSyncPlugin, message: string, timeo
 	if (timeout == 0) return;
 	const notice = new Notice(message, timeout || doNotHide);
 
-	const hideBotDisconnectedMessages = message.contains(StatusMessages.botReconnected);
+	const hideBotDisconnectedMessages = message.contains(StatusMessages.botConnected);
 	persistentNotices = persistentNotices.filter((persistentNotice) => {
 		const shouldHide =
 			(hideBotDisconnectedMessages && persistentNotice.message.contains(StatusMessages.botDisconnected)) ||
@@ -54,7 +55,7 @@ export async function displayAndLogError(
 	status?: string,
 	action?: string,
 	msg?: TelegramBot.Message,
-	timeout?: number
+	timeout?: number, // 0 - do not show in obsidian | undefined - never hide
 ) {
 	let beautyError = `${error.name}: ${error.message.replace(/Error: /g, "")}\n\n${status || ""}\n\n${action || ""}`;
 	beautyError = beautyError.trim();
@@ -64,5 +65,28 @@ export async function displayAndLogError(
 		await plugin.bot?.sendMessage(msg.chat.id, `...❌...\n\n${beautyError}`, {
 			reply_to_message_id: msg.message_id,
 		});
+	}
+}
+
+// changing GramJs version can cause cache issues and wrong alerts, so it's cure for it
+export function hideMTProtoAlerts(plugin: TelegramSyncPlugin) {
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	const originalAlert = window.alert as any;
+	if (!originalAlert.__isOverridden) {
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		window.alert = function (message?: any) {
+			if (message.includes("Missing MTProto Entity")) {
+				localStorage.removeItem("GramJs:apiCache");
+				plugin.settings.cacheCleanupAtStartup = true;
+				plugin.saveSettings();
+				displayAndLog(
+					plugin,
+					"Telegram Sync got errors during cache cleanup from the previous plugin version.\n\nPlease close all instances of Obsidian and restart it. You may need to repeat it twice.\n\nApologize for the inconvenience",
+				);
+				return;
+			}
+			originalAlert(message);
+		};
+		originalAlert.__isOverridden = true;
 	}
 }

@@ -7,7 +7,7 @@
 
 ##### All Telegram User
 ✅ reacting with "👍" instead of replying for marking messages as processed<br/>
-❌ getting messages older than 24 hours if obsidian wasn't running (*not implemented*)<br/>
-❌ deleting messages older than 48 hours (*not implemented*)<br/>
-❌ delete messages that were forwarded to the same place where they were and marking original messages as processed (*not implemented*)<br/>
+✅ easy installing the latest published beta versions<br/>
+❌ getting messages from other bots in connected group chats (*not implemented*)<br/>
+❌ getting and deleting messages older than 24 hours if obsidian wasn't running (*not implemented*)<br/>
 ❌ automatically identifying renamed topic without using command /topicName (*not implemented*)<br/>

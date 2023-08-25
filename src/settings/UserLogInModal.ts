@@ -26,7 +26,7 @@ export class UserLogInModal extends Modal {
 		new Setting(this.botSettingsDiv)
 			.setName("1. Enter password (optionally)")
 			.setDesc(
-				"Enter your password before scanning QR code only if you use two-step authorization. Password will not be stored"
+				"Enter your password before scanning QR code only if you use two-step authorization. Password will not be stored",
 			)
 			.addText((text) => {
 				text.setPlaceholder("*************")
@@ -72,7 +72,7 @@ export class UserLogInModal extends Modal {
 		new Setting(this.botSettingsDiv)
 			.setName("4. Check active sessions")
 			.setDesc(
-				`If the login is successful, you will find the 'Obsidian Telegram Sync' session in the list of active sessions. If you find it in the list of inactive sessions, then you have probably entered the wrong password`
+				`If the login is successful, you will find the 'Obsidian Telegram Sync' session in the list of active sessions. If you find it in the list of inactive sessions, then you have probably entered the wrong password`,
 			);
 	}
 	addFooterButtons() {

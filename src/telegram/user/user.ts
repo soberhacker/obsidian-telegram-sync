@@ -4,7 +4,7 @@ import { StatusMessages, displayAndLogError } from "src/utils/logUtils";
 import * as release from "release-notes.mjs";
 
 export async function connect(plugin: TelegramSyncPlugin, sessionType: client.SessionType, sessionId?: number) {
-	// TODO remove this condition in 2024
+	// TODO in 2024: remove this condition
 	// Api keys were changed so needed some adaptation
 	if (
 		sessionType == "user" &&
@@ -34,7 +34,7 @@ export async function connect(plugin: TelegramSyncPlugin, sessionType: client.Se
 		await client.init(
 			plugin.settings.telegramSessionId,
 			plugin.settings.telegramSessionType,
-			plugin.currentDeviceId
+			plugin.currentDeviceId,
 		);
 
 		plugin.userConnected = await client.isAuthorizedAsUser();
@@ -64,12 +64,12 @@ export async function reconnect(plugin: TelegramSyncPlugin, displayError = false
 		plugin.userConnected = await client.isAuthorizedAsUser();
 	} catch (error) {
 		plugin.userConnected = false;
-		if (displayError && plugin.botConnected && plugin.settings.telegramSessionType == "user") {
+		if (displayError && plugin.isBotConnected() && plugin.settings.telegramSessionType == "user") {
 			await displayAndLogError(
 				plugin,
 				error,
 				StatusMessages.userDisconnected,
-				"Try restore the connection manually by restarting Obsidian or by refresh button in the plugin settings!"
+				"Try restore the connection manually by restarting Obsidian or by refresh button in the plugin settings!",
 			);
 		}
 	} finally {

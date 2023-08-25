@@ -5,7 +5,10 @@ import { TextInputSuggest } from "./suggest";
 import TelegramSyncPlugin from "src/main";
 
 export class FileSuggest extends TextInputSuggest<TFile> {
-	constructor(public inputEl: HTMLInputElement, private plugin: TelegramSyncPlugin) {
+	constructor(
+		public inputEl: HTMLInputElement,
+		private plugin: TelegramSyncPlugin,
+	) {
 		super(inputEl);
 	}
 

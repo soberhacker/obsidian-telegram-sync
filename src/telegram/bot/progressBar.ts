@@ -13,7 +13,7 @@ export const _3MB = 3 * 1024 * 1024;
 export async function createProgressBar(
 	bot: TelegramBot,
 	msg: TelegramBot.Message,
-	action: ProgressBarType
+	action: ProgressBarType,
 ): Promise<TelegramBot.Message | undefined> {
 	return await bot.sendMessage(msg.chat.id, action, {
 		reply_to_message_id: msg.message_id,
@@ -29,7 +29,7 @@ export async function updateProgressBar(
 	progressBarMessage: TelegramBot.Message | undefined,
 	total: number,
 	current: number,
-	previousStage: number
+	previousStage: number,
 ): Promise<number> {
 	if (!progressBarMessage) return 0;
 	const stage = Math.ceil((current / total) * 10);
@@ -39,7 +39,7 @@ export async function updateProgressBar(
 			{
 				inline_keyboard: createProgressBarKeyboard(stage).inline_keyboard,
 			},
-			{ chat_id: msg.chat.id, message_id: progressBarMessage.message_id }
+			{ chat_id: msg.chat.id, message_id: progressBarMessage.message_id },
 		);
 	} catch (e) {
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -51,7 +51,7 @@ export async function updateProgressBar(
 export async function deleteProgressBar(
 	bot: TelegramBot,
 	msg: TelegramBot.Message,
-	progressBarMessage: TelegramBot.Message | undefined
+	progressBarMessage: TelegramBot.Message | undefined,
 ) {
 	if (!progressBarMessage) return;
 	await bot.deleteMessage(msg.chat.id, progressBarMessage.message_id);

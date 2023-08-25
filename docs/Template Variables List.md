@@ -4,13 +4,11 @@
 ```ts
 {{content}} - forwarded from + file|image + message text
 {{content:text}} - only message text
-{{content:firstLine}} - first line of the message text
-{{content:noFirstLine}} - the message text without the first line
 {{content:XX}} - XX characters of the message text
-{{file}} - file|image content ![]()
-{{file:link}} - link to the file|image []()
+{{content:[X-Y]}} - all lines from line number X to Y, inclusive
+{{files}} - files | images  ![]()
+{{files:links}} - links to files | images []()
 {{voiceTranscript}} - transcribing voice(video notes!) to text (same limits as for Telegram Premium subscribers)
-{{voiceTranscript:XX}} - XX symbols of transcribed voices (same limits as for Telegram Premium subscribers)
 {{chat}} - link to the chat (bot / group / channel)
 {{chatId}} - id of the chat (bot / group / channel)
 {{chat:name}} - name of the chat (bot / group / channel)
@@ -34,9 +32,12 @@
 
 ###### Template example:
 ```
-{{messageDate:YYYY}} {{content:firstLine}}
+{{messageDate:YYYY}} {{content:[1]}}
 
-{{content:noFirstLine}}
+{{content:[2]}} - the second line
+{{content:[2-]}} - from the second line to the last
+{{content:[-1]}} - the last line
+{{content:[2-4]}} - from the second to the fourth lines
 
 Source: {{chat}}-{{forwardFrom}}
 Created: {{creationDate:YYYY-DD-MM}} {{creationTime:HH:mm:ss}}
@@ -70,7 +71,7 @@ myNotes/Telegram.md
 
 // Important channels are written in separate folders, other messages - in root folder in separate notes
 myNotes/{{chat:Recipes}}/{content:30}.md
-myNotes/{{chat:Ideas}}/{{content:firstLine}}.md
+myNotes/{{chat:Ideas}}/{{content:[1]}}.md
 myNotes/{{chat:Work}}/{{forwardFrom}}_{{creationDate}}.md
 myNotes/{{content:20}}_{{messageDate}}_{{messageTime}}.md
 
@@ -79,7 +80,7 @@ myNotes/inbox.md
 myNotes/{{chat}}/{{forwardFrom}}/{{content}}.md
 myNotes/{{chat:Surf Shop}}{{user:Me}}/Announcements.md
 myNotes/daily/{{messageDate}}.md
-myNotes/{{messageDate:YYYY}}/{{forwardFrom}}/{{content:firstLine}}.md
+myNotes/{{messageDate:YYYY}}/{{forwardFrom}}/{{content:[1]}}.md
 myNotes/{{messageDate:YYYY}}/{{messageDate:MM}}/{{messageDate:DD}}/{{messageTime:HHmmssSSS}}.md
 myNotes/{{creationDate:YYYY}}/{{creationDate:MM-DD}}.{{creationTime:HH:mm:ss(SSS)}}.md
 ```

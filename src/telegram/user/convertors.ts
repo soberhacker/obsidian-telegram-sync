@@ -3,7 +3,7 @@ import { Api, TelegramClient } from "telegram";
 import { getFileObject } from "../bot/message/getters";
 import { extractMediaId } from "./convertBotFileToMessageMedia";
 import { TotalList } from "telegram/Helpers";
-import { _1h, _1sec, _2h, _2sec } from "src/utils/logUtils";
+import { _1h, _1sec, _2h } from "src/utils/logUtils";
 
 const cantFindTheMessage = "Can't find the message for connected user.";
 
@@ -33,7 +33,7 @@ let cachedMessagesRequests: MessagesRequests[] = [];
 const cachedUserCouples: UserCouple[] = [];
 
 // clean every 2 hours message request and couples if needed
-setInterval(() => {
+const cachedMessagesIntervalId = setInterval(() => {
 	if (cachedMessageCouples.length < 5000) return;
 	const lastMessageCouple = cachedMessageCouples.last();
 	if (lastMessageCouple && new Date().getTime() - lastMessageCouple.creationTime.getTime() > _1h) {
@@ -41,6 +41,10 @@ setInterval(() => {
 		cachedMessageCouples = [];
 	}
 }, _2h);
+
+export function clearCachedMessagesInterval() {
+	clearInterval(cachedMessagesIntervalId);
+}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function getMediaId(media: any): bigint | undefined {
@@ -55,13 +59,13 @@ export async function getInputPeer(
 	user: Api.User,
 	botUser: TelegramBot.User,
 	botMsg: TelegramBot.Message,
-	limit = 10
+	limit = 10,
 ): Promise<Api.TypeInputPeer> {
 	let userCouple = cachedUserCouples.find(
 		(usrCouple) =>
 			usrCouple.botChatId == botMsg.chat.id &&
 			usrCouple.botUserId == botUser.id &&
-			usrCouple.userId == user.id.toJSNumber()
+			usrCouple.userId == user.id.toJSNumber(),
 	);
 	if (userCouple) return userCouple.userChat;
 
@@ -74,7 +78,7 @@ export async function getInputPeer(
 		throw new Error(
 			`User ${user.username || user.firstName || user.id} does not have chat with ${
 				botMsg.chat.username || botMsg.chat.title || botMsg.chat.first_name || botMsg.chat.id
-			} `
+			} `,
 		);
 	}
 	userCouple = {
@@ -92,7 +96,7 @@ export async function getMessage(
 	inputPeer: Api.TypeInputPeer,
 	botMsg: TelegramBot.Message,
 	mediaId?: string,
-	limit = 50
+	limit = 50,
 ): Promise<Api.Message> {
 	let messageCouple = cachedMessageCouples.find((msgCouple) => msgCouple.botMsgId == botMsg.message_id);
 	if (messageCouple?.userMsg) return messageCouple.userMsg;
@@ -101,15 +105,15 @@ export async function getMessage(
 		(rq) =>
 			rq.botChatId == botMsg.chat.id &&
 			rq.msgDate <= botMsg.date &&
-			(rq.messages.last()?.date || botMsg.date - 1) >= botMsg.date
+			(rq.messages.last()?.date || botMsg.date - 1) >= botMsg.date,
 	);
 	if (!messagesRequests.find((rq) => rq.limit == limit)) {
 		// wait 1 sec for history updates in Telegram
 		if (new Date().getTime() - new Date(botMsg.date * 1000).getTime() < _1sec)
-			await new Promise((resolve) => setTimeout(resolve, _2sec));
+			await new Promise((resolve) => setTimeout(resolve, _1sec));
 		let messages = await client.getMessages(inputPeer, { limit, reverse: true, offsetDate: botMsg.date - 2 });
 		// remove bot messages (fromId != undefined)
-		messages = messages.filter((m) => m.fromId) || [];
+		messages = messages.filter((m) => m.fromId || m.peerId instanceof Api.PeerChannel) || [];
 		messagesRequests.push({ botChatId: botMsg.chat.id, msgDate: botMsg.date, messages, limit });
 		cachedMessagesRequests.push(messagesRequests[0]);
 	}
@@ -139,7 +143,7 @@ export async function getMessage(
 	}
 	if (cachedMessageCouples.find((mc) => mc.userMsg.id == userMsg.id)) {
 		throw new Error(
-			"Because there may be several identical messages, it is not possible to pinpoint which message is needed."
+			"Because there may be several identical messages, it is not possible to pinpoint which message is needed.",
 		);
 	}
 	messageCouple = {
@@ -156,7 +160,7 @@ function findUserMsg(
 	messages: Api.Message[],
 	botMsg: TelegramBot.Message,
 	dateOffset = 0,
-	mediaId?: string
+	mediaId?: string,
 ): Api.Message | undefined {
 	return messages.find((m) => {
 		const equalDates = m.date + dateOffset == botMsg.date;

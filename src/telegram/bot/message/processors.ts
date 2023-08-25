@@ -12,7 +12,6 @@ import {
 	getUrl,
 	getUserLink,
 } from "./getters";
-import { getTelegramMdPath } from "src/utils/fsUtils";
 import { TFile, normalizePath } from "obsidian";
 import { formatDateTime } from "../../../utils/dateUtils";
 import { _15sec, _1h, _5sec, displayAndLog, displayAndLogError } from "src/utils/logUtils";
@@ -55,35 +54,12 @@ export async function finalizeMessageProcessing(plugin: TelegramSyncPlugin, msg:
 	}
 }
 
-export async function appendMessageToTelegramMd(
-	plugin: TelegramSyncPlugin,
-	msg: TelegramBot.Message,
-	formattedContent: string,
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	error?: Error
-) {
-	// Do not append messages if not connected
-	if (!plugin.botConnected) return;
-
-	const telegramMdPath = getTelegramMdPath(plugin.app.vault, plugin.settings.newNotesLocation);
-	let telegramMdFile = plugin.app.vault.getAbstractFileByPath(telegramMdPath) as TFile;
-
-	// Create or modify the Telegram.md file
-	if (!telegramMdFile) {
-		telegramMdFile = await plugin.app.vault.create(telegramMdPath, `${formattedContent}\n`);
-	} else {
-		const fileContent = await plugin.app.vault.read(telegramMdFile);
-		await plugin.app.vault.modify(telegramMdFile, `${fileContent}\n***\n\n${formattedContent}\n`);
-	}
-	await finalizeMessageProcessing(plugin, msg, error);
-}
-
 // Apply a template to a message's content
 export async function applyNoteContentTemplate(
 	plugin: TelegramSyncPlugin,
 	templatePath: string,
 	msg: TelegramBot.Message,
-	fileLink?: string
+	filesLinks: string[] = [],
 ): Promise<string> {
 	let templateContent = "";
 	try {
@@ -96,11 +72,14 @@ export async function applyNoteContentTemplate(
 	}
 
 	const textContentMd = await convertMessageTextToMarkdown(msg);
+	const allEmbeddedFilesLinks = filesLinks.length > 0 ? filesLinks.join("\n") : "";
+	const allFilesLinks = allEmbeddedFilesLinks.replace("![", "[");
+
 	// Check if the message is forwarded and extract the required information
 	const forwardFromLink = getForwardFromLink(msg);
 	const fullContentMd =
 		(forwardFromLink ? `**Forwarded from ${forwardFromLink}**\n\n` : "") +
-		(fileLink ? fileLink + "\n\n" : "") +
+		(allEmbeddedFilesLinks ? allEmbeddedFilesLinks + "\n\n" : "") +
 		textContentMd;
 
 	if (!templateContent) {
@@ -133,8 +112,11 @@ export async function applyNoteContentTemplate(
 	let processedContent = lines.join("\n");
 
 	processedContent = processedContent
-		.replace(/{{file}}/g, fileLink || "")
-		.replace(/{{file:link}}/g, fileLink?.startsWith("!") ? fileLink.slice(1) : fileLink || "")
+		.replace(/{{file}}/g, allEmbeddedFilesLinks) // TODO in 2024: deprecated, remove
+		.replace(/{{file:link}}/g, allFilesLinks) // TODO in 2024: deprecated, remove
+
+		.replace(/{{files}}/g, allEmbeddedFilesLinks)
+		.replace(/{{files:links}}/g, allFilesLinks)
 		.replace(/{{messageDate:(.*?)}}/g, (_, format) => formatDateTime(messageDateTime, format))
 		.replace(/{{messageTime:(.*?)}}/g, (_, format) => formatDateTime(messageDateTime, format))
 		.replace(/{{date:(.*?)}}/g, (_, format) => formatDateTime(dateTimeNow, format))
@@ -196,15 +178,51 @@ function addLeadingForEveryLine(text: string, leadingChars?: string): string {
 function processText(text: string, leadingChars?: string, property?: string): string {
 	let finalText = "";
 	const lowerCaseProperty = (property && property.toLowerCase()) || "text";
+
 	if (lowerCaseProperty == "text") finalText = text;
-	if (lowerCaseProperty == "firstline") finalText = text.split("\n")[0];
-	if (lowerCaseProperty == "nofirstline") {
-		let lines = text.split("\n");
-		lines = lines.slice(1);
-		finalText = lines.join("\n");
-	}
+	// TODO in 2024: remove deprecated code
+	// deprecated
+	else if (lowerCaseProperty == "firstline") finalText = text.split("\n")[0];
+	// deprecated
+	else if (lowerCaseProperty == "nofirstline") finalText = text.split("\n").slice(1).join("\n");
 	// if property is length
-	if (Number.isInteger(parseFloat(lowerCaseProperty))) finalText = text.substring(0, Number(property));
+	else if (Number.isInteger(parseFloat(lowerCaseProperty))) finalText = text.substring(0, Number(property));
+
+	if (finalText) return addLeadingForEveryLine(finalText, leadingChars);
+
+	// if property is range
+	const rangePattern = /^\[\d+-\d+\]$/;
+	const singleLinePattern = /^\[\d+\]$/;
+	const lastLinePattern = /^\[-\d+\]$/;
+	const fromLineToEndPattern = /^\[\d+-\]$/;
+
+	let lines = text.split("\n");
+	let startLine = 0;
+	let endLine = lines.length;
+
+	if (rangePattern.test(lowerCaseProperty)) {
+		const range = lowerCaseProperty
+			.substring(1, lowerCaseProperty.length - 1)
+			.split("-")
+			.map(Number);
+		startLine = Math.max(0, range[0] - 1);
+		endLine = Math.min(lines.length, range[1]);
+	} else if (singleLinePattern.test(lowerCaseProperty)) {
+		startLine = Number(lowerCaseProperty.substring(1, lowerCaseProperty.length - 1)) - 1;
+		endLine = startLine + 1;
+	} else if (lastLinePattern.test(lowerCaseProperty)) {
+		startLine = Math.max(
+			0,
+			lines.length - Number(lowerCaseProperty.substring(2, lowerCaseProperty.length - 1)) - 1,
+		);
+		endLine = startLine + 1;
+	} else if (fromLineToEndPattern.test(lowerCaseProperty)) {
+		startLine = Number(lowerCaseProperty.substring(1, lowerCaseProperty.length - 2)) - 1;
+		endLine = lines.length;
+	} else lines = [];
+
+	finalText = lines.slice(startLine, endLine).join("\n");
+
 	return addLeadingForEveryLine(finalText, leadingChars);
 }
 
@@ -213,7 +231,7 @@ function pasteText(
 	pasteType: "content" | "voiceTranscript",
 	pasteHere: string,
 	pasteContent: string,
-	pasteText: string
+	pasteText: string,
 ) {
 	const leadingRE = new RegExp(`^([>\\s]+){{${pasteType}}}`);
 	const leadingAndPropertyRE = new RegExp(`^([>\\s]+){{${pasteType}:(.*?)}}`);

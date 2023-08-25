@@ -1,7 +1,6 @@
 import { Api, TelegramClient } from "telegram";
 import { StoreSession } from "telegram/sessions";
-import { PromisedWebSockets } from "telegram/extensions/PromisedWebSockets";
-import { version } from "release-notes.mjs";
+import { version, versionALessThanVersionB } from "release-notes.mjs";
 import TelegramBot from "node-telegram-bot-api";
 import QRCode from "qrcode";
 import os from "os";
@@ -12,6 +11,8 @@ import { formatDateTime } from "src/utils/dateUtils";
 import { LogLevel, Logger } from "telegram/extensions/Logger";
 import { _1min, _5sec } from "src/utils/logUtils";
 import * as config from "./config";
+import bigInt from "big-integer";
+import { PromisedWebSockets } from "telegram/extensions";
 
 export type SessionType = "bot" | "user";
 
@@ -30,6 +31,11 @@ const NotAuthorizedAsUser = new Error("Not authorized as user. You have to conne
 export function getNewSessionId(): number {
 	return Number(formatDateTime(new Date(), "YYYYMMDDHHmmssSSS"));
 }
+
+export const insiderChannel = new Api.InputPeerChannel({
+	channelId: bigInt("1913400014"),
+	accessHash: bigInt("-3471904725986943479"),
+});
 
 // Stop the bot polling
 export async function stop() {
@@ -74,7 +80,10 @@ export async function init(sessionId: number, sessionType: SessionType, deviceId
 			if (!authorized) _clientUser = undefined;
 			else if (!_clientUser && authorized) _clientUser = (await client.getMe()) as Api.User;
 		} catch (e) {
-			if (sessionType == "user") {
+			if (
+				sessionType == "user" &&
+				!(e instanceof Error && e.message.includes("Could not find a matching Constructor ID"))
+			) {
 				await init(_sessionId, "bot", deviceId);
 				throw new Error(`Login as user failed. Error: ${e}`);
 			} else throw e;
@@ -110,7 +119,7 @@ export async function signInAsBot(botToken: string) {
 			},
 			{
 				botAuthToken: botToken,
-			}
+			},
 		)
 		.then(async (botUser) => {
 			_botToken = botToken;
@@ -152,7 +161,7 @@ export async function signInAsUserWithQrCode(container: HTMLDivElement, password
 					container.setText(error.message);
 					console.log(error);
 				},
-			}
+			},
 		)
 		.then((clientUser) => {
 			_clientUser = clientUser as Api.User;
@@ -181,7 +190,7 @@ export async function downloadMedia(
 	botMsg: TelegramBot.Message,
 	fileId: string,
 	fileSize: number,
-	botUser?: TelegramBot.User
+	botUser?: TelegramBot.User,
 ) {
 	const checkedClient = await checkBotService();
 
@@ -204,7 +213,7 @@ export async function downloadMedia(
 					progressBarMessage,
 					totalBytes.toJSNumber() || fileSize,
 					receivedBytes.toJSNumber(),
-					stage
+					stage,
 				);
 			},
 		})
@@ -216,30 +225,17 @@ export async function downloadMedia(
 		});
 }
 
-const sendReactionMsgGroupsToSkip: string[] = [];
-
 export async function sendReaction(botUser: TelegramBot.User, botMsg: TelegramBot.Message, emoticon: string) {
-	// if files are grouped they can have only one reaction
-	if (botMsg.media_group_id)
-		if (sendReactionMsgGroupsToSkip.contains(botMsg.media_group_id)) return;
-		else sendReactionMsgGroupsToSkip.push(botMsg.media_group_id);
-	try {
-		const { checkedClient, checkedUser } = await checkUserService();
-		const inputPeer = await getInputPeer(checkedClient, checkedUser, botUser, botMsg);
-		const message = await getMessage(checkedClient, inputPeer, botMsg);
-		await checkedClient.invoke(
-			new Api.messages.SendReaction({
-				peer: inputPeer,
-				msgId: message.id,
-				reaction: [new Api.ReactionEmoji({ emoticon })],
-			})
-		);
-	} catch (error) {
-		if (botMsg.media_group_id && error.message == "400: MESSAGE_NOT_MODIFIED (caused by messages.SendReaction)")
-			return;
-		else if (botMsg.media_group_id) sendReactionMsgGroupsToSkip.remove(botMsg.media_group_id);
-		throw error;
-	}
+	const { checkedClient, checkedUser } = await checkUserService();
+	const inputPeer = await getInputPeer(checkedClient, checkedUser, botUser, botMsg);
+	const message = await getMessage(checkedClient, inputPeer, botMsg);
+	await checkedClient.invoke(
+		new Api.messages.SendReaction({
+			peer: inputPeer,
+			msgId: message.id,
+			reaction: [new Api.ReactionEmoji({ emoticon })],
+		}),
+	);
 }
 
 export async function transcribeAudio(
@@ -247,7 +243,7 @@ export async function transcribeAudio(
 	botMsg: TelegramBot.Message,
 	botUser?: TelegramBot.User,
 	mediaId?: string,
-	limit = 15 // minutes for waiting transcribing (not for the audio)
+	limit = 15, // minutes for waiting transcribing (not for the audio)
 ): Promise<string> {
 	if (botMsg.text || !(botMsg.voice || botMsg.video_note)) {
 		return "";
@@ -260,7 +256,7 @@ export async function transcribeAudio(
 	const { checkedClient, checkedUser } = await checkUserService();
 	if (!checkedUser.premium) {
 		throw new Error(
-			"Transcribing voices available only for Telegram Premium subscribers! Remove {{voiceTranscript}} from current template or login with a premium user."
+			"Transcribing voices available only for Telegram Premium subscribers! Remove {{voiceTranscript}} from current template or login with a premium user.",
 		);
 	}
 	if (!botUser) return "";
@@ -277,7 +273,7 @@ export async function transcribeAudio(
 				new Api.messages.TranscribeAudio({
 					peer: inputPeer,
 					msgId: message.id,
-				})
+				}),
 			);
 			stage = await updateProgressBar(bot, botMsg, progressBarMessage, 14, i, stage);
 			if (transcribedAudio.pending)
@@ -293,4 +289,43 @@ export async function transcribeAudio(
 	if (!_voiceTranscripts.has(`${botMsg.chat.id}_${botMsg.message_id}`))
 		_voiceTranscripts.set(`${botMsg.chat.id}_${botMsg.message_id}`, transcribedAudio.text);
 	return transcribedAudio.text;
+}
+
+export async function subscribedOnInsiderChannel(): Promise<boolean> {
+	if (!client || !client.connected || _sessionType == "bot") return false;
+	try {
+		const { checkedClient } = await checkUserService();
+		const inputDialogPeer = new Api.InputDialogPeer({
+			peer: insiderChannel,
+		});
+		const dialogs = await checkedClient.invoke(
+			new Api.messages.GetPeerDialogs({
+				peers: [inputDialogPeer],
+			}),
+		);
+		return dialogs.dialogs.length > 0;
+	} catch (e) {
+		console.log(e);
+		return false;
+	}
+}
+export async function getLastBetaRelease(currentVersion: string): Promise<{ version: string; mainJs: Buffer }> {
+	const { checkedClient } = await checkUserService();
+	const messages = await checkedClient.getMessages(insiderChannel, {
+		limit: 10,
+		filter: new Api.InputMessagesFilterDocument(),
+		search: "-beta.",
+	});
+	if (messages.length == 0) throw new Error("No beta versions in Insider channel!");
+	const message = messages[0];
+	const match = message.message.match(/Obsidian Telegram Sync (\S+)/);
+	const version = match ? match[1] : "";
+	if (!version) throw new Error("Can't find the version label in the message: " + message.message);
+	if (versionALessThanVersionB(version, currentVersion))
+		throw new Error(
+			`The last beta version ${version} can't be installed because it less than current version ${currentVersion}!`,
+		);
+	const mainJs = (await messages[0].downloadMedia()) as Buffer;
+	if (!mainJs) throw new Error("Can't find main.js in the last 10 messages of Insider channel");
+	return { version, mainJs };
 }

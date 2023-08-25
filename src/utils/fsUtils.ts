@@ -1,6 +1,8 @@
 import { TFile, TFolder, Vault, normalizePath } from "obsidian";
 import { date2DateString, date2TimeString } from "./dateUtils";
 
+export const defaultDelimiter = "\n\n***\n\n";
+
 // Create a folder path if it does not exist
 export async function createFolderIfNotExist(vault: Vault, folderPath: string) {
 	if (!vault || !folderPath) {
@@ -14,7 +16,7 @@ export async function createFolderIfNotExist(vault: Vault, folderPath: string) {
 
 	if (folder && folder instanceof TFile) {
 		throw new URIError(
-			`Folder "${folderPath}" can't be created because there is a file with the same name. Change the path or rename the file.`
+			`Folder "${folderPath}" can't be created because there is a file with the same name. Change the path or rename the file.`,
 		);
 	}
 
@@ -37,7 +39,7 @@ export async function getUniqueFilePath(
 	locationPath: string,
 	baseForFileName: string,
 	fileExtension: string, // with dot
-	unixTime: number
+	unixTime: number,
 ): Promise<string> {
 	const _fileExtension = fileExtension.startsWith(".") ? fileExtension.slice(1) : fileExtension;
 	await createFolderIfNotExist(vault, locationPath);
@@ -68,6 +70,41 @@ export function getTelegramMdPath(vault: Vault, location: string) {
 	return telegramMdPath;
 }
 
+export async function appendContentToNote(
+	vault: Vault,
+	notePath: string,
+	newContent: string,
+	startLine = "",
+	delimiter = defaultDelimiter,
+	reversedOrder = false,
+) {
+	let noteFile: TFile = vault.getAbstractFileByPath(notePath) as TFile;
+
+	if (!noteFile) {
+		noteFile = await vault.create(notePath, newContent);
+	} else {
+		const currentContent = await vault.read(noteFile);
+		const content = startLine
+			? currentContent.replace(startLine, startLine + delimiter + newContent)
+			: reversedOrder
+			? newContent + delimiter + currentContent
+			: currentContent + delimiter + newContent;
+		if (currentContent != content) await vault.modify(noteFile, content);
+	}
+}
+
 export function base64ToString(base64: string): string {
 	return Buffer.from(base64, "base64").toString("utf-8");
+}
+
+export async function replaceMainJs(vault: Vault, mainJs: Buffer | "main-prod.js") {
+	const mainJsPath = normalizePath(vault.configDir + "/plugins/telegram-sync/main.js");
+	const mainProdJsPath = normalizePath(vault.configDir + "/plugins/telegram-sync/main-prod.js");
+	if (mainJs instanceof Buffer) {
+		await vault.adapter.writeBinary(mainProdJsPath, await vault.adapter.readBinary(mainJsPath));
+		await vault.adapter.writeBinary(mainJsPath, mainJs);
+	} else {
+		if (!(await vault.adapter.exists(mainProdJsPath))) return;
+		await vault.adapter.writeBinary(mainJsPath, await vault.adapter.readBinary(mainProdJsPath));
+	}
 }

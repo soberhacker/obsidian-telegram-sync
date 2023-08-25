@@ -2,6 +2,8 @@ import { Modal, Setting } from "obsidian";
 import TelegramSyncPlugin from "src/main";
 import { _5sec, displayAndLog } from "src/utils/logUtils";
 
+export const mainDeviceIdSettingName = "Main device id";
+
 export class BotSettingsModal extends Modal {
 	botSettingsDiv: HTMLDivElement;
 	saved = false;
@@ -14,7 +16,7 @@ export class BotSettingsModal extends Modal {
 		this.botSettingsDiv = this.contentEl.createDiv();
 		this.botSettingsDiv.createEl("h4", { text: "Bot settings" });
 		this.addBotToken();
-		this.addAllowedChatFromUsernamesSetting();
+		this.addAllowedChatsSetting();
 		this.addDeviceId();
 		this.addFooterButtons();
 	}
@@ -37,14 +39,16 @@ export class BotSettingsModal extends Modal {
 			});
 	}
 
-	addAllowedChatFromUsernamesSetting() {
-		const allowedChatFromUsernamesSetting = new Setting(this.botSettingsDiv)
-			.setName("Allowed chat from usernames (required)")
-			.setDesc("Only messages from these usernames will be processed. At least your username must be entered.")
+	addAllowedChatsSetting() {
+		const allowedChatsSetting = new Setting(this.botSettingsDiv)
+			.setName("Allowed chats (required)")
+			.setDesc(
+				"Enter list of usernames or chat ids that should be processed. At least your username must be entered.",
+			)
 			.addTextArea((text) => {
 				const textArea = text
-					.setPlaceholder("example: soberhacker,username")
-					.setValue(this.plugin.settings.allowedChatFromUsernames.join(", "))
+					.setPlaceholder("example: soberhacker,1227636")
+					.setValue(this.plugin.settings.allowedChats.join(", "))
 					.onChange(async (value: string) => {
 						value = value.replace(/\s/g, "");
 						if (!value) {
@@ -52,7 +56,7 @@ export class BotSettingsModal extends Modal {
 							textArea.inputEl.style.borderWidth = "2px";
 							textArea.inputEl.style.borderStyle = "solid";
 						}
-						this.plugin.settings.allowedChatFromUsernames = value.split(",");
+						this.plugin.settings.allowedChats = value.split(",");
 					});
 			});
 		// add link to Telegram FAQ about getting username
@@ -62,20 +66,20 @@ export class BotSettingsModal extends Modal {
 			href: "https://telegram.org/faq?setln=en#q-what-are-usernames-how-do-i-get-one",
 			text: "Telegram FAQ",
 		});
-		allowedChatFromUsernamesSetting.descEl.appendChild(howDoIGetUsername);
+		allowedChatsSetting.descEl.appendChild(howDoIGetUsername);
 	}
 
 	addDeviceId() {
 		const deviceIdSetting = new Setting(this.botSettingsDiv)
-			.setName("Main device id")
+			.setName(mainDeviceIdSettingName)
 			.setDesc(
-				"Specify the device to be used for sync when running Obsidian simultaneously on multiple desktops. If not specified, the priority will shift unpredictably."
+				"Specify the device to be used for sync when running Obsidian simultaneously on multiple desktops. If not specified, the priority will shift unpredictably.",
 			)
 			.addText((text) =>
 				text
 					.setPlaceholder("example: 98912984-c4e9-5ceb-8000-03882a0485e4")
 					.setValue(this.plugin.settings.mainDeviceId)
-					.onChange((value) => (this.plugin.settings.mainDeviceId = value))
+					.onChange((value) => (this.plugin.settings.mainDeviceId = value)),
 			);
 
 		// current device id copy to settings

@@ -60,7 +60,7 @@ function updateEntitiesOffset(
 	currentEntity: TelegramBot.MessageEntity,
 	currentIndex: number,
 	beforeOffset: number,
-	afterOffset: number
+	afterOffset: number,
 ) {
 	currentEntities.forEach((entity, index) => {
 		if (index <= currentIndex) return;
