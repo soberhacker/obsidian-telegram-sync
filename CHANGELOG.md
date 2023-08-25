@@ -1,6 +1,25 @@
 # Changelog
 
 
+## [1.10.0](https://github.com/soberhacker/obsidian-telegram-sync/compare/1.9.0...1.10.0) (2023-08-25)
+
+
+### Features
+
+* add {{content:[X-Y]}} for getting any lines ([2d2ff65](https://github.com/soberhacker/obsidian-telegram-sync/commit/2d2ff657d2f8d2b778ff52268305ac78411cb811))
+* add channel post handling ([3b06394](https://github.com/soberhacker/obsidian-telegram-sync/commit/3b06394e1d31bb2aeeb65f4be787786b99eaebfa))
+* add connection status indicator ([a921ef4](https://github.com/soberhacker/obsidian-telegram-sync/commit/a921ef4f796590656af3d7c759beeeb60110b89f))
+* add connection status indicator ([a921ef4](https://github.com/soberhacker/obsidian-telegram-sync/commit/a921ef4f796590656af3d7c759beeeb60110b89f))
+* creating a single note for media groups ([7bf3eea](https://github.com/soberhacker/obsidian-telegram-sync/commit/7bf3eea52bc66a6badb8cdde36496023e71134f2))
+* showing release notes only if not in Insider ([1d699b5](https://github.com/soberhacker/obsidian-telegram-sync/commit/1d699b59e233431e04cfbf4322b8020e64f2fc21))
+* simple installing published beta versions ([81a5f8b](https://github.com/soberhacker/obsidian-telegram-sync/commit/81a5f8b4bac7cfb28d8679f6373f837dfe56b661))
+
+
+### Bug Fixes
+
+* error "Premature close" ([ea049e4](https://github.com/soberhacker/obsidian-telegram-sync/commit/ea049e48b2f9ba77db47101b445f7900804ddb9f))
+* infinite restarts on non-main device ([6b909f4](https://github.com/soberhacker/obsidian-telegram-sync/commit/6b909f4285e5579dce6403bfdea9cc91b4d1045d))
+
 ## [1.9.0](https://github.com/soberhacker/obsidian-telegram-sync/compare/1.8.1...1.9.0) (2023-08-01)
 
 
