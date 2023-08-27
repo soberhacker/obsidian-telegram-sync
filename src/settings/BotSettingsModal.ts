@@ -2,6 +2,8 @@ import { Modal, Setting } from "obsidian";
 import TelegramSyncPlugin from "src/main";
 import { _5sec, displayAndLog } from "src/utils/logUtils";
 
+export const mainDeviceIdSettingName = "Main device id";
+
 export class BotSettingsModal extends Modal {
 	botSettingsDiv: HTMLDivElement;
 	saved = false;
@@ -69,7 +71,7 @@ export class BotSettingsModal extends Modal {
 
 	addDeviceId() {
 		const deviceIdSetting = new Setting(this.botSettingsDiv)
-			.setName("Main device id")
+			.setName(mainDeviceIdSettingName)
 			.setDesc(
 				"Specify the device to be used for sync when running Obsidian simultaneously on multiple desktops. If not specified, the priority will shift unpredictably.",
 			)

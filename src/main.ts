@@ -1,47 +1,56 @@
-import { Plugin, setIcon } from "obsidian";
-import {
-	DEFAULT_SETTINGS,
-	TelegramSyncSettings,
-	TelegramSyncSettingTab,
-	HowToInformAboutBotStatusType,
-	ParameterNameHowToInformAboutBotStatus,
-} from "./settings/Settings";
+import { Plugin } from "obsidian";
+import { DEFAULT_SETTINGS, TelegramSyncSettings, TelegramSyncSettingTab } from "./settings/Settings";
 import TelegramBot from "node-telegram-bot-api";
 import { machineIdSync } from "node-machine-id";
-import { _15sec, _2min, displayAndLog, StatusMessages, _5sec } from "./utils/logUtils";
+import { _15sec, _2min, displayAndLog, StatusMessages, displayAndLogError, hideMTProtoAlerts } from "./utils/logUtils";
 import * as Client from "./telegram/user/client";
 import * as Bot from "./telegram/bot/bot";
 import * as User from "./telegram/user/user";
 import { enqueue } from "./utils/queues";
-import { tooManyRequestsIntervalId } from "./telegram/bot/tooManyRequests";
-import { cachedMessagesIntervalId } from "./telegram/user/convertors";
-import { handleMediaGroupIntervalId } from "./telegram/bot/message/handlers";
+import { clearTooManyRequestsInterval } from "./telegram/bot/tooManyRequests";
+import { clearCachedMessagesInterval } from "./telegram/user/convertors";
+import { clearHandleMediaGroupInterval } from "./telegram/bot/message/handlers";
+import ConnectionStatusIndicator, { checkConnectionMessage } from "./ConnectionStatusIndicator";
+import { mainDeviceIdSettingName } from "./settings/BotSettingsModal";
 
-export const MessageCheckConnection =
-	"Check internet(proxy) connection, the functionality of Telegram using the official app. If everything is ok, restart Obsidian.";
+// TODO: add "connecting"
+export type ConnectionStatus = "connected" | "disconnected";
+export type PluginStatus = "unloading" | "unloaded" | "loading" | "loaded";
 
 // Main class for the Telegram Sync plugin
 export default class TelegramSyncPlugin extends Plugin {
 	settings: TelegramSyncSettings;
-	settingsTab: TelegramSyncSettingTab;
-	private botStatus: "connected" | "disconnected" = "disconnected";
+	settingsTab?: TelegramSyncSettingTab;
+	private botStatus: ConnectionStatus = "disconnected";
+	// TODO: change to userStatus and display in status bar
 	userConnected = false;
 	checkingBotConnection = false;
 	checkingUserConnection = false;
+	// TODO: TelegramSyncBot extends TelegramBot
 	bot?: TelegramBot;
 	botUser?: TelegramBot.User;
 	listOfNotePaths: string[] = [];
 	currentDeviceId = machineIdSync(true);
 	lastPollingErrors: string[] = [];
-	restartingIntervalId: NodeJS.Timer;
+	restartingIntervalId?: NodeJS.Timer;
 	restartingIntervalTime = _15sec;
+	// TODO: add messagesLeftCnt displaying in status bar
 	messagesLeftCnt = 0;
-	statusIcon?: HTMLElement;
-	pluginStatus: "unloading" | "unloaded";
+	connectionStatusIndicator? = new ConnectionStatusIndicator(this);
+	status: PluginStatus = "loading";
 
 	async initTelegram(initType?: Client.SessionType) {
 		this.lastPollingErrors = [];
 		this.messagesLeftCnt = 0;
+		if (this.settings.mainDeviceId && this.settings.mainDeviceId !== this.currentDeviceId) {
+			this.stopTelegram();
+			displayAndLog(
+				this,
+				`Paused on this device. If you want the plugin to work here, change the value of "${mainDeviceIdSettingName}" to the current device id in the bot settings.`,
+				0,
+			);
+			return;
+		}
 		if (!initType || initType == "user") {
 			try {
 				this.checkingUserConnection = true;
@@ -58,6 +67,17 @@ export default class TelegramSyncPlugin extends Plugin {
 				this.checkingBotConnection = false;
 			}
 		}
+		// restart telegram bot or user if needed
+		if (!this.restartingIntervalId) this.setRestartTelegramInterval(this.restartingIntervalTime);
+	}
+
+	setRestartTelegramInterval(newRestartingIntervalTime: number, sessionType?: Client.SessionType) {
+		this.restartingIntervalTime = newRestartingIntervalTime;
+		clearInterval(this.restartingIntervalId);
+		this.restartingIntervalId = setInterval(
+			async () => await enqueue(this, this.restartTelegram, sessionType),
+			this.restartingIntervalTime,
+		);
 	}
 
 	async restartTelegram(sessionType?: Client.SessionType) {
@@ -80,104 +100,63 @@ export default class TelegramSyncPlugin extends Plugin {
 				this.settings?.botToken
 			) {
 				await this.initTelegram("bot");
-				displayAndLog(this, StatusMessages.botReconnected, _5sec);
 				needRestartInterval = true;
 			}
 
-			if (needRestartInterval) {
-				this.restartingIntervalTime = _15sec;
-				clearInterval(this.restartingIntervalId);
-				this.restartingIntervalId = setInterval(
-					async () => await enqueue(this, this.restartTelegram, sessionType),
-					this.restartingIntervalTime,
-				);
-			}
+			if (needRestartInterval) this.setRestartTelegramInterval(_15sec);
 		} catch {
-			if (this.restartingIntervalTime < _2min) this.restartingIntervalTime = this.restartingIntervalTime * 2;
-			clearInterval(this.restartingIntervalId);
-			this.restartingIntervalId = setInterval(
-				async () => await enqueue(this, this.restartTelegram, sessionType),
-				this.restartingIntervalTime,
+			this.setRestartTelegramInterval(
+				this.restartingIntervalTime < _2min ? this.restartingIntervalTime * 2 : this.restartingIntervalTime,
 			);
 		}
+	}
+
+	stopTelegram() {
+		this.checkingBotConnection = false;
+		this.checkingUserConnection = false;
+		clearInterval(this.restartingIntervalId);
+		this.restartingIntervalId = undefined;
+		Bot.disconnect(this);
+		User.disconnect(this);
 	}
 
 	// Load the plugin, settings, and initialize the bot
 	async onload() {
-		console.log(`Loading ${this.manifest.name} plugin`);
+		this.status = "loading";
+
 		await this.loadSettings();
-		this.addStatusIconIdneeded();
-		// TODO in 2024: Remove allowedChatFromUsernames, because it is deprecated
-		if (this.settings.allowedChatFromUsernames.length != 0) {
-			this.settings.allowedChats = [...this.settings.allowedChatFromUsernames];
-			this.settings.allowedChatFromUsernames = [];
-			await this.saveSettings();
-		}
+		await this.upgradeSettings();
 
 		// Add a settings tab for this plugin
-		this.settingsTab = new TelegramSyncSettingTab(this);
+		this.settingsTab = new TelegramSyncSettingTab(this.app, this);
 		this.addSettingTab(this.settingsTab);
 
+		hideMTProtoAlerts(this);
 		// Initialize the Telegram bot when Obsidian layout is fully loaded
 		this.app.workspace.onLayoutReady(async () => {
-			await this.initTelegram();
-			// restart telegram bot or user if needed
-			this.restartingIntervalId = setInterval(
-				async () => await enqueue(this, this.restartTelegram),
-				this.restartingIntervalTime,
-			);
+			enqueue(this, this.initTelegram);
 		});
+
+		this.status = "loaded";
+		displayAndLog(this, this.status, 0);
 	}
 
 	async onunload(): Promise<void> {
-		this.pluginStatus = "unloading";
-		clearInterval(this.restartingIntervalId);
-		clearInterval(tooManyRequestsIntervalId);
-		clearInterval(cachedMessagesIntervalId);
-		clearInterval(handleMediaGroupIntervalId);
-		this.clearStatusIcon();
-		await Bot.disconnect(this);
-		await User.disconnect(this);
-		this.pluginStatus = "unloaded";
-	}
-
-	needToShowStatusBar(): boolean {
-		switch (this.settings.howToInformAboutBotStatus) {
-			case HowToInformAboutBotStatusType.showBotLogs:
-				return false;
-			case HowToInformAboutBotStatusType.showBotStatusBar:
-				return true;
-			case HowToInformAboutBotStatusType.showBotStatusBarErrorsOnly:
-				if (this.isBotConnected()) return false;
-				else return true;
-			default:
-				throw new Error(
-					`Unknown configuration value ${this.settings.howToInformAboutBotStatus} for parameter ${ParameterNameHowToInformAboutBotStatus}`,
-				);
+		this.status = "unloading";
+		try {
+			clearTooManyRequestsInterval();
+			clearCachedMessagesInterval();
+			clearHandleMediaGroupInterval();
+			this.connectionStatusIndicator?.destroy();
+			this.connectionStatusIndicator = undefined;
+			this.settingsTab = undefined;
+			this.stopTelegram();
+		} catch (e) {
+			displayAndLog(this, e, 0);
+		} finally {
+			this.status = "unloaded";
+			displayAndLog(this, this.status, 0);
 		}
-	}
-
-	setStatusIconDisonnectedStyleProperties(): void {
-		this?.statusIcon?.setAttrs({
-			style: "background-color: red;",
-			"data-tooltip-position": "top",
-			"aria-label": MessageCheckConnection,
-		});
-	}
-
-	addStatusIconIdneeded(): void {
-		if (this.statusIcon !== undefined) return; // status icon resource has already been allocated
-		if (this.pluginStatus == "unloading") return;
-		if (!this.needToShowStatusBar()) return;
-		this.statusIcon = this.addStatusBarItem();
-		setIcon(this.statusIcon, "send");
-		if (this.isBotConnected()) this.setStatusIconConnectedStyleProperties();
-		else this.setStatusIconDisonnectedStyleProperties();
-	}
-
-	clearStatusIcon(): void {
-		this.statusIcon?.remove();
-		this.statusIcon = undefined;
 	}
 
 	// Load settings from the plugin's data
@@ -190,6 +169,20 @@ export default class TelegramSyncPlugin extends Plugin {
 		await this.saveData(this.settings);
 	}
 
+	async upgradeSettings() {
+		if (this.settings.cacheCleanupAtStartup) {
+			localStorage.removeItem("GramJs:apiCache");
+			this.settings.cacheCleanupAtStartup = false;
+			await this.saveSettings();
+		}
+		// TODO in 2024: Remove allowedChatFromUsernames, because it is deprecated
+		if (this.settings.allowedChatFromUsernames.length != 0) {
+			this.settings.allowedChats = [...this.settings.allowedChatFromUsernames];
+			this.settings.allowedChatFromUsernames = [];
+			await this.saveSettings();
+		}
+	}
+
 	async getBotUser(msg: TelegramBot.Message): Promise<TelegramBot.User> {
 		this.botUser = this.botUser || (await this.bot?.getMe());
 		if (!this.botUser) throw new Error("Can't get access to bot info. Restart the Telegram Sync plugin");
@@ -200,33 +193,14 @@ export default class TelegramSyncPlugin extends Plugin {
 		return this.botStatus === "connected";
 	}
 
-	setBotState(state: "connected" | "disconnected"): void {
-		this.botStatus = state;
-		this.updatePluginStatusIcon();
-	}
+	async setBotStatus(status: ConnectionStatus, error?: Error) {
+		if (this.botStatus == status && !error) return;
 
-	updatePluginStatusIcon(recreateStatusIcon = false): void {
-		if (recreateStatusIcon) this.clearStatusIcon();
-		this.addStatusIconIdneeded();
+		this.botStatus = status;
+		this.connectionStatusIndicator?.update(error);
 
-		// if icon resource is not allocated but icon should not be shown then allocate icon resouce
-		if (this.statusIcon !== undefined && this.connectedStatusBarShouldBeHidden()) {
-			this.clearStatusIcon();
-			return;
-		}
-
-		if (this.isBotConnected()) {
-			this.setStatusIconConnectedStyleProperties();
-		} else this.setStatusIconDisonnectedStyleProperties();
-	}
-
-	private setStatusIconConnectedStyleProperties() {
-		this.statusIcon?.removeAttribute("style");
-		this.statusIcon?.removeAttribute("data-tooltip-position");
-		this.statusIcon?.removeAttribute("aria-label");
-	}
-
-	private connectedStatusBarShouldBeHidden(): boolean {
-		return !this.needToShowStatusBar() && this.isBotConnected();
+		if (this.isBotConnected()) displayAndLog(this, StatusMessages.botConnected, 0);
+		else if (!error) displayAndLog(this, StatusMessages.botDisconnected, 0);
+		else displayAndLogError(this, error, StatusMessages.botDisconnected, checkConnectionMessage, undefined, 0);
 	}
 }

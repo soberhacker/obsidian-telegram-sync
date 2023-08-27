@@ -17,9 +17,6 @@ export async function connect(plugin: TelegramSyncPlugin, sessionType: client.Se
 		release.showBreakingChangesInReleaseNotes();
 	}
 
-	if (release.versionALessThanVersionB(plugin.settings.pluginVersion, "1.10.0"))
-		localStorage.removeItem("GramJs:apiCache");
-
 	if (!(sessionType == "user" || plugin.settings.botToken !== "")) return;
 
 	const initialSessionType = plugin.settings.telegramSessionType;
@@ -67,7 +64,7 @@ export async function reconnect(plugin: TelegramSyncPlugin, displayError = false
 		plugin.userConnected = await client.isAuthorizedAsUser();
 	} catch (error) {
 		plugin.userConnected = false;
-		if (displayError && plugin.botConnected && plugin.settings.telegramSessionType == "user") {
+		if (displayError && plugin.isBotConnected() && plugin.settings.telegramSessionType == "user") {
 			await displayAndLogError(
 				plugin,
 				error,
@@ -86,6 +83,5 @@ export async function disconnect(plugin: TelegramSyncPlugin) {
 		await client.stop();
 	} finally {
 		plugin.userConnected = false;
-		plugin.checkingUserConnection = false;
 	}
 }

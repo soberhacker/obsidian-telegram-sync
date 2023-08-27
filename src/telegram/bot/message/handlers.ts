@@ -25,7 +25,12 @@ export interface MediaGroup {
 
 const mediaGroups: MediaGroup[] = [];
 
-export let handleMediaGroupIntervalId: NodeJS.Timer;
+let handleMediaGroupIntervalId: NodeJS.Timer | undefined;
+
+export function clearHandleMediaGroupInterval() {
+	clearInterval(handleMediaGroupIntervalId);
+	handleMediaGroupIntervalId = undefined;
+}
 
 export async function handleMessageOrPost(
 	plugin: TelegramSyncPlugin,
@@ -33,7 +38,7 @@ export async function handleMessageOrPost(
 	msgType: "post" | "message",
 ) {
 	if (!plugin.isBotConnected()) {
-		plugin.setBotState("connected");
+		plugin.setBotStatus("connected");
 		plugin.lastPollingErrors = [];
 	}
 
@@ -63,7 +68,7 @@ export async function handleMessageOrPost(
 
 	// Store topic name if "/topicName " command
 	if (msg.text?.includes("/topicName")) {
-		await plugin.settingsTab.storeTopicName(msg);
+		await plugin.settingsTab?.storeTopicName(msg);
 		return;
 	}
 

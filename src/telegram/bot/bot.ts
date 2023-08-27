@@ -1,16 +1,12 @@
 import TelegramBot from "node-telegram-bot-api";
-import TelegramSyncPlugin, { MessageCheckConnection } from "src/main";
-import { _1sec, displayAndLog, displayAndLogError, StatusMessages, _5sec } from "src/utils/logUtils";
+import TelegramSyncPlugin from "src/main";
+import { _1sec, displayAndLog } from "src/utils/logUtils";
 import { handleMessageOrPost } from "./message/handlers";
 import { reconnect } from "../user/user";
 
 // Initialize the Telegram bot and set up message handling
 export async function connect(plugin: TelegramSyncPlugin) {
 	await disconnect(plugin);
-
-	if (plugin.settings.mainDeviceId && plugin.settings.mainDeviceId !== plugin.currentDeviceId) {
-		return;
-	}
 
 	if (!plugin.settings.botToken) {
 		displayAndLog(plugin, "Telegram bot token is empty.\n\nSyncing is disabled.");
@@ -41,10 +37,11 @@ export async function connect(plugin: TelegramSyncPlugin) {
 		} finally {
 			await bot.startPolling();
 		}
-		plugin.setBotState("connected");
+		plugin.setBotStatus("connected");
 	} catch (error) {
-		if (plugin.settings.needToLogBotError() && (!bot || !bot.isPolling()))
-			await displayAndLogError(plugin, error, StatusMessages.botDisconnected, MessageCheckConnection);
+		if (!bot || !bot.isPolling()) {
+			plugin.setBotStatus("disconnected", error);
+		}
 	}
 }
 
@@ -55,8 +52,7 @@ export async function disconnect(plugin: TelegramSyncPlugin) {
 	} finally {
 		plugin.bot = undefined;
 		plugin.botUser = undefined;
-		plugin.setBotState("disconnected");
-		plugin.checkingBotConnection = false;
+		plugin.setBotStatus("disconnected");
 	}
 }
 
@@ -85,9 +81,7 @@ async function handlePollingError(plugin: TelegramSyncPlugin, error: any) {
 	if (plugin.lastPollingErrors.length == 0 || !plugin.lastPollingErrors.includes(pollingError)) {
 		plugin.lastPollingErrors.push(pollingError);
 		if (!(pollingError == "twoBotInstances")) {
-			plugin.setBotState("disconnected");
-			if (plugin.settings.needToLogBotError())
-				await displayAndLogError(plugin, error, StatusMessages.botDisconnected);
+			plugin.setBotStatus("disconnected", error);
 		}
 	}
 
@@ -101,10 +95,9 @@ async function checkConnectionAfterError(plugin: TelegramSyncPlugin, intervalInS
 		plugin.checkingBotConnection = true;
 		await new Promise((resolve) => setTimeout(resolve, intervalInSeconds * _1sec));
 		plugin.botUser = await plugin.bot.getMe();
-		plugin.setBotState("connected");
+		plugin.setBotStatus("connected");
 		plugin.lastPollingErrors = [];
 		plugin.checkingBotConnection = false;
-		displayAndLog(plugin, StatusMessages.botReconnected, _5sec);
 		reconnect(plugin);
 	} catch {
 		plugin.checkingBotConnection = false;

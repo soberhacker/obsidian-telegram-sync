@@ -96,3 +96,15 @@ export async function appendContentToNote(
 export function base64ToString(base64: string): string {
 	return Buffer.from(base64, "base64").toString("utf-8");
 }
+
+export async function replaceMainJs(vault: Vault, mainJs: Buffer | "main-prod.js") {
+	const mainJsPath = normalizePath(vault.configDir + "/plugins/telegram-sync/main.js");
+	const mainProdJsPath = normalizePath(vault.configDir + "/plugins/telegram-sync/main-prod.js");
+	if (mainJs instanceof Buffer) {
+		await vault.adapter.writeBinary(mainProdJsPath, await vault.adapter.readBinary(mainJsPath));
+		await vault.adapter.writeBinary(mainJsPath, mainJs);
+	} else {
+		if (!(await vault.adapter.exists(mainProdJsPath))) return;
+		await vault.adapter.writeBinary(mainJsPath, await vault.adapter.readBinary(mainProdJsPath));
+	}
+}
