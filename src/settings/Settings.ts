@@ -322,7 +322,9 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 	}
 
 	addMessageDistributionRules() {
-		new Setting(this.containerEl).setName("ClassificatorPathTemplate").setDesc("Here will be the description");
+		new Setting(this.containerEl)
+			.setName("Message distribution rules")
+			.setDesc("Configure message filters, content template, and storage paths for new notes and files");
 		let div = this.containerEl.createEl("div", {
 			class: "cm-embed-block cm-table-widget",
 			tabindex: "-1",
