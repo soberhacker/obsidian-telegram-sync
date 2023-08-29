@@ -26,11 +26,19 @@ export interface Topic {
 	topicId: number;
 }
 
-export interface PathTemplateRow {
-	classifier: string;
-	path2File: string;
+export interface MessageDistributionRule {
+	messageFilter: string;
 	path2Template: string;
+	path2Note: string;
+	path2Files: string;
 }
+
+const defaultMessageDistributionRule: MessageDistributionRule = {
+	messageFilter: "*",
+	path2Template: "",
+	path2Note: "Telegram.md",
+	path2Files: "",
+};
 
 export interface TelegramSyncSettings {
 	botToken: string;
@@ -49,9 +57,9 @@ export interface TelegramSyncSettings {
 	betaVersion: string;
 	connectionStatusIndicatorType: KeysOfConnectionStatusIndicatorType;
 	cacheCleanupAtStartup: boolean;
+	messageDistributionRules: MessageDistributionRule[];
 	// add new settings above this line
 	topicNames: Topic[];
-	pathTemplateList: PathTemplateRow[];
 }
 
 export const DEFAULT_SETTINGS: TelegramSyncSettings = {
@@ -71,9 +79,9 @@ export const DEFAULT_SETTINGS: TelegramSyncSettings = {
 	betaVersion: "",
 	connectionStatusIndicatorType: "CONSTANT",
 	cacheCleanupAtStartup: false,
+	messageDistributionRules: [defaultMessageDistributionRule],
 	// add new settings above this line
 	topicNames: [],
-	pathTemplateList: [{ classifier: "*", path2File: "/Telegram.md", path2Template: "/TelegramTemplate" }],
 };
 
 export class TelegramSyncSettingTab extends PluginSettingTab {
@@ -92,21 +100,17 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 
 		this.addBot();
 		this.addUser();
-		this.containerEl.createEl("br");
-		this.containerEl.createEl("h2", { text: "Locations" });
-		this.addNewNotesLocation();
-		this.addNewFilesLocation();
-		this.addTemplateFileLocation();
-		this.addClassificatorPathTemplate();
+
 		this.containerEl.createEl("br");
 		this.containerEl.createEl("h2", { text: "Behavior settings" });
-		this.addAppendAllToTelegramMd();
-		this.addSaveFilesCheckbox();
 		this.addDeleteMessagesFromTelegram();
+		this.addMessageDistributionRules();
+
 		this.containerEl.createEl("br");
 		this.containerEl.createEl("h2", { text: "System settings" });
 		await this.addBetaRelease();
 		this.addConnectionStatusIndicator();
+
 		this.addDonation();
 	}
 
@@ -317,7 +321,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 		templateFileLocationSetting.descEl.appendChild(availableTemplateVariables);
 	}
 
-	addClassificatorPathTemplate() {
+	addMessageDistributionRules() {
 		new Setting(this.containerEl).setName("ClassificatorPathTemplate").setDesc("Here will be the description");
 		let div = this.containerEl.createEl("div", {
 			class: "cm-embed-block cm-table-widget",
