@@ -26,6 +26,12 @@ export interface Topic {
 	topicId: number;
 }
 
+export interface PathTemplateRow {
+	classifier: string;
+	path2File: string;
+	path2Template: string;
+}
+
 export interface TelegramSyncSettings {
 	botToken: string;
 	newNotesLocation: string;
@@ -45,6 +51,7 @@ export interface TelegramSyncSettings {
 	cacheCleanupAtStartup: boolean;
 	// add new settings above this line
 	topicNames: Topic[];
+	pathTemplateList: PathTemplateRow[];
 }
 
 export const DEFAULT_SETTINGS: TelegramSyncSettings = {
@@ -66,6 +73,7 @@ export const DEFAULT_SETTINGS: TelegramSyncSettings = {
 	cacheCleanupAtStartup: false,
 	// add new settings above this line
 	topicNames: [],
+	pathTemplateList: [{ classifier: "*", path2File: "/Telegram.md", path2Template: "/TelegramTemplate" }],
 };
 
 export class TelegramSyncSettingTab extends PluginSettingTab {
@@ -89,6 +97,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 		this.addNewNotesLocation();
 		this.addNewFilesLocation();
 		this.addTemplateFileLocation();
+		this.addClassificatorPathTemplate();
 		this.containerEl.createEl("br");
 		this.containerEl.createEl("h2", { text: "Behavior settings" });
 		this.addAppendAllToTelegramMd();
@@ -306,6 +315,28 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 			text: "Template Variables List",
 		});
 		templateFileLocationSetting.descEl.appendChild(availableTemplateVariables);
+	}
+
+	addClassificatorPathTemplate() {
+		new Setting(this.containerEl).setName("ClassificatorPathTemplate").setDesc("Here will be the description");
+		let div = this.containerEl.createEl("div", {
+			class: "cm-embed-block cm-table-widget",
+			tabindex: "-1",
+			contenteditable: "false",
+		});
+		div = div.createEl("div", { class: "markdown-rendered show-indentation-guide", style: "overflow-x: auto;" });
+		const table = div.createEl("table");
+		const head = table.createEl("thead").createEl("tr");
+		head.createEl("th").setText("classifier");
+		head.createEl("th").setText("path");
+		head.createEl("th").setText("message will be added to");
+		head.createEl("th").setText("template");
+		const row = table.createEl("tbody").createEl("tr");
+		row.createEl("td").setText("*");
+		row.createEl("td").setText("/calendar{{message:YYYY-MM-DD}}.md");
+		row.createEl("td").setText("/calendar/2023-08-29.md");
+		row.createEl("td").setText("/template/daily_telegram.md");
+		this.plugin.saveSettings();
 	}
 
 	addAppendAllToTelegramMd() {
