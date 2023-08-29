@@ -34,10 +34,10 @@ export interface MessageDistributionRule {
 }
 
 const defaultMessageDistributionRule: MessageDistributionRule = {
-	messageFilter: "*",
+	messageFilter: "",
 	path2Template: "",
-	path2Note: "Telegram.md",
-	path2Files: "",
+	path2Note: "Telegram/{{content:30}} - {{messageDate}}{{messageTime}}.md",
+	path2Files: "Telegram/{{fileType}}s/{{fileName}} - {{messageDate}}{{messageTime}}.{{fileExtension}}",
 };
 
 export interface TelegramSyncSettings {
