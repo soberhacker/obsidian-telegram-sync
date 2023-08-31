@@ -26,6 +26,20 @@ export interface Topic {
 	topicId: number;
 }
 
+export interface MessageDistributionRule {
+	messageFilter: string;
+	path2Template: string;
+	path2Note: string;
+	path2Files: string;
+}
+
+const defaultMessageDistributionRule: MessageDistributionRule = {
+	messageFilter: "",
+	path2Template: "",
+	path2Note: "Telegram/{{content:30}} - {{messageDate}}{{messageTime}}.md",
+	path2Files: "Telegram/{{fileType}}s/{{fileName}} - {{messageDate}}{{messageTime}}.{{fileExtension}}",
+};
+
 export interface TelegramSyncSettings {
 	botToken: string;
 	newNotesLocation: string;
@@ -43,6 +57,7 @@ export interface TelegramSyncSettings {
 	betaVersion: string;
 	connectionStatusIndicatorType: KeysOfConnectionStatusIndicatorType;
 	cacheCleanupAtStartup: boolean;
+	messageDistributionRules: MessageDistributionRule[];
 	// add new settings above this line
 	topicNames: Topic[];
 }
@@ -64,6 +79,7 @@ export const DEFAULT_SETTINGS: TelegramSyncSettings = {
 	betaVersion: "",
 	connectionStatusIndicatorType: "CONSTANT",
 	cacheCleanupAtStartup: false,
+	messageDistributionRules: [defaultMessageDistributionRule],
 	// add new settings above this line
 	topicNames: [],
 };
@@ -84,20 +100,17 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 
 		this.addBot();
 		this.addUser();
-		this.containerEl.createEl("br");
-		this.containerEl.createEl("h2", { text: "Locations" });
-		this.addNewNotesLocation();
-		this.addNewFilesLocation();
-		this.addTemplateFileLocation();
+
 		this.containerEl.createEl("br");
 		this.containerEl.createEl("h2", { text: "Behavior settings" });
-		this.addAppendAllToTelegramMd();
-		this.addSaveFilesCheckbox();
 		this.addDeleteMessagesFromTelegram();
+		this.addMessageDistributionRules();
+
 		this.containerEl.createEl("br");
 		this.containerEl.createEl("h2", { text: "System settings" });
 		await this.addBetaRelease();
 		this.addConnectionStatusIndicator();
+
 		this.addDonation();
 	}
 
@@ -306,6 +319,30 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 			text: "Template Variables List",
 		});
 		templateFileLocationSetting.descEl.appendChild(availableTemplateVariables);
+	}
+
+	addMessageDistributionRules() {
+		new Setting(this.containerEl)
+			.setName("Message distribution rules")
+			.setDesc("Configure message filters, content template, and storage paths for new notes and files");
+		let div = this.containerEl.createEl("div", {
+			class: "cm-embed-block cm-table-widget",
+			tabindex: "-1",
+			contenteditable: "false",
+		});
+		div = div.createEl("div", { class: "markdown-rendered show-indentation-guide", style: "overflow-x: auto;" });
+		const table = div.createEl("table");
+		const head = table.createEl("thead").createEl("tr");
+		head.createEl("th").setText("classifier");
+		head.createEl("th").setText("path");
+		head.createEl("th").setText("message will be added to");
+		head.createEl("th").setText("template");
+		const row = table.createEl("tbody").createEl("tr");
+		row.createEl("td").setText("*");
+		row.createEl("td").setText("/calendar{{message:YYYY-MM-DD}}.md");
+		row.createEl("td").setText("/calendar/2023-08-29.md");
+		row.createEl("td").setText("/template/daily_telegram.md");
+		this.plugin.saveSettings();
 	}
 
 	addAppendAllToTelegramMd() {
