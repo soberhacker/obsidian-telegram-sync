@@ -325,24 +325,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 		new Setting(this.containerEl)
 			.setName("Message distribution rules")
 			.setDesc("Configure message filters, content template, and storage paths for new notes and files");
-		let div = this.containerEl.createEl("div", {
-			class: "cm-embed-block cm-table-widget",
-			tabindex: "-1",
-			contenteditable: "false",
-		});
-		div = div.createEl("div", { class: "markdown-rendered show-indentation-guide", style: "overflow-x: auto;" });
-		const table = div.createEl("table");
-		const head = table.createEl("thead").createEl("tr");
-		head.createEl("th").setText("classifier");
-		head.createEl("th").setText("path");
-		head.createEl("th").setText("message will be added to");
-		head.createEl("th").setText("template");
-		const row = table.createEl("tbody").createEl("tr");
-		row.createEl("td").setText("*");
-		row.createEl("td").setText("/calendar{{message:YYYY-MM-DD}}.md");
-		row.createEl("td").setText("/calendar/2023-08-29.md");
-		row.createEl("td").setText("/template/daily_telegram.md");
-		this.plugin.saveSettings();
+		// TODO: add "add button", table, edit, sort, delete buttons
 	}
 
 	addAppendAllToTelegramMd() {
