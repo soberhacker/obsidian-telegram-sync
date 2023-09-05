@@ -136,7 +136,7 @@ export async function applyNotePathTemplate(
 	if (!notePathTemplate) return "";
 
 	let textContentMd = "";
-	if (notePathTemplate.includes("{{content")) textContentMd = await convertMessageTextToMarkdown(msg);
+	if (notePathTemplate.includes("{{content")) textContentMd = (await convertMessageTextToMarkdown(msg)).slice(0, 100);
 
 	let processedPath = notePathTemplate.endsWith("/") ? notePathTemplate + defaultNoteNameTemplate : notePathTemplate;
 	processedPath = await processBasicVariables(plugin, msg, processedPath, textContentMd);

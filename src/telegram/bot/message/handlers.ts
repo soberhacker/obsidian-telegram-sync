@@ -239,6 +239,7 @@ export async function handleFiles(plugin: TelegramSyncPlugin, msg: TelegramBot.M
 		// Create a specific folder for each file type
 		const specificFolder = `${basePath}/${fileType}s`;
 		// Format the file name and path
+		// TODO now: file names always unique when path templates
 		filePath = await getUniqueFilePath(
 			plugin.app.vault,
 			plugin.listOfNotePaths,

@@ -34,8 +34,8 @@ export interface MessageDistributionRule {
 }
 
 const defaultTelegramFolder = "Telegram";
-export const defaultNoteNameTemplate = "{{content:30}} - {{messageDate}}{{messageTime}}.md";
-export const defaultFileNameTemplate = "{{fileName}} - {{messageDate}}{{messageTime}}.{{fileExtension}}";
+export const defaultNoteNameTemplate = "{{content:30}} - {{messageDate:YYYYMMDD}}{{messageTime:HHmmssSSS}}.md";
+export const defaultFileNameTemplate = "{{file:name}}.{{file:extension}}";
 
 const defaultMessageDistributionRule: MessageDistributionRule = {
 	messageFilter: "",
