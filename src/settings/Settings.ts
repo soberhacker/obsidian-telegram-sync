@@ -33,11 +33,15 @@ export interface MessageDistributionRule {
 	path2Files: string;
 }
 
+const defaultTelegramFolder = "Telegram";
+export const defaultNoteNameTemplate = "{{content:30}} - {{messageDate}}{{messageTime}}.md";
+export const defaultFileNameTemplate = "{{fileName}} - {{messageDate}}{{messageTime}}.{{fileExtension}}";
+
 const defaultMessageDistributionRule: MessageDistributionRule = {
 	messageFilter: "",
 	path2Template: "",
-	path2Note: "Telegram/{{content:30}} - {{messageDate}}{{messageTime}}.md",
-	path2Files: "Telegram/{{fileType}}s/{{fileName}} - {{messageDate}}{{messageTime}}.{{fileExtension}}",
+	path2Note: `${defaultTelegramFolder}/${defaultNoteNameTemplate}`,
+	path2Files: `${defaultTelegramFolder}/{{fileType}}s/${defaultFileNameTemplate}`,
 };
 
 export interface TelegramSyncSettings {

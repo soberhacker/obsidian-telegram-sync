@@ -29,8 +29,12 @@ export async function createFolderIfNotExist(vault: Vault, folderPath: string) {
 
 export function sanitizeFileName(fileName: string): string {
 	const invalidCharacters = /[\\/:*?"<>|\n\r]/g;
-	const replacementCharacter = "_";
-	return fileName.replace(invalidCharacters, replacementCharacter);
+	return fileName.replace(invalidCharacters, "_");
+}
+
+export function sanitizeFilePath(filePath: string): string {
+	const invalidCharacters = /[\\:*?"<>|\n\r]/g;
+	return filePath.replace(invalidCharacters, "_");
 }
 
 export async function getUniqueFilePath(

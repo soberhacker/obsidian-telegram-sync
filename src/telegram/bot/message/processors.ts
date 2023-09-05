@@ -18,6 +18,9 @@ import { _15sec, _1h, _5sec, displayAndLog, displayAndLogError } from "src/utils
 import { convertMessageTextToMarkdown, escapeRegExp } from "./convertToMarkdown";
 import * as Client from "../../user/client";
 import { enqueue } from "src/utils/queues";
+import { sanitizeFilePath } from "src/utils/fsUtils";
+import path from "path";
+import { defaultFileNameTemplate, defaultNoteNameTemplate } from "src/settings/Settings";
 
 // Delete a message or send a confirmation reply based on settings and message age
 export async function finalizeMessageProcessing(plugin: TelegramSyncPlugin, msg: TelegramBot.Message, error?: Error) {
@@ -71,68 +74,30 @@ export async function applyNoteContentTemplate(
 		throw new Error(`Template "${templatePath}" not found! ${e}`);
 	}
 
-	const textContentMd = await convertMessageTextToMarkdown(msg);
 	const allEmbeddedFilesLinks = filesLinks.length > 0 ? filesLinks.join("\n") : "";
 	const allFilesLinks = allEmbeddedFilesLinks.replace("![", "[");
-
+	let textContentMd = "";
+	if (!templateContent || templateContent.includes("{{content"))
+		textContentMd = await convertMessageTextToMarkdown(msg);
 	// Check if the message is forwarded and extract the required information
 	const forwardFromLink = getForwardFromLink(msg);
-	const fullContentMd =
+	const fullContent =
 		(forwardFromLink ? `**Forwarded from ${forwardFromLink}**\n\n` : "") +
 		(allEmbeddedFilesLinks ? allEmbeddedFilesLinks + "\n\n" : "") +
 		textContentMd;
 
 	if (!templateContent) {
-		return fullContentMd;
+		return fullContent;
 	}
 
-	let voiceTranscript = "";
-	if (templateContent.includes("{{voiceTranscript") && plugin.bot) {
-		voiceTranscript = await Client.transcribeAudio(plugin.bot, msg, await plugin.getBotUser(msg));
-	}
-
-	const messageDateTime = new Date(msg.date * 1000);
-	const creationDateTime = msg.forward_date ? new Date(msg.forward_date * 1000) : messageDateTime;
-
-	const dateTimeNow = new Date();
 	const itemsForReplacing: [string, string][] = [];
 
-	const lines = templateContent.split("\n");
-	for (let i = 0; i < lines.length; i++) {
-		const line = lines[i];
-
-		if (line.includes("{{content")) {
-			lines[i] = pasteText(plugin, "content", line, fullContentMd, textContentMd);
-		}
-
-		if (line.includes("{{voiceTranscript")) {
-			lines[i] = pasteText(plugin, "voiceTranscript", line, voiceTranscript, voiceTranscript);
-		}
-	}
-	let processedContent = lines.join("\n");
-
-	processedContent = processedContent
+	let processedContent = (await processBasicVariables(plugin, msg, templateContent, textContentMd, fullContent))
 		.replace(/{{file}}/g, allEmbeddedFilesLinks) // TODO in 2024: deprecated, remove
 		.replace(/{{file:link}}/g, allFilesLinks) // TODO in 2024: deprecated, remove
 
 		.replace(/{{files}}/g, allEmbeddedFilesLinks)
 		.replace(/{{files:links}}/g, allFilesLinks)
-		.replace(/{{messageDate:(.*?)}}/g, (_, format) => formatDateTime(messageDateTime, format))
-		.replace(/{{messageTime:(.*?)}}/g, (_, format) => formatDateTime(messageDateTime, format))
-		.replace(/{{date:(.*?)}}/g, (_, format) => formatDateTime(dateTimeNow, format))
-		.replace(/{{time:(.*?)}}/g, (_, format) => formatDateTime(dateTimeNow, format))
-		.replace(/{{forwardFrom}}/g, forwardFromLink)
-		.replace(/{{forwardFrom:name}}/g, getForwardFromName(msg)) // name of forwarded message creator
-		.replace(/{{user}}/g, getUserLink(msg)) // link to the user who sent the message
-		.replace(/{{userId}}/g, msg.from?.id.toString() || msg.message_id.toString()) // id of the user who sent the message
-		.replace(/{{chat}}/g, getChatLink(msg)) // link to the chat with the message
-		.replace(/{{chatId}}/g, msg.chat.id.toString()) // id of the chat with the message
-		.replace(/{{chat:name}}/g, getChatName(msg)) // name of the chat (bot / group / channel)
-		.replace(/{{topic}}/g, await getTopicLink(plugin, msg)) // link to the topic with the message
-		.replace(/{{topic:name}}/g, (await getTopic(plugin, msg))?.name || "") // link to the topic with the message
-		.replace(/{{topicId}}/g, getTopicId(msg)?.toString() || "") // head message id representing the topic
-		.replace(/{{messageId}}/g, msg.message_id.toString())
-		.replace(/{{replyMessageId}}/g, getReplyMessageId(msg))
 		.replace(/{{url1}}/g, getUrl(msg)) // first url from the message
 		.replace(/{{url1:preview(.*?)}}/g, (_, height: string) => {
 			let linkPreview = "";
@@ -146,8 +111,6 @@ export async function applyNoteContentTemplate(
 			}
 			return linkPreview;
 		}) // preview for first url from the message
-		.replace(/{{creationDate:(.*?)}}/g, (_, format) => formatDateTime(creationDateTime, format)) // date, when the message was created
-		.replace(/{{creationTime:(.*?)}}/g, (_, format) => formatDateTime(creationDateTime, format)) // time, when the message was created
 		.replace(/{{replace:(.*?)=>(.*?)}}/g, (_, replaceThis, replaceWith) => {
 			itemsForReplacing.push([replaceThis, replaceWith]);
 			return "";
@@ -162,6 +125,95 @@ export async function applyNoteContentTemplate(
 		const beautyReplaceWith = replaceWith.replace(/\\n/g, "\n");
 		processedContent = processedContent.replace(new RegExp(beautyReplaceThis, "g"), beautyReplaceWith);
 	});
+	return processedContent;
+}
+
+export async function applyNotePathTemplate(
+	plugin: TelegramSyncPlugin,
+	notePathTemplate: string,
+	msg: TelegramBot.Message,
+): Promise<string> {
+	if (!notePathTemplate) return "";
+
+	let textContentMd = "";
+	if (notePathTemplate.includes("{{content")) textContentMd = await convertMessageTextToMarkdown(msg);
+
+	let processedPath = notePathTemplate.endsWith("/") ? notePathTemplate + defaultNoteNameTemplate : notePathTemplate;
+	processedPath = await processBasicVariables(plugin, msg, processedPath, textContentMd);
+	if (!path.extname(processedPath)) processedPath = processedPath + ".md";
+	return sanitizeFilePath(processedPath);
+}
+
+export async function applyFilesPathTemplate(
+	plugin: TelegramSyncPlugin,
+	filePathTemplate: string,
+	msg: TelegramBot.Message,
+	fileType: string,
+	fileExtension: string,
+	fileName: string,
+): Promise<string> {
+	if (!filePathTemplate) return "";
+
+	let processedPath = filePathTemplate.endsWith("/") ? filePathTemplate + defaultFileNameTemplate : filePathTemplate;
+	processedPath = await processBasicVariables(plugin, msg, processedPath);
+	processedPath = processedPath
+		.replace(/{{file:type}}/g, fileType)
+		.replace(/{{file:name}}/g, fileName)
+		.replace(/{{file:extension}}/g, fileExtension);
+	if (!path.extname(processedPath)) processedPath = processedPath + "." + fileExtension;
+	return sanitizeFilePath(processedPath);
+}
+
+// Apply a template to a message's content
+export async function processBasicVariables(
+	plugin: TelegramSyncPlugin,
+	msg: TelegramBot.Message,
+	processThis: string,
+	messageText?: string,
+	messageContent?: string,
+): Promise<string> {
+	const messageDateTime = new Date(msg.date * 1000);
+	const creationDateTime = msg.forward_date ? new Date(msg.forward_date * 1000) : messageDateTime;
+	const dateTimeNow = new Date();
+
+	let voiceTranscript = "";
+	if (processThis.includes("{{voiceTranscript") && plugin.bot) {
+		voiceTranscript = await Client.transcribeAudio(plugin.bot, msg, await plugin.getBotUser(msg));
+	}
+
+	const lines = processThis.split("\n");
+	for (let i = 0; i < lines.length; i++) {
+		const line = lines[i];
+
+		if (line.includes("{{content") && (messageContent || messageText)) {
+			lines[i] = pasteText(plugin, "content", line, messageContent || messageText || "", messageText || "");
+		}
+
+		if (line.includes("{{voiceTranscript")) {
+			lines[i] = pasteText(plugin, "voiceTranscript", line, voiceTranscript, voiceTranscript);
+		}
+	}
+	let processedContent = lines.join("\n");
+
+	processedContent = processedContent
+		.replace(/{{messageDate:(.*?)}}/g, (_, format) => formatDateTime(messageDateTime, format))
+		.replace(/{{messageTime:(.*?)}}/g, (_, format) => formatDateTime(messageDateTime, format))
+		.replace(/{{date:(.*?)}}/g, (_, format) => formatDateTime(dateTimeNow, format))
+		.replace(/{{time:(.*?)}}/g, (_, format) => formatDateTime(dateTimeNow, format))
+		.replace(/{{forwardFrom}}/g, getForwardFromLink(msg))
+		.replace(/{{forwardFrom:name}}/g, getForwardFromName(msg)) // name of forwarded message creator
+		.replace(/{{user}}/g, getUserLink(msg)) // link to the user who sent the message
+		.replace(/{{userId}}/g, msg.from?.id.toString() || msg.message_id.toString()) // id of the user who sent the message
+		.replace(/{{chat}}/g, getChatLink(msg)) // link to the chat with the message
+		.replace(/{{chatId}}/g, msg.chat.id.toString()) // id of the chat with the message
+		.replace(/{{chat:name}}/g, getChatName(msg)) // name of the chat (bot / group / channel)
+		.replace(/{{topic}}/g, await getTopicLink(plugin, msg)) // link to the topic with the message
+		.replace(/{{topic:name}}/g, (await getTopic(plugin, msg))?.name || "") // link to the topic with the message
+		.replace(/{{topicId}}/g, getTopicId(msg)?.toString() || "") // head message id representing the topic
+		.replace(/{{messageId}}/g, msg.message_id.toString())
+		.replace(/{{replyMessageId}}/g, getReplyMessageId(msg))
+		.replace(/{{creationDate:(.*?)}}/g, (_, format) => formatDateTime(creationDateTime, format)) // date, when the message was created
+		.replace(/{{creationTime:(.*?)}}/g, (_, format) => formatDateTime(creationDateTime, format)); // time, when the message was created
 	return processedContent;
 }
 

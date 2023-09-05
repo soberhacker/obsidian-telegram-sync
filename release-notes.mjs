@@ -1,12 +1,13 @@
 import { compareVersions } from "compare-versions";
 
-export const version = "1.10.0";
+export const version = "2.0.0";
 // TODO getting messages one by one instead of parallel processing
 // TODO add Demo gif and screenshots to readme.md
+// TODO now: Change new features and breaking changes texts
 // ## Demo
 //![](https://raw.githubusercontent.com/vslinko/obsidian-outliner/main/demos/demo1.gif)<br>
 export const showNewFeatures = true;
-export let showBreakingChanges = false;
+export let showBreakingChanges = true;
 
 const newFeatures =
 	"This release introduces connection status indicator instead of notifications, along with 5 other important features.";
