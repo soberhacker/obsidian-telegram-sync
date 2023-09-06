@@ -19,30 +19,13 @@ import {
 	connectionStatusIndicatorSettingName,
 } from "src/ConnectionStatusIndicator";
 import { enqueue } from "src/utils/queues";
+import { MessageDistributionRule, defaultMessageDistributionRule } from "./messageDistribution";
 
 export interface Topic {
 	name: string;
 	chatId: number;
 	topicId: number;
 }
-
-export interface MessageDistributionRule {
-	messageFilter: string;
-	path2Template: string;
-	path2Note: string;
-	path2Files: string;
-}
-
-const defaultTelegramFolder = "Telegram";
-export const defaultNoteNameTemplate = "{{content:30}} - {{messageDate:YYYYMMDD}}{{messageTime:HHmmssSSS}}.md";
-export const defaultFileNameTemplate = "{{file:name}}.{{file:extension}}";
-
-const defaultMessageDistributionRule: MessageDistributionRule = {
-	messageFilter: "",
-	path2Template: "",
-	path2Note: `${defaultTelegramFolder}/${defaultNoteNameTemplate}`,
-	path2Files: `${defaultTelegramFolder}/{{fileType}}s/${defaultFileNameTemplate}`,
-};
 
 export interface TelegramSyncSettings {
 	botToken: string;

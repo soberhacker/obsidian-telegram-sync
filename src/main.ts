@@ -12,6 +12,13 @@ import { clearCachedMessagesInterval } from "./telegram/user/convertors";
 import { clearHandleMediaGroupInterval } from "./telegram/bot/message/handlers";
 import ConnectionStatusIndicator, { checkConnectionMessage } from "./ConnectionStatusIndicator";
 import { mainDeviceIdSettingName } from "./settings/BotSettingsModal";
+import {
+	defaultFileNameTemplate,
+	defaultMessageFilter,
+	defaultMessageFilterQuery,
+	defaultNoteNameTemplate,
+	defaultTelegramFolder,
+} from "./settings/messageDistribution";
 
 // TODO: add "connecting"
 export type ConnectionStatus = "connected" | "disconnected";
@@ -180,6 +187,23 @@ export default class TelegramSyncPlugin extends Plugin {
 			this.settings.allowedChats = [...this.settings.allowedChatFromUsernames];
 			this.settings.allowedChatFromUsernames = [];
 			await this.saveSettings();
+		}
+		// TODO in 2024: Remove this block, because messageDistributionRules should be established by that time
+		if (this.settings.newNotesLocation || this.settings.newFilesLocation || this.settings.templateFileLocation) {
+			this.settings.messageDistributionRules = [];
+			this.settings.messageDistributionRules.push({
+				messageFilterQuery: defaultMessageFilterQuery,
+				messageFilters: [defaultMessageFilter],
+				path2Template: this.settings.templateFileLocation,
+				path2Note: `${this.settings.newNotesLocation || defaultTelegramFolder}/${
+					this.settings.appendAllToTelegramMd ? "Telegram.md" : defaultNoteNameTemplate
+				}`,
+				path2Files: `${this.settings.newFilesLocation || defaultTelegramFolder}/${defaultFileNameTemplate}`,
+			});
+			this.settings.newNotesLocation = "";
+			this.settings.newFilesLocation = "";
+			this.settings.templateFileLocation = "";
+			this.saveSettings();
 		}
 	}
 

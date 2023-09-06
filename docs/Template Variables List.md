@@ -2,21 +2,19 @@
 
 ```ts
 {{all}} - all messages
-{{user:NAME}} - messages from user with name NAME
-{{userId:ID}} - messages from user with id ID
-{{chat:NAME}} - messages in bot | group | channel with name NAME
-{{chatId:ID}} - messages in bot | group | channel with id ID
-{{topic:NAME}} - messages in topic with name NAME
-{{forwardFrom:CREATOR}} - messages forwarded from chat or user with name CREATOR
+{{user=VALUE}} - messages from user with name or id equal VALUE
+{{chat=VALUE}} - messages in bot | group | channel with name or id equal VALUE
+{{topic=VALUE}} - messages in topic with name VALUE
+{{forwardFrom=VALUE}} - messages forwarded from chat or user with name VALUE
 ```
 
 #### Filter examples:
 
 ```js
 // filter by group and user names
-{{chat:My Notes}}{{user:Admin}}
+{{chat=My Notes}}{{user=Admin}}
 // filter by a few topic names
-{{topic:Memes}}{{topic:Images}}
+{{topic=Memes}}{{topic=Images}}
 ```
 
 -   If **Message Filter** is unspecified, filter by default will be equal {{all}}
