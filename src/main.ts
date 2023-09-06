@@ -198,7 +198,9 @@ export default class TelegramSyncPlugin extends Plugin {
 				path2Note: `${this.settings.newNotesLocation || defaultTelegramFolder}/${
 					this.settings.appendAllToTelegramMd ? "Telegram.md" : defaultNoteNameTemplate
 				}`,
-				path2Files: `${this.settings.newFilesLocation || defaultTelegramFolder}/${defaultFileNameTemplate}`,
+				path2Files: this.settings.needToSaveFiles
+					? `${this.settings.newFilesLocation || defaultTelegramFolder}/${defaultFileNameTemplate}`
+					: "",
 			});
 			this.settings.newNotesLocation = "";
 			this.settings.newFilesLocation = "";
