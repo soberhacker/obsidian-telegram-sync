@@ -74,11 +74,11 @@ export function extractMessageFiltersFromQuery(messageFilterQuery: string): Mess
 			throw new Error(`Empty value for filter type: ${filterType}`);
 		}
 
-		if (!MessageFilterType[filterType.toUpperCase() as keyof typeof MessageFilterType]) {
+		if (!Object.values(MessageFilterType).includes(filterType as MessageFilterType)) {
 			throw new Error(`Unknown filter type: ${filterType}`);
 		}
 
-		if (!MessageFilterOperation[operation.toUpperCase() as keyof typeof MessageFilterOperation]) {
+		if (!Object.values(MessageFilterOperation).includes(operation as MessageFilterOperation)) {
 			throw new Error(`Unsupported filter operation: ${operation}`);
 		}
 
