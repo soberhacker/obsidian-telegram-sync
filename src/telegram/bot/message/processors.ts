@@ -13,14 +13,14 @@ import {
 	getUserLink,
 } from "./getters";
 import { TFile, normalizePath } from "obsidian";
-import { formatDateTime } from "../../../utils/dateUtils";
+import { formatDateTime, unixTime2Date } from "../../../utils/dateUtils";
 import { _15sec, _1h, _5sec, displayAndLog, displayAndLogError } from "src/utils/logUtils";
 import { convertMessageTextToMarkdown, escapeRegExp } from "./convertToMarkdown";
 import * as Client from "../../user/client";
 import { enqueue } from "src/utils/queues";
-import { sanitizeFilePath } from "src/utils/fsUtils";
+import { sanitizeFileName, sanitizeFilePath } from "src/utils/fsUtils";
 import path from "path";
-import { defaultFileNameTemplate, defaultNoteNameTemplate } from "src/settings/Settings";
+import { defaultFileNameTemplate, defaultNoteNameTemplate } from "src/settings/messageDistribution";
 
 // Delete a message or send a confirmation reply based on settings and message age
 export async function finalizeMessageProcessing(plugin: TelegramSyncPlugin, msg: TelegramBot.Message, error?: Error) {
@@ -29,9 +29,8 @@ export async function finalizeMessageProcessing(plugin: TelegramSyncPlugin, msg:
 		return;
 	}
 
-	const currentTime = new Date();
-	const messageTime = new Date(msg.date * 1000);
-	const timeDifference = currentTime.getTime() - messageTime.getTime();
+	const messageTime = unixTime2Date(msg.date);
+	const timeDifference = new Date().getTime() - messageTime.getTime();
 	const hoursDifference = timeDifference / _1h;
 
 	if (plugin.settings.deleteMessagesFromTelegram && hoursDifference <= 48) {
@@ -60,18 +59,18 @@ export async function finalizeMessageProcessing(plugin: TelegramSyncPlugin, msg:
 // Apply a template to a message's content
 export async function applyNoteContentTemplate(
 	plugin: TelegramSyncPlugin,
-	templatePath: string,
+	templateFilePath: string,
 	msg: TelegramBot.Message,
 	filesLinks: string[] = [],
 ): Promise<string> {
 	let templateContent = "";
 	try {
-		if (templatePath) {
-			const templateFile = plugin.app.vault.getAbstractFileByPath(normalizePath(templatePath)) as TFile;
+		if (templateFilePath) {
+			const templateFile = plugin.app.vault.getAbstractFileByPath(normalizePath(templateFilePath)) as TFile;
 			templateContent = await plugin.app.vault.read(templateFile);
 		}
 	} catch (e) {
-		throw new Error(`Template "${templatePath}" not found! ${e}`);
+		throw new Error(`Template "${templateFilePath}" not found! ${e}`);
 	}
 
 	const allEmbeddedFilesLinks = filesLinks.length > 0 ? filesLinks.join("\n") : "";
@@ -171,10 +170,11 @@ export async function processBasicVariables(
 	processThis: string,
 	messageText?: string,
 	messageContent?: string,
+	isPath = false,
 ): Promise<string> {
-	const messageDateTime = new Date(msg.date * 1000);
-	const creationDateTime = msg.forward_date ? new Date(msg.forward_date * 1000) : messageDateTime;
 	const dateTimeNow = new Date();
+	const messageDateTime = unixTime2Date(msg.date, msg.message_id);
+	const creationDateTime = msg.forward_date ? unixTime2Date(msg.forward_date, msg.message_id) : messageDateTime;
 
 	let voiceTranscript = "";
 	if (processThis.includes("{{voiceTranscript") && plugin.bot) {
@@ -201,20 +201,29 @@ export async function processBasicVariables(
 		.replace(/{{date:(.*?)}}/g, (_, format) => formatDateTime(dateTimeNow, format))
 		.replace(/{{time:(.*?)}}/g, (_, format) => formatDateTime(dateTimeNow, format))
 		.replace(/{{forwardFrom}}/g, getForwardFromLink(msg))
-		.replace(/{{forwardFrom:name}}/g, getForwardFromName(msg)) // name of forwarded message creator
+		.replace(/{{forwardFrom:name}}/g, prepareIfPath(isPath, getForwardFromName(msg))) // name of forwarded message creator
 		.replace(/{{user}}/g, getUserLink(msg)) // link to the user who sent the message
+		.replace(/{{user:name}}/g, prepareIfPath(isPath, msg.from?.username || ""))
+		.replace(
+			/{{user:fullName}}/g,
+			prepareIfPath(isPath, `${msg.from?.first_name} ${msg.from?.last_name || ""}`.trim()),
+		)
 		.replace(/{{userId}}/g, msg.from?.id.toString() || msg.message_id.toString()) // id of the user who sent the message
 		.replace(/{{chat}}/g, getChatLink(msg)) // link to the chat with the message
 		.replace(/{{chatId}}/g, msg.chat.id.toString()) // id of the chat with the message
-		.replace(/{{chat:name}}/g, getChatName(msg)) // name of the chat (bot / group / channel)
+		.replace(/{{chat:name}}/g, prepareIfPath(isPath, getChatName(msg))) // name of the chat (bot / group / channel)
 		.replace(/{{topic}}/g, await getTopicLink(plugin, msg)) // link to the topic with the message
-		.replace(/{{topic:name}}/g, (await getTopic(plugin, msg))?.name || "") // link to the topic with the message
+		.replace(/{{topic:name}}/g, prepareIfPath(isPath, (await getTopic(plugin, msg))?.name || "")) // link to the topic with the message
 		.replace(/{{topicId}}/g, getTopicId(msg)?.toString() || "") // head message id representing the topic
 		.replace(/{{messageId}}/g, msg.message_id.toString())
 		.replace(/{{replyMessageId}}/g, getReplyMessageId(msg))
 		.replace(/{{creationDate:(.*?)}}/g, (_, format) => formatDateTime(creationDateTime, format)) // date, when the message was created
 		.replace(/{{creationTime:(.*?)}}/g, (_, format) => formatDateTime(creationDateTime, format)); // time, when the message was created
 	return processedContent;
+}
+
+function prepareIfPath(isPath: boolean, value: string): string {
+	return isPath ? sanitizeFileName(value) : value;
 }
 
 // Copy tab and blockquotes to every new line of {{content*}} or {{voiceTranscript*}} if they are placed in front of this variables.

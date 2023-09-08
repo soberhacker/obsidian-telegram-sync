@@ -2,7 +2,7 @@
 
 ```ts
 {{all}} - all messages
-{{user=VALUE}} - messages from user with name or id equal VALUE
+{{user=VALUE}} - messages from user with username, full name or id equal VALUE
 {{chat=VALUE}} - messages in bot | group | channel with name or id equal VALUE
 {{topic=VALUE}} - messages in topic with name VALUE
 {{forwardFrom=VALUE}} - messages forwarded from chat or user with name VALUE
@@ -12,7 +12,7 @@
 
 ```js
 // filter by group and user names
-{{chat=My Notes}}{{user=Admin}}
+{{chat=My Notes}}{{user=soberhacker}}
 // filter by a few topic names
 {{topic=Memes}}{{topic=Images}}
 ```
@@ -33,6 +33,8 @@
 {{messageId}} - message id
 {{replyMessageId}} - reply message id
 {{user}} - link to the user who sent the message
+{{user:name}} - username who sent the message
+{{user:fullName}} - full name who sent the message
 {{userId}} - id of the user who sent the message
 {{forwardFrom}} - link to the forwarded message or its creator (user | channel)
 {{forwardFrom:name}} - name of forwarded message creator
@@ -90,34 +92,38 @@ Created: {{creationDate:YYYY-DD-MM}} {{creationTime:HH:mm:ss}}
 
 ```js
 // A separate note is created for each message, because note names are based on message text and time
-Telegram/{{content:30}} - {{messageDate:YYYYMMDD}}{{messageTime:HHmmssSSS}}.md
+Telegram/{{content:30}} - {{messageTime:YYYYMMDDHHmmssSSS}}.md
 // All message are appended to the note with name "Telegram.md"
 Telegram.md
 // All messages from one day are added to a daily note
 {{messageDate:YYYYMMDD}}.md
 // For every chat will be created separate folder
-myNotes/{{chat}}/{{forwardFrom}}/{{content:[1]}}.md
+myNotes/{{chat:name}}/{{forwardFrom:name}}/{{content:[1]}}.md
 // Messages are grouped by year, month, day and time
-myNotes/{{messageDate:YYYY}}/{{messageDate:MM}}/{{messageDate:DD}}/{{messageTime:HHmmssSSS}}.md
+myNotes/{{messageDate:YYYY/MM/DD}}/{{messageTime:HHmmssSSS}}.md
 ```
 
--   If a note with such name exists then new data will be always appended to this notes
-    <br><br>
+```json
+⚠️ If a note with such name exists then new data will be always appended to this notes
+```
 
 ### File Path Variables
 
 ```ts
 {{file:type}} - file type identified by Telegram (video, audio, voice, photo, document)
 {{file:extension}} - file extension (mp3, ogg, docx, png...)
-{{file:name}} - unique file name assigned by Telegram (without extension)
+{{file:name}} - file name assigned by Telegram (without extension)
 ```
 
 #### File paths examples:
 
 ```js
-Telegram/{{file:type}}s/{{file:name}}.{{file:extension}}
-myFiles/{{forwardFrom}}_{{file:name}}.{{file:extension}}
-myFiles/{{messageDate:YYYY}}/{{file:type}}.{{messageTime:HHmmss}}.{{file:name}}.{{file:extension}}
+Telegram/{{file:type}}s/{{file:name}} - {{messageTime:YYYYMMDDHHmmssSSS}}.{{file:extension}}
+myFiles/{{forwardFrom:name}}_{{file:name}}_{{messageTime:YYYYMMDDHHmmssSSS}}.{{file:extension}}
+myFiles/{{messageDate:YYYY/MM/DD}}/{{file:type}}.{{messageTime:HHmmssSSS}}.{{file:name}}.{{file:extension}}
 ```
 
--   If a file with such name exists then new file will be created with auto-generated unique name
+```json
+⚠️ If a file already exists, ` - {{messageTime:YYYYMMDDHHmmssSSS}}` will be added to its name
+⚠️ If a file path lacks {{file:extension}}, it will be automatically added
+```

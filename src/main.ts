@@ -36,7 +36,7 @@ export default class TelegramSyncPlugin extends Plugin {
 	// TODO: TelegramSyncBot extends TelegramBot
 	bot?: TelegramBot;
 	botUser?: TelegramBot.User;
-	listOfNotePaths: string[] = [];
+	createdFilePaths: string[] = [];
 	currentDeviceId = machineIdSync(true);
 	lastPollingErrors: string[] = [];
 	restartingIntervalId?: NodeJS.Timer;

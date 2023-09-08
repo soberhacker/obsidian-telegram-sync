@@ -28,17 +28,18 @@ export const defaultMessageFilter = {
 	value: "",
 };
 
+// TODO now: Replace with new names
 export interface MessageDistributionRule {
 	messageFilterQuery: string;
 	messageFilters: MessageFilter[];
-	path2Template: string;
-	path2Note: string;
-	path2Files: string;
+	path2Template: string; // templateFilePath
+	path2Note: string; // notePathTemplate
+	path2Files: string; // filePathTemplate
 }
 
 export const defaultTelegramFolder = "Telegram";
-export const defaultNoteNameTemplate = "{{content:30}} - {{messageDate:YYYYMMDD}}{{messageTime:HHmmssSSS}}.md";
-export const defaultFileNameTemplate = "{{file:name}}.{{file:extension}}";
+export const defaultNoteNameTemplate = "{{content:30}} - {{messageTime:YYYYMMDDHHmmssSSS}}.md";
+export const defaultFileNameTemplate = "{{file:name}} - {{messageTime:YYYYMMDDHHmmssSSS}}.{{file:extension}}";
 
 export const defaultMessageDistributionRule: MessageDistributionRule = {
 	messageFilterQuery: defaultMessageFilterQuery,

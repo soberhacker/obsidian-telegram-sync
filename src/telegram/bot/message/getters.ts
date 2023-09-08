@@ -56,14 +56,14 @@ export function getUserLink(msg: TelegramBot.Message): string {
 	if (!msg.from) return "";
 
 	const username = msg.from.username || "no_username_" + msg.from.id.toString().slice(4);
-	const fullName = msg.from.first_name + (msg.from.last_name ? " " + msg.from.last_name : "");
+	const fullName = `${msg.from.first_name} ${msg.from.last_name || ""}`.trim();
 	return `[${fullName}](https://t.me/${username})`;
 }
 
 export function getChatName(msg: TelegramBot.Message): string {
 	let chatName = "";
 	if (msg.chat.type == "private") {
-		chatName = msg.chat.first_name + (msg.chat.last_name ? " " + msg.chat.last_name : "");
+		chatName = `${msg.chat.first_name} ${msg.chat.last_name || ""}`.trim();
 	} else {
 		chatName = msg.chat.title || msg.chat.type + msg.chat.id;
 	}
@@ -113,7 +113,11 @@ export function getTopicId(msg: TelegramBot.Message): number | undefined {
 	return (msg.chat.is_forum && (msg.message_thread_id || msg.reply_to_message?.message_thread_id || 1)) || undefined;
 }
 
-export async function getTopic(plugin: TelegramSyncPlugin, msg: TelegramBot.Message): Promise<Topic | undefined> {
+export async function getTopic(
+	plugin: TelegramSyncPlugin,
+	msg: TelegramBot.Message,
+	throwError = true,
+): Promise<Topic | undefined> {
 	if (!msg.chat.is_forum) return undefined;
 
 	const reply = msg.reply_to_message;
@@ -128,7 +132,7 @@ export async function getTopic(plugin: TelegramSyncPlugin, msg: TelegramBot.Mess
 		plugin.settings.topicNames.push(topic);
 		await plugin.saveSettings();
 	}
-	if (!topic) {
+	if (!topic && throwError) {
 		throw new Error(
 			"Telegram bot has a limitation to get topic names. if the topic name displays incorrect, set the name manually using bot command `/topicName NAME`",
 		);
@@ -153,7 +157,7 @@ export function getReplyMessageId(msg: TelegramBot.Message): string {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function getFileObject(msg: TelegramBot.Message): { fileType?: string; fileObject?: any } {
+export function getFileObject(msg: TelegramBot.Message): { fileType: string; fileObject?: any } {
 	for (const fileType of fileTypes) {
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		if ((msg as any)[fileType]) {
@@ -161,9 +165,5 @@ export function getFileObject(msg: TelegramBot.Message): { fileType?: string; fi
 			return { fileType: fileType, fileObject: (msg as any)[fileType] };
 		}
 	}
-	return {};
-}
-
-export function getMediaGroupFileName(msg: TelegramBot.Message) {
-	return msg.media_group_id ? "mediaGroup_" + msg.media_group_id : "";
+	return { fileType: "undefined", fileObject: undefined };
 }
