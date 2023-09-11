@@ -4,6 +4,7 @@ export const version = "2.0.0";
 // TODO getting messages one by one instead of parallel processing
 // TODO add Demo gif and screenshots to readme.md
 // TODO now: Change new features and breaking changes texts
+// TODO now: Add motivation for channel subscribing
 // ## Demo
 //![](https://raw.githubusercontent.com/vslinko/obsidian-outliner/main/demos/demo1.gif)<br>
 export const showNewFeatures = true;

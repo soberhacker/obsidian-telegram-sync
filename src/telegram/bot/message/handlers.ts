@@ -80,7 +80,7 @@ export async function handleMessageOrPost(
 		return;
 	}
 
-	const distributionRule = getMessageDistributionRule(plugin, msg);
+	const distributionRule = await getMessageDistributionRule(plugin, msg);
 	if (!distributionRule) {
 		displayAndLog(plugin, `The message skipped, because there is no matched distribution rule`, 0);
 		return;

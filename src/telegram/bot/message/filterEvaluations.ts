@@ -63,19 +63,24 @@ export async function isMessageFiltered(
 	}
 }
 
-export function doesMessageMatchAllFilters(
+export async function doesMessageMatchAllFilters(
 	plugin: TelegramSyncPlugin,
 	msg: TelegramBot.Message,
 	filters: MessageFilter[],
-): boolean {
-	return !!filters.find(async (filter) => await isMessageFiltered(plugin, msg, filter));
+): Promise<boolean> {
+	for (const filter of filters) {
+		const isFiltered = await isMessageFiltered(plugin, msg, filter);
+		if (!isFiltered) return false;
+	}
+	return true;
 }
 
-export function getMessageDistributionRule(
+export async function getMessageDistributionRule(
 	plugin: TelegramSyncPlugin,
 	msg: TelegramBot.Message,
-): MessageDistributionRule | undefined {
-	return plugin.settings.messageDistributionRules.find((rule) =>
-		doesMessageMatchAllFilters(plugin, msg, rule.messageFilters),
-	);
+): Promise<MessageDistributionRule | undefined> {
+	for (const rule of plugin.settings.messageDistributionRules) {
+		if (await doesMessageMatchAllFilters(plugin, msg, rule.messageFilters)) return rule;
+	}
+	return undefined;
 }

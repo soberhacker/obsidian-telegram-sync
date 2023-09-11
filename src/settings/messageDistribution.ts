@@ -46,7 +46,7 @@ export const defaultMessageDistributionRule: MessageDistributionRule = {
 	messageFilters: [defaultMessageFilter],
 	path2Template: "",
 	path2Note: `${defaultTelegramFolder}/${defaultNoteNameTemplate}`,
-	path2Files: `${defaultTelegramFolder}/{{fileType}}s/${defaultFileNameTemplate}`,
+	path2Files: `${defaultTelegramFolder}/{{file:type}}s/${defaultFileNameTemplate}`,
 };
 
 export function extractMessageFiltersFromQuery(messageFilterQuery: string): MessageFilter[] {
