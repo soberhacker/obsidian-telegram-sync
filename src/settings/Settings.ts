@@ -1,7 +1,5 @@
 import TelegramSyncPlugin from "src/main";
-import { App, ButtonComponent, Notice, PluginSettingTab, Setting, TextComponent, normalizePath } from "obsidian";
-import { FileSuggest } from "./suggesters/FileSuggester";
-import { FolderSuggest } from "./suggesters/FolderSuggester";
+import { App, ButtonComponent, Notice, PluginSettingTab, Setting, TextComponent } from "obsidian";
 import { boostyButton, paypalButton, buyMeACoffeeButton, kofiButton } from "./donation";
 import TelegramBot from "node-telegram-bot-api";
 import { createProgressBar, updateProgressBar, deleteProgressBar, ProgressBarType } from "src/telegram/bot/progressBar";
@@ -21,19 +19,12 @@ import {
 import { enqueue } from "src/utils/queues";
 import { MessageDistributionRule, defaultMessageDistributionRule } from "./messageDistribution";
 import { MessageDistributionRulesModal } from "./MessageDistributionRulesModal";
+import { arrayMove } from "src/utils/arrayUtils";
 
 export interface Topic {
 	name: string;
 	chatId: number;
 	topicId: number;
-}
-export function arraymove<T>(arr: T[], fromIndex: number, toIndex: number): void {
-	if (toIndex < 0 || toIndex === arr.length) {
-		return;
-	}
-	const element = arr[fromIndex];
-	arr[fromIndex] = arr[toIndex];
-	arr[toIndex] = element;
 }
 
 export interface TelegramSyncSettings {
@@ -262,61 +253,6 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 		});
 	}
 
-	addNewNotesLocation() {
-		new Setting(this.containerEl)
-			.setName("New notes location")
-			.setDesc("Folder where the new notes will be created")
-			.addSearch((cb) => {
-				new FolderSuggest(cb.inputEl);
-				cb.setPlaceholder("example: folder1/folder2")
-					.setValue(this.plugin.settings.newNotesLocation)
-					.onChange(async (newFolder) => {
-						this.plugin.settings.newNotesLocation = newFolder ? normalizePath(newFolder) : newFolder;
-						await this.plugin.saveSettings();
-					});
-			});
-	}
-
-	addNewFilesLocation() {
-		new Setting(this.containerEl)
-			.setName("New files location")
-			.setDesc("Folder where the new files will be created")
-			.addSearch((cb) => {
-				new FolderSuggest(cb.inputEl);
-				cb.setPlaceholder("example: folder1/folder2")
-					.setValue(this.plugin.settings.newFilesLocation)
-					.onChange(async (newFolder) => {
-						this.plugin.settings.newFilesLocation = newFolder ? normalizePath(newFolder) : newFolder;
-						await this.plugin.saveSettings();
-					});
-			});
-	}
-
-	addTemplateFileLocation() {
-		const templateFileLocationSetting = new Setting(this.containerEl)
-			.setName("Template file location")
-			.setDesc("Template to use when creating new notes.")
-			.addSearch((cb) => {
-				new FileSuggest(cb.inputEl, this.plugin);
-				cb.setPlaceholder("example: folder/zettelkasten.md")
-					.setValue(this.plugin.settings.templateFileLocation)
-					.onChange(async (templateFile) => {
-						this.plugin.settings.templateFileLocation = templateFile
-							? normalizePath(templateFile)
-							: templateFile;
-						await this.plugin.saveSettings();
-					});
-			});
-		// add template available variables
-		const availableTemplateVariables = document.createElement("div");
-		availableTemplateVariables.textContent = "To get list of available variables click on -> ";
-		availableTemplateVariables.createEl("a", {
-			href: "https://github.com/soberhacker/obsidian-telegram-sync/blob/main/docs/Template%20Variables%20List.md",
-			text: "Template Variables List",
-		});
-		templateFileLocationSetting.descEl.appendChild(availableTemplateVariables);
-	}
-
 	addMessageDistributionRules() {
 		const messageDistributionSetting = new Setting(this.containerEl);
 		messageDistributionSetting
@@ -342,7 +278,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 					.setIcon("up-chevron-glyph")
 					.setTooltip("Move up")
 					.onClick(() => {
-						arraymove(this.plugin.settings.messageDistributionRules, index, index - 1);
+						arrayMove(this.plugin.settings.messageDistributionRules, index, index - 1);
 						this.plugin.saveSettings();
 						this.display();
 					});
@@ -352,7 +288,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 					.setIcon("down-chevron-glyph")
 					.setTooltip("Move down")
 					.onClick(() => {
-						arraymove(this.plugin.settings.messageDistributionRules, index, index + 1); // ro rename arraymove
+						arrayMove(this.plugin.settings.messageDistributionRules, index, index + 1);
 						this.plugin.saveSettings();
 						this.display();
 					});
@@ -362,9 +298,11 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 					.setIcon("pencil")
 					.setTooltip("Edit")
 					.onClick(() => {
+						// ro add parameter here from display
 						const messageDistributionRulesModal = new MessageDistributionRulesModal(this.plugin);
+						// ro remove
 						messageDistributionRulesModal.display(this.plugin.settings.messageDistributionRules[index]);
-						messageDistributionRulesModal.open(); // ro add parameter here from display
+						messageDistributionRulesModal.open();
 					});
 			});
 			setting.addExtraButton((extra) => {
@@ -381,33 +319,6 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 			});
 		});
 		console.log(this.plugin.settings.messageDistributionRules); // ro remove logs everywhere after finish
-	}
-
-	addAppendAllToTelegramMd() {
-		new Setting(this.containerEl)
-			.setName("Append all to Telegram.md")
-			.setDesc(
-				"All messages will be appended into a single file, Telegram.md. If disabled, a separate file will be created for each message",
-			)
-			.addToggle((toggle) =>
-				toggle.setValue(this.plugin.settings.appendAllToTelegramMd).onChange(async (value: boolean) => {
-					this.plugin.settings.appendAllToTelegramMd = value;
-					await this.plugin.saveSettings();
-				}),
-			);
-	}
-
-	addSaveFilesCheckbox() {
-		new Setting(this.containerEl)
-			.setName("Save files")
-			.setDesc("Files will be downloaded and saved in your vault")
-			.addToggle((cb) => {
-				cb.setValue(this.plugin.settings.needToSaveFiles).onChange(async (value) => {
-					this.plugin.settings.needToSaveFiles = value;
-					this.plugin.settingsTab?.display();
-				});
-			});
-		if (this.plugin.settings.needToSaveFiles === false) return;
 	}
 
 	addDeleteMessagesFromTelegram() {

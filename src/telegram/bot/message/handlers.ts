@@ -122,7 +122,7 @@ export async function handleMessageOrPost(
 
 	++plugin.messagesLeftCnt;
 	try {
-		if (!msg.text) distributionRule.path2Files && (await handleFiles(plugin, msg, distributionRule));
+		if (!msg.text) distributionRule.filePathTemplate && (await handleFiles(plugin, msg, distributionRule));
 		else await handleMessage(plugin, msg, distributionRule);
 		msgType == "message" && (await enqueue(ifNewReleaseThenShowChanges, plugin, msg));
 	} catch (error) {
@@ -138,8 +138,8 @@ export async function handleMessage(
 	msg: TelegramBot.Message,
 	distributionRule: MessageDistributionRule,
 ) {
-	const formattedContent = await applyNoteContentTemplate(plugin, distributionRule.path2Template, msg);
-	const notePath = await applyNotePathTemplate(plugin, distributionRule.path2Note, msg);
+	const formattedContent = await applyNoteContentTemplate(plugin, distributionRule.templateFilePath, msg);
+	const notePath = await applyNotePathTemplate(plugin, distributionRule.notePathTemplate, msg);
 	const noteFolderPath = path.dirname(notePath);
 	createFolderIfNotExist(plugin.app.vault, noteFolderPath);
 	await enqueue(appendContentToNote, plugin.app.vault, notePath, formattedContent);
@@ -165,7 +165,7 @@ async function createNoteContent(
 		filesLinks.push(`[❌ error while handling file](${error})`);
 	}
 
-	return await applyNoteContentTemplate(plugin, distributionRule.path2Template, msg, filesLinks);
+	return await applyNoteContentTemplate(plugin, distributionRule.templateFilePath, msg, filesLinks);
 }
 
 // Handle files received in messages
@@ -253,7 +253,7 @@ export async function handleFiles(
 
 		filePath = await applyFilesPathTemplate(
 			plugin,
-			distributionRule.path2Files,
+			distributionRule.filePathTemplate,
 			msg,
 			fileType,
 			fileExtension,
@@ -274,7 +274,7 @@ export async function handleFiles(
 		else error = e;
 	}
 
-	if (msg.caption || distributionRule.path2Template)
+	if (msg.caption || distributionRule.templateFilePath)
 		await appendFileToNote(plugin, msg, distributionRule, filePath, telegramFileName, error);
 
 	if (msg.media_group_id && !handleMediaGroupIntervalId)
@@ -324,7 +324,7 @@ async function appendFileToNote(
 		return;
 	}
 
-	const notePath = await applyNotePathTemplate(plugin, distributionRule.path2Note, msg);
+	const notePath = await applyNotePathTemplate(plugin, distributionRule.notePathTemplate, msg);
 	const noteFolderPath = path.dirname(notePath);
 	createFolderIfNotExist(plugin.app.vault, noteFolderPath);
 

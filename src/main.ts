@@ -194,11 +194,11 @@ export default class TelegramSyncPlugin extends Plugin {
 			this.settings.messageDistributionRules.push({
 				messageFilterQuery: defaultMessageFilterQuery,
 				messageFilters: [defaultMessageFilter],
-				path2Template: this.settings.templateFileLocation,
-				path2Note: `${this.settings.newNotesLocation || defaultTelegramFolder}/${
+				templateFilePath: this.settings.templateFileLocation,
+				notePathTemplate: `${this.settings.newNotesLocation || defaultTelegramFolder}/${
 					this.settings.appendAllToTelegramMd ? "Telegram.md" : defaultNoteNameTemplate
 				}`,
-				path2Files: this.settings.needToSaveFiles
+				filePathTemplate: this.settings.needToSaveFiles
 					? `${this.settings.newFilesLocation || defaultTelegramFolder}/${defaultFileNameTemplate}`
 					: "",
 			});

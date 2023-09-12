@@ -28,13 +28,12 @@ export const defaultMessageFilter = {
 	value: "",
 };
 
-// TODO now: Replace with new names
 export interface MessageDistributionRule {
 	messageFilterQuery: string;
 	messageFilters: MessageFilter[];
-	path2Template: string; // templateFilePath
-	path2Note: string; // notePathTemplate
-	path2Files: string; // filePathTemplate
+	templateFilePath: string;
+	notePathTemplate: string;
+	filePathTemplate: string;
 }
 
 export const defaultTelegramFolder = "Telegram";
@@ -44,9 +43,17 @@ export const defaultFileNameTemplate = "{{file:name}} - {{messageTime:YYYYMMDDHH
 export const defaultMessageDistributionRule: MessageDistributionRule = {
 	messageFilterQuery: defaultMessageFilterQuery,
 	messageFilters: [defaultMessageFilter],
-	path2Template: "",
-	path2Note: `${defaultTelegramFolder}/${defaultNoteNameTemplate}`,
-	path2Files: `${defaultTelegramFolder}/{{file:type}}s/${defaultFileNameTemplate}`,
+	templateFilePath: "",
+	notePathTemplate: `${defaultTelegramFolder}/${defaultNoteNameTemplate}`,
+	filePathTemplate: `${defaultTelegramFolder}/{{file:type}}s/${defaultFileNameTemplate}`,
+};
+
+export const blankMessageDistributionRule: MessageDistributionRule = {
+	messageFilterQuery: "",
+	messageFilters: [],
+	templateFilePath: "",
+	notePathTemplate: "",
+	filePathTemplate: "",
 };
 
 export function extractMessageFiltersFromQuery(messageFilterQuery: string): MessageFilter[] {
