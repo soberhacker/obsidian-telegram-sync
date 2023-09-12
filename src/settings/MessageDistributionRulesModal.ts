@@ -1,12 +1,15 @@
 import { Modal, normalizePath, Setting } from "obsidian";
 import TelegramSyncPlugin from "../main";
 import {
+	defaultFileNameTemplate,
+	defaultNoteNameTemplate,
 	extractMessageFiltersFromQuery,
 	MessageDistributionRule,
 	MessageFilterOperation,
 	MessageFilterType,
 } from "./messageDistribution";
 import { FileSuggest } from "./suggesters/FileSuggester";
+import { _15sec, displayAndLog } from "src/utils/logUtils";
 
 export class MessageDistributionRulesModal extends Modal {
 	messageDistributionRule: MessageDistributionRule;
@@ -27,7 +30,7 @@ export class MessageDistributionRulesModal extends Modal {
 				messageFilters: [
 					{
 						filterType: MessageFilterType.ALL,
-						operation: MessageFilterOperation.EQUAL,
+						operation: MessageFilterOperation.NO_OPERATION,
 						value: "",
 					},
 				],
@@ -57,7 +60,7 @@ export class MessageDistributionRulesModal extends Modal {
 						this.messageDistributionRule.messageFilterQuery = value;
 						this.messageDistributionRule.messageFilters = extractMessageFiltersFromQuery(value);
 					})
-					.setPlaceholder("example: topic=Notes");
+					.setPlaceholder("example: {{topic=Notes}}{{user=soberhacker}}");
 			});
 	}
 
@@ -67,7 +70,7 @@ export class MessageDistributionRulesModal extends Modal {
 			.setDesc("Specify path to template file you want to apply to new notes")
 			.addSearch((cb) => {
 				new FileSuggest(cb.inputEl, this.plugin);
-				cb.setPlaceholder("example:  folder/file.md")
+				cb.setPlaceholder("example:  folder/zettelkasten.md")
 					.setValue(this.messageDistributionRule.path2Template)
 					.onChange(async (templateFile) => {
 						this.messageDistributionRule.path2Template = templateFile
@@ -86,7 +89,7 @@ export class MessageDistributionRulesModal extends Modal {
 					"Leave empty if you don't want to create any notes from messages",
 			)
 			.addTextArea((text) => {
-				text.setPlaceholder("example:  folder/file.md")
+				text.setPlaceholder(`example: folder/${defaultNoteNameTemplate}`)
 					.setValue(this.messageDistributionRule.path2Note)
 					.onChange(async (value: string) => {
 						this.messageDistributionRule.path2Note = value;
@@ -97,10 +100,9 @@ export class MessageDistributionRulesModal extends Modal {
 	addNewFilesPath() {
 		new Setting(this.messageDistributionRulesDiv)
 			.setName("New files path")
-			.setDesc("Folder where the new files will be saved.\n" + "Leave empty if you don't want to save any files")
+			.setDesc("Folder where the new files will be saved.\nLeave empty if you don't want to save any files")
 			.addTextArea((text) => {
-				text
-					.setPlaceholder("example:  folder/file.md")
+				text.setPlaceholder(`example: folder/${defaultFileNameTemplate}`)
 					.setValue(this.messageDistributionRule.path2Files)
 					.onChange(async (value: string) => {
 						this.messageDistributionRule.path2Files = value;
@@ -112,6 +114,7 @@ export class MessageDistributionRulesModal extends Modal {
 		new Setting(this.messageDistributionRulesDiv)
 			.setName("Variables list")
 			.setDesc("List of variables that are available to use in templates and storage paths.")
+			// ro rename everywhere where "El" not for html element
 			.addButton((buttonEl) => {
 				buttonEl.setButtonText("Open in browser"); // Set the button text
 				buttonEl.onClick(() => {
@@ -130,6 +133,8 @@ export class MessageDistributionRulesModal extends Modal {
 				.setIcon("checkmark")
 				.onClick(async () => {
 					if (
+						// ro add check only one should be filled
+						// displayAndLog(plugin, "", _15sec);
 						this.messageDistributionRule.path2Template &&
 						this.messageDistributionRule.path2Note &&
 						this.messageDistributionRule.path2Files
@@ -137,12 +142,7 @@ export class MessageDistributionRulesModal extends Modal {
 						const existingRuleIndex = this.plugin.settings.messageDistributionRules.indexOf(
 							this.messageDistributionRule,
 						);
-
-						if (existingRuleIndex !== -1) {
-							// Update the existing rule if it already exists
-							this.plugin.settings.messageDistributionRules[existingRuleIndex] =
-								this.messageDistributionRule;
-						} else {
+						if (existingRuleIndex == -1) {
 							// Push the new rule if it doesn't exist
 							this.plugin.settings.messageDistributionRules.push(this.messageDistributionRule);
 						}

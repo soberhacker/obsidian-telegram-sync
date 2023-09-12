@@ -352,7 +352,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 					.setIcon("down-chevron-glyph")
 					.setTooltip("Move down")
 					.onClick(() => {
-						arraymove(this.plugin.settings.messageDistributionRules, index, index + 1);
+						arraymove(this.plugin.settings.messageDistributionRules, index, index + 1); // ro rename arraymove
 						this.plugin.saveSettings();
 						this.display();
 					});
@@ -364,7 +364,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 					.onClick(() => {
 						const messageDistributionRulesModal = new MessageDistributionRulesModal(this.plugin);
 						messageDistributionRulesModal.display(this.plugin.settings.messageDistributionRules[index]);
-						messageDistributionRulesModal.open();
+						messageDistributionRulesModal.open(); // ro add parameter here from display
 					});
 			});
 			setting.addExtraButton((extra) => {
@@ -380,8 +380,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 					});
 			});
 		});
-		console.log(this.plugin.settings.messageDistributionRules);
-		// TODO: add "add button", table, edit, sort, delete buttons
+		console.log(this.plugin.settings.messageDistributionRules); // ro remove logs everywhere after finish
 	}
 
 	addAppendAllToTelegramMd() {
