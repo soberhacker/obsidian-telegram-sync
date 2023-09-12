@@ -20,11 +20,20 @@ import {
 } from "src/ConnectionStatusIndicator";
 import { enqueue } from "src/utils/queues";
 import { MessageDistributionRule, defaultMessageDistributionRule } from "./messageDistribution";
+import { MessageDistributionRulesModal } from "./MessageDistributionRulesModal";
 
 export interface Topic {
 	name: string;
 	chatId: number;
 	topicId: number;
+}
+export function arraymove<T>(arr: T[], fromIndex: number, toIndex: number): void {
+	if (toIndex < 0 || toIndex === arr.length) {
+		return;
+	}
+	const element = arr[fromIndex];
+	arr[fromIndex] = arr[toIndex];
+	arr[toIndex] = element;
 }
 
 export interface TelegramSyncSettings {
@@ -309,9 +318,69 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 	}
 
 	addMessageDistributionRules() {
-		new Setting(this.containerEl)
+		const messageDistributionSetting = new Setting(this.containerEl);
+		messageDistributionSetting
 			.setName("Message distribution rules")
-			.setDesc("Configure message filters, content template, and storage paths for new notes and files");
+			.setDesc("Configure message filters, content template, and storage paths for new notes and files")
+			.addButton((buttonEl: ButtonComponent) => {
+				buttonEl.setButtonText("+"); // Set the button text
+				buttonEl.setClass("mod-cta");
+				buttonEl.onClick(() => {
+					// Add your button click logic here
+					const messageDistributionRulesModal = new MessageDistributionRulesModal(this.plugin);
+					messageDistributionRulesModal.open();
+					console.log("Button clicked!");
+				});
+			});
+		this.plugin.settings.messageDistributionRules.forEach((rule, index) => {
+			const setting = new Setting(this.containerEl);
+			setting.infoEl.replaceWith(rule.messageFilterQuery);
+			setting.settingEl.classList.add("my-custom-list-item");
+			//setting.infoEl.replaceWith(rule.path2Template);
+			setting.addExtraButton((extra) => {
+				extra
+					.setIcon("up-chevron-glyph")
+					.setTooltip("Move up")
+					.onClick(() => {
+						arraymove(this.plugin.settings.messageDistributionRules, index, index - 1);
+						this.plugin.saveSettings();
+						this.display();
+					});
+			});
+			setting.addExtraButton((extra) => {
+				extra
+					.setIcon("down-chevron-glyph")
+					.setTooltip("Move down")
+					.onClick(() => {
+						arraymove(this.plugin.settings.messageDistributionRules, index, index + 1);
+						this.plugin.saveSettings();
+						this.display();
+					});
+			});
+			setting.addExtraButton((extra) => {
+				extra
+					.setIcon("pencil")
+					.setTooltip("Edit")
+					.onClick(() => {
+						const messageDistributionRulesModal = new MessageDistributionRulesModal(this.plugin);
+						messageDistributionRulesModal.display(this.plugin.settings.messageDistributionRules[index]);
+						messageDistributionRulesModal.open();
+					});
+			});
+			setting.addExtraButton((extra) => {
+				extra
+					.setIcon("cross")
+					.setTooltip("Delete")
+					.onClick(() => {
+						this.plugin.settings.messageDistributionRules.remove(
+							this.plugin.settings.messageDistributionRules[index],
+						);
+						this.plugin.saveSettings();
+						this.display();
+					});
+			});
+		});
+		console.log(this.plugin.settings.messageDistributionRules);
 		// TODO: add "add button", table, edit, sort, delete buttons
 	}
 
