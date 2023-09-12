@@ -52,10 +52,12 @@ export class MessageDistributionRulesModal extends Modal {
 					"Leave the field blank if you want to apply this rule to all messages",
 			)
 			.addTextArea((text) => {
-				text.setValue(this.messageDistributionRule.messageFilterQuery).onChange(async (value: string) => {
-					this.messageDistributionRule.messageFilterQuery = value;
-					this.messageDistributionRule.messageFilters = extractMessageFiltersFromQuery(value);
-				});
+				text.setValue(this.messageDistributionRule.messageFilterQuery)
+					.onChange(async (value: string) => {
+						this.messageDistributionRule.messageFilterQuery = value;
+						this.messageDistributionRule.messageFilters = extractMessageFiltersFromQuery(value);
+					})
+					.setPlaceholder("example: topic=Notes");
 			});
 	}
 
@@ -65,7 +67,7 @@ export class MessageDistributionRulesModal extends Modal {
 			.setDesc("Specify path to template file you want to apply to new notes")
 			.addSearch((cb) => {
 				new FileSuggest(cb.inputEl, this.plugin);
-				cb.setPlaceholder("example: folder/zettelkasten.md")
+				cb.setPlaceholder("example:  folder/file.md")
 					.setValue(this.messageDistributionRule.path2Template)
 					.onChange(async (templateFile) => {
 						this.messageDistributionRule.path2Template = templateFile
@@ -84,8 +86,7 @@ export class MessageDistributionRulesModal extends Modal {
 					"Leave empty if you don't want to create any notes from messages",
 			)
 			.addTextArea((text) => {
-				text
-					//.setPlaceholder("")
+				text.setPlaceholder("example:  folder/file.md")
 					.setValue(this.messageDistributionRule.path2Note)
 					.onChange(async (value: string) => {
 						this.messageDistributionRule.path2Note = value;
@@ -99,7 +100,7 @@ export class MessageDistributionRulesModal extends Modal {
 			.setDesc("Folder where the new files will be saved.\n" + "Leave empty if you don't want to save any files")
 			.addTextArea((text) => {
 				text
-					//.setPlaceholder("")
+					.setPlaceholder("example:  folder/file.md")
 					.setValue(this.messageDistributionRule.path2Files)
 					.onChange(async (value: string) => {
 						this.messageDistributionRule.path2Files = value;
