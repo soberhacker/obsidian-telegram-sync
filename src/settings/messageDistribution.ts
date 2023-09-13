@@ -103,3 +103,11 @@ export function extractMessageFiltersFromQuery(messageFilterQuery: string): Mess
 		};
 	});
 }
+
+export function getMessageDistributionRuleDisplayedName(distributionRule: MessageDistributionRule): string {
+	// ro if filter = ALL then return only All messages ans skip other filters
+	// {{all}} => All messages
+
+	// {{topic=Name}}{{user=butasov}} => topic = Name; user = burtasov;
+	return "";
+}
