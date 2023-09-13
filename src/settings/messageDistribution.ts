@@ -22,11 +22,13 @@ export interface MessageFilter {
 
 export const defaultMessageFilterQuery = `{{${MessageFilterType.ALL}}}`;
 
-export const defaultMessageFilter = {
-	filterType: MessageFilterType.ALL,
-	operation: MessageFilterOperation.NO_OPERATION,
-	value: "",
-};
+export function createDefaultMessageFilter(): MessageFilter {
+	return {
+		filterType: MessageFilterType.ALL,
+		operation: MessageFilterOperation.NO_OPERATION,
+		value: "",
+	};
+}
 
 export interface MessageDistributionRule {
 	messageFilterQuery: string;
@@ -40,21 +42,25 @@ export const defaultTelegramFolder = "Telegram";
 export const defaultNoteNameTemplate = "{{content:30}} - {{messageTime:YYYYMMDDHHmmssSSS}}.md";
 export const defaultFileNameTemplate = "{{file:name}} - {{messageTime:YYYYMMDDHHmmssSSS}}.{{file:extension}}";
 
-export const defaultMessageDistributionRule: MessageDistributionRule = {
-	messageFilterQuery: defaultMessageFilterQuery,
-	messageFilters: [defaultMessageFilter],
-	templateFilePath: "",
-	notePathTemplate: `${defaultTelegramFolder}/${defaultNoteNameTemplate}`,
-	filePathTemplate: `${defaultTelegramFolder}/{{file:type}}s/${defaultFileNameTemplate}`,
-};
+export function createDefaultMessageDistributionRule(): MessageDistributionRule {
+	return {
+		messageFilterQuery: defaultMessageFilterQuery,
+		messageFilters: [createDefaultMessageFilter()],
+		templateFilePath: "",
+		notePathTemplate: `${defaultTelegramFolder}/${defaultNoteNameTemplate}`,
+		filePathTemplate: `${defaultTelegramFolder}/{{file:type}}s/${defaultFileNameTemplate}`,
+	};
+}
 
-export const blankMessageDistributionRule: MessageDistributionRule = {
-	messageFilterQuery: "",
-	messageFilters: [],
-	templateFilePath: "",
-	notePathTemplate: "",
-	filePathTemplate: "",
-};
+export function createBlankMessageDistributionRule(): MessageDistributionRule {
+	return {
+		messageFilterQuery: "",
+		messageFilters: [],
+		templateFilePath: "",
+		notePathTemplate: "",
+		filePathTemplate: "",
+	};
+}
 
 export function extractMessageFiltersFromQuery(messageFilterQuery: string): MessageFilter[] {
 	if (!messageFilterQuery || messageFilterQuery == `{{${MessageFilterType.ALL}}}`)

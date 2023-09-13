@@ -17,7 +17,7 @@ import {
 	connectionStatusIndicatorSettingName,
 } from "src/ConnectionStatusIndicator";
 import { enqueue } from "src/utils/queues";
-import { MessageDistributionRule, defaultMessageDistributionRule } from "./messageDistribution";
+import { MessageDistributionRule, createDefaultMessageDistributionRule } from "./messageDistribution";
 import { MessageDistributionRulesModal } from "./MessageDistributionRulesModal";
 import { arrayMove } from "src/utils/arrayUtils";
 
@@ -66,7 +66,7 @@ export const DEFAULT_SETTINGS: TelegramSyncSettings = {
 	betaVersion: "",
 	connectionStatusIndicatorType: "CONSTANT",
 	cacheCleanupAtStartup: false,
-	messageDistributionRules: [defaultMessageDistributionRule],
+	messageDistributionRules: [createDefaultMessageDistributionRule()],
 	// add new settings above this line
 	topicNames: [],
 };
@@ -256,10 +256,10 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 		messageDistributionSetting
 			.setName("Message distribution rules")
 			.setDesc("Configure message filters, content template, and storage paths for new notes and files")
-			.addButton((buttonEl: ButtonComponent) => {
-				buttonEl.setButtonText("+");
-				buttonEl.setClass("mod-cta");
-				buttonEl.onClick(async () => {
+			.addButton((btn: ButtonComponent) => {
+				btn.setButtonText("+");
+				btn.setClass("mod-cta");
+				btn.onClick(async () => {
 					const messageDistributionRulesModal = new MessageDistributionRulesModal(this.plugin);
 					messageDistributionRulesModal.onClose = async () => {
 						if (messageDistributionRulesModal.saved) await this.display();
@@ -271,10 +271,8 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 			const setting = new Setting(this.containerEl);
 			setting.infoEl.replaceWith(rule.messageFilterQuery);
 			setting.settingEl.classList.add("my-custom-list-item");
-			//setting.infoEl.replaceWith(rule.path2Template);
-			setting.addExtraButton((extra) => {
-				extra
-					.setIcon("up-chevron-glyph")
+			setting.addExtraButton((btn) => {
+				btn.setIcon("up-chevron-glyph")
 					.setTooltip("Move up")
 					.onClick(async () => {
 						arrayMove(this.plugin.settings.messageDistributionRules, index, index - 1);
@@ -282,9 +280,8 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 						await this.display();
 					});
 			});
-			setting.addExtraButton((extra) => {
-				extra
-					.setIcon("down-chevron-glyph")
+			setting.addExtraButton((btn) => {
+				btn.setIcon("down-chevron-glyph")
 					.setTooltip("Move down")
 					.onClick(async () => {
 						arrayMove(this.plugin.settings.messageDistributionRules, index, index + 1);
@@ -297,7 +294,6 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 					.setIcon("pencil")
 					.setTooltip("Edit")
 					.onClick(async () => {
-						// ro add parameter here from display
 						const messageDistributionRulesModal = new MessageDistributionRulesModal(
 							this.plugin,
 							this.plugin.settings.messageDistributionRules[index],
@@ -316,12 +312,19 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 						this.plugin.settings.messageDistributionRules.remove(
 							this.plugin.settings.messageDistributionRules[index],
 						);
+						if (this.plugin.settings.messageDistributionRules.length == 0) {
+							displayAndLog(
+								this.plugin,
+								"The default message distribution rule has been created, as at least one rule must exist!",
+								_15sec,
+							);
+							this.plugin.settings.messageDistributionRules.push(createDefaultMessageDistributionRule());
+						}
 						await this.plugin.saveSettings();
 						await this.display();
 					});
 			});
 		});
-		// ro remove logs everywhere after finish
 	}
 
 	addDeleteMessagesFromTelegram() {

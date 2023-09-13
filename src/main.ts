@@ -13,8 +13,9 @@ import { clearHandleMediaGroupInterval } from "./telegram/bot/message/handlers";
 import ConnectionStatusIndicator, { checkConnectionMessage } from "./ConnectionStatusIndicator";
 import { mainDeviceIdSettingName } from "./settings/BotSettingsModal";
 import {
+	createDefaultMessageDistributionRule,
+	createDefaultMessageFilter,
 	defaultFileNameTemplate,
-	defaultMessageFilter,
 	defaultMessageFilterQuery,
 	defaultNoteNameTemplate,
 	defaultTelegramFolder,
@@ -177,23 +178,24 @@ export default class TelegramSyncPlugin extends Plugin {
 	}
 
 	async upgradeSettings() {
+		let needToSaveSettings = false;
 		if (this.settings.cacheCleanupAtStartup) {
 			localStorage.removeItem("GramJs:apiCache");
 			this.settings.cacheCleanupAtStartup = false;
-			await this.saveSettings();
+			needToSaveSettings = true;
 		}
 		// TODO in 2024: Remove allowedChatFromUsernames, because it is deprecated
 		if (this.settings.allowedChatFromUsernames.length != 0) {
 			this.settings.allowedChats = [...this.settings.allowedChatFromUsernames];
 			this.settings.allowedChatFromUsernames = [];
-			await this.saveSettings();
+			needToSaveSettings = true;
 		}
 		// TODO in 2024: Remove this block, because messageDistributionRules should be established by that time
 		if (this.settings.newNotesLocation || this.settings.newFilesLocation || this.settings.templateFileLocation) {
 			this.settings.messageDistributionRules = [];
 			this.settings.messageDistributionRules.push({
 				messageFilterQuery: defaultMessageFilterQuery,
-				messageFilters: [defaultMessageFilter],
+				messageFilters: [createDefaultMessageFilter()],
 				templateFilePath: this.settings.templateFileLocation,
 				notePathTemplate: `${this.settings.newNotesLocation || defaultTelegramFolder}/${
 					this.settings.appendAllToTelegramMd ? "Telegram.md" : defaultNoteNameTemplate
@@ -205,11 +207,18 @@ export default class TelegramSyncPlugin extends Plugin {
 			this.settings.newNotesLocation = "";
 			this.settings.newFilesLocation = "";
 			this.settings.templateFileLocation = "";
-			this.saveSettings();
+			needToSaveSettings = true;
 		}
+
+		if (this.settings.messageDistributionRules.length == 0) {
+			this.settings.messageDistributionRules.push(createDefaultMessageDistributionRule());
+			needToSaveSettings = true;
+		}
+
+		needToSaveSettings && this.saveSettings();
 	}
 
-	async getBotUser(msg: TelegramBot.Message): Promise<TelegramBot.User> {
+	async getBotUser(): Promise<TelegramBot.User> {
 		this.botUser = this.botUser || (await this.bot?.getMe());
 		if (!this.botUser) throw new Error("Can't get access to bot info. Restart the Telegram Sync plugin");
 		return this.botUser;

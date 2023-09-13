@@ -3,8 +3,8 @@ import TelegramSyncPlugin from "../main";
 import {
 	defaultFileNameTemplate,
 	defaultNoteNameTemplate,
-	blankMessageDistributionRule,
 	extractMessageFiltersFromQuery,
+	createBlankMessageDistributionRule,
 	MessageDistributionRule,
 } from "./messageDistribution";
 import { FileSuggest } from "./suggesters/FileSuggester";
@@ -13,27 +13,25 @@ import { _15sec, displayAndLog } from "../utils/logUtils";
 export class MessageDistributionRulesModal extends Modal {
 	messageDistributionRule: MessageDistributionRule;
 	messageDistributionRulesDiv: HTMLDivElement;
+	plugin: TelegramSyncPlugin;
 	saved = false;
 	editing = false;
-	constructor(
-		public plugin: TelegramSyncPlugin,
-		messageDistributionRule?: MessageDistributionRule,
-	) {
+
+	constructor(plugin: TelegramSyncPlugin, messageDistributionRule?: MessageDistributionRule) {
 		super(plugin.app);
+		this.plugin = plugin;
 		if (messageDistributionRule) {
 			this.editing = true;
 			this.messageDistributionRule = messageDistributionRule;
-		} else {
-			this.editing = false;
-			this.messageDistributionRule = blankMessageDistributionRule;
-		}
+		} else this.messageDistributionRule = createBlankMessageDistributionRule();
 	}
+
 	async display() {
 		this.contentEl.empty();
 		this.messageDistributionRulesDiv = this.contentEl.createDiv();
-		this.messageDistributionRulesDiv.createEl("h4", { text: "Message Distribution Rules settings" });
-		// ro check logic here
-		//if (!this.messageDistributionRule) this.messageDistributionRule = blankMessageDistributionRule;
+		this.messageDistributionRulesDiv.createEl("h4", {
+			text: `${this.editing ? "Editing" : "Adding"} message distribution rule`,
+		});
 		this.addMessageFilter();
 		this.addTemplateFilePath();
 		this.addNotePathTemplate();
@@ -64,12 +62,10 @@ export class MessageDistributionRulesModal extends Modal {
 			.setDesc("Specify path to template file you want to apply to new notes")
 			.addSearch((cb) => {
 				new FileSuggest(cb.inputEl, this.plugin);
-				cb.setPlaceholder("example:  folder/zettelkasten.md")
+				cb.setPlaceholder("example: folder/zettelkasten.md")
 					.setValue(this.messageDistributionRule.templateFilePath)
 					.onChange(async (path) => {
 						this.messageDistributionRule.templateFilePath = path ? normalizePath(path) : path;
-						// ro remove saveSettings, it should be saved together with others settings
-						//await this.plugin.saveSettings();
 					});
 			});
 	}
@@ -118,6 +114,7 @@ export class MessageDistributionRulesModal extends Modal {
 				});
 			});
 	}
+
 	addFooterButtons() {
 		const footerButtons = new Setting(this.contentEl.createDiv());
 		footerButtons.addButton((b) => {
@@ -125,24 +122,18 @@ export class MessageDistributionRulesModal extends Modal {
 				.setIcon("checkmark")
 				.onClick(async () => {
 					if (
-						// ro add check that only one should be filled
 						!this.messageDistributionRule.templateFilePath &&
 						!this.messageDistributionRule.notePathTemplate &&
 						!this.messageDistributionRule.filePathTemplate
-					)
+					) {
 						displayAndLog(this.plugin, "Please, fill at least one field", _15sec);
-					else {
-						// const existingRuleIndex = this.plugin.settings.messageDistributionRules.indexOf(
-						// 	this.messageDistributionRule,
-						// );
-						if (!this.editing) {
-							// Push the new rule if it doesn't exist
-							this.plugin.settings.messageDistributionRules.push(this.messageDistributionRule);
-						}
-						await this.plugin.saveSettings();
-						this.saved = true;
-						this.close();
+						return;
 					}
+					// Push the new rule if it doesn't exist
+					if (!this.editing) this.plugin.settings.messageDistributionRules.push(this.messageDistributionRule);
+					await this.plugin.saveSettings();
+					this.saved = true;
+					this.close();
 				});
 			return b;
 		});

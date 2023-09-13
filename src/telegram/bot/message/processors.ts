@@ -178,7 +178,7 @@ export async function processBasicVariables(
 
 	let voiceTranscript = "";
 	if (processThis.includes("{{voiceTranscript") && plugin.bot) {
-		voiceTranscript = await Client.transcribeAudio(plugin.bot, msg, await plugin.getBotUser(msg));
+		voiceTranscript = await Client.transcribeAudio(plugin.bot, msg, await plugin.getBotUser());
 	}
 
 	const lines = processThis.split("\n");
