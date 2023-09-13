@@ -8,23 +8,32 @@ import {
 	MessageDistributionRule,
 } from "./messageDistribution";
 import { FileSuggest } from "./suggesters/FileSuggester";
+import { _15sec, displayAndLog } from "../utils/logUtils";
 
 export class MessageDistributionRulesModal extends Modal {
 	messageDistributionRule: MessageDistributionRule;
 	messageDistributionRulesDiv: HTMLDivElement;
 	saved = false;
-	// ro add messageDistributionRule in constructor as parameter and fill this.messageDistributionRule
-	constructor(public plugin: TelegramSyncPlugin) {
+	editing = false;
+	constructor(
+		public plugin: TelegramSyncPlugin,
+		messageDistributionRule?: MessageDistributionRule,
+	) {
 		super(plugin.app);
+		if (messageDistributionRule) {
+			this.editing = true;
+			this.messageDistributionRule = messageDistributionRule;
+		} else {
+			this.editing = false;
+			this.messageDistributionRule = blankMessageDistributionRule;
+		}
 	}
-	// ro remove existingRule parameter
-	async display(existingRule?: MessageDistributionRule) {
+	async display() {
 		this.contentEl.empty();
 		this.messageDistributionRulesDiv = this.contentEl.createDiv();
 		this.messageDistributionRulesDiv.createEl("h4", { text: "Message Distribution Rules settings" });
 		// ro check logic here
-		if (existingRule) this.messageDistributionRule = existingRule;
-		else this.messageDistributionRule = blankMessageDistributionRule;
+		//if (!this.messageDistributionRule) this.messageDistributionRule = blankMessageDistributionRule;
 		this.addMessageFilter();
 		this.addTemplateFilePath();
 		this.addNotePathTemplate();
@@ -60,7 +69,7 @@ export class MessageDistributionRulesModal extends Modal {
 					.onChange(async (path) => {
 						this.messageDistributionRule.templateFilePath = path ? normalizePath(path) : path;
 						// ro remove saveSettings, it should be saved together with others settings
-						await this.plugin.saveSettings();
+						//await this.plugin.saveSettings();
 					});
 			});
 	}
@@ -68,7 +77,6 @@ export class MessageDistributionRulesModal extends Modal {
 	addNotePathTemplate() {
 		new Setting(this.messageDistributionRulesDiv)
 			.setName("Note path template")
-			// ro I remove \n because it doesn't work here and I think it's ok without
 			.setDesc(
 				"Specify path template for storage folders and note names. Leave empty if you don't want to create any notes from filtrated messages",
 			)
@@ -110,7 +118,6 @@ export class MessageDistributionRulesModal extends Modal {
 				});
 			});
 	}
-
 	addFooterButtons() {
 		const footerButtons = new Setting(this.contentEl.createDiv());
 		footerButtons.addButton((b) => {
@@ -119,22 +126,21 @@ export class MessageDistributionRulesModal extends Modal {
 				.onClick(async () => {
 					if (
 						// ro add check that only one should be filled
-						// displayAndLog(plugin, "Text of message", _15sec);
-						this.messageDistributionRule.templateFilePath &&
-						this.messageDistributionRule.notePathTemplate &&
-						this.messageDistributionRule.filePathTemplate
-					) {
-						const existingRuleIndex = this.plugin.settings.messageDistributionRules.indexOf(
-							this.messageDistributionRule,
-						);
-						if (existingRuleIndex == -1) {
+						!this.messageDistributionRule.templateFilePath &&
+						!this.messageDistributionRule.notePathTemplate &&
+						!this.messageDistributionRule.filePathTemplate
+					)
+						displayAndLog(this.plugin, "Please, fill at least one field", _15sec);
+					else {
+						// const existingRuleIndex = this.plugin.settings.messageDistributionRules.indexOf(
+						// 	this.messageDistributionRule,
+						// );
+						if (!this.editing) {
 							// Push the new rule if it doesn't exist
 							this.plugin.settings.messageDistributionRules.push(this.messageDistributionRule);
 						}
 						await this.plugin.saveSettings();
-						console.log("add Button works");
 						this.saved = true;
-						console.log(this.plugin.settings.messageDistributionRules);
 						this.close();
 					}
 				});
@@ -151,8 +157,7 @@ export class MessageDistributionRulesModal extends Modal {
 			return b;
 		});
 	}
-
 	onOpen() {
-		this.display(this.messageDistributionRule);
+		this.display();
 	}
 }

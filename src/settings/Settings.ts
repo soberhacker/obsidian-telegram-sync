@@ -70,7 +70,6 @@ export const DEFAULT_SETTINGS: TelegramSyncSettings = {
 	// add new settings above this line
 	topicNames: [],
 };
-
 export class TelegramSyncSettingTab extends PluginSettingTab {
 	plugin: TelegramSyncPlugin;
 	botStatusTimeOut: NodeJS.Timeout;
@@ -252,20 +251,20 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 			text: "a few secondary features",
 		});
 	}
-
 	addMessageDistributionRules() {
 		const messageDistributionSetting = new Setting(this.containerEl);
 		messageDistributionSetting
 			.setName("Message distribution rules")
 			.setDesc("Configure message filters, content template, and storage paths for new notes and files")
 			.addButton((buttonEl: ButtonComponent) => {
-				buttonEl.setButtonText("+"); // Set the button text
+				buttonEl.setButtonText("+");
 				buttonEl.setClass("mod-cta");
-				buttonEl.onClick(() => {
-					// Add your button click logic here
+				buttonEl.onClick(async () => {
 					const messageDistributionRulesModal = new MessageDistributionRulesModal(this.plugin);
+					messageDistributionRulesModal.onClose = async () => {
+						if (messageDistributionRulesModal.saved) await this.display();
+					};
 					messageDistributionRulesModal.open();
-					console.log("Button clicked!");
 				});
 			});
 		this.plugin.settings.messageDistributionRules.forEach((rule, index) => {
@@ -277,31 +276,35 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 				extra
 					.setIcon("up-chevron-glyph")
 					.setTooltip("Move up")
-					.onClick(() => {
+					.onClick(async () => {
 						arrayMove(this.plugin.settings.messageDistributionRules, index, index - 1);
-						this.plugin.saveSettings();
-						this.display();
+						await this.plugin.saveSettings();
+						await this.display();
 					});
 			});
 			setting.addExtraButton((extra) => {
 				extra
 					.setIcon("down-chevron-glyph")
 					.setTooltip("Move down")
-					.onClick(() => {
+					.onClick(async () => {
 						arrayMove(this.plugin.settings.messageDistributionRules, index, index + 1);
-						this.plugin.saveSettings();
-						this.display();
+						await this.plugin.saveSettings();
+						await this.display();
 					});
 			});
 			setting.addExtraButton((extra) => {
 				extra
 					.setIcon("pencil")
 					.setTooltip("Edit")
-					.onClick(() => {
+					.onClick(async () => {
 						// ro add parameter here from display
-						const messageDistributionRulesModal = new MessageDistributionRulesModal(this.plugin);
-						// ro remove
-						messageDistributionRulesModal.display(this.plugin.settings.messageDistributionRules[index]);
+						const messageDistributionRulesModal = new MessageDistributionRulesModal(
+							this.plugin,
+							this.plugin.settings.messageDistributionRules[index],
+						);
+						messageDistributionRulesModal.onClose = async () => {
+							if (messageDistributionRulesModal.saved) await this.display();
+						};
 						messageDistributionRulesModal.open();
 					});
 			});
@@ -309,16 +312,16 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 				extra
 					.setIcon("cross")
 					.setTooltip("Delete")
-					.onClick(() => {
+					.onClick(async () => {
 						this.plugin.settings.messageDistributionRules.remove(
 							this.plugin.settings.messageDistributionRules[index],
 						);
-						this.plugin.saveSettings();
-						this.display();
+						await this.plugin.saveSettings();
+						await this.display();
 					});
 			});
 		});
-		console.log(this.plugin.settings.messageDistributionRules); // ro remove logs everywhere after finish
+		// ro remove logs everywhere after finish
 	}
 
 	addDeleteMessagesFromTelegram() {
