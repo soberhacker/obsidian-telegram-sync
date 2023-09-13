@@ -58,11 +58,12 @@ export async function isMessageFiltered(
 			return isForwardFromFiltered(msg, filter.value);
 		case MessageFilterType.TOPIC:
 			return await isTopicFiltered(plugin, msg, filter.value);
+		// TODO next: add filter content contain some text {{content~#Video}}
 		default:
 			return false;
 	}
 }
-
+// TODO next: change logic of matching filter - if type the same than OR else AND
 export async function doesMessageMatchAllFilters(
 	plugin: TelegramSyncPlugin,
 	msg: TelegramBot.Message,

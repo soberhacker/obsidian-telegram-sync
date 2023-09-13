@@ -108,6 +108,6 @@ export function getMessageDistributionRuleDisplayedName(distributionRule: Messag
 	// ro if filter = ALL then return only All messages ans skip other filters
 	// {{all}} => All messages
 
-	// {{topic=Name}}{{user=butasov}} => topic = Name; user = burtasov;
+	// {{topic=Name}}{{user=soberhacker}} => topic = Name; user = soberhacker;
 	return "";
 }
