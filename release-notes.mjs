@@ -14,7 +14,7 @@ const newFeatures =
 	" - customizing note and file names\n" +
 	" - appending data to any periodic notes (daily notes, etc)\n" +
 	" - distributing messages across different folders\n" +
-	"Many thanks to all contributors, especially @ro_mashaaa, @fokinevgenij!";
+	"Many thanks to all contributors, especially to @ro_mashaaa, @fokinevgenij!";
 export const breakingChanges =
 	"⚠️ <b><i>Due to breaking changes, it is better to check all plugin settings again! Apologies</i></b> ⚠️";
 
