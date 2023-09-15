@@ -39,9 +39,8 @@ export class MessageDistributionRulesModal extends Modal {
 		this.addVariablesList();
 		this.addFooterButtons();
 	}
-
 	addMessageFilter() {
-		new Setting(this.messageDistributionRulesDiv)
+		const setting = new Setting(this.messageDistributionRulesDiv)
 			.setName("Message filter")
 			.setDesc(
 				"Conditions by which you would like to filter messages. Leave the field blank if you want to apply this rule to all messages",
@@ -54,10 +53,11 @@ export class MessageDistributionRulesModal extends Modal {
 					})
 					.setPlaceholder("example: {{topic=Notes}}{{user=soberhacker}}");
 			});
+		setSettingStyles(setting);
 	}
 
 	addTemplateFilePath() {
-		new Setting(this.messageDistributionRulesDiv)
+		const setting = new Setting(this.messageDistributionRulesDiv)
 			.setName("Template file path")
 			.setDesc("Specify path to template file you want to apply to new notes")
 			.addSearch((cb) => {
@@ -68,10 +68,12 @@ export class MessageDistributionRulesModal extends Modal {
 						this.messageDistributionRule.templateFilePath = path ? normalizePath(path) : path;
 					});
 			});
+		setting.infoEl.style.width = "65%";
+		setting.controlEl.style.width = "35%";
 	}
 
 	addNotePathTemplate() {
-		new Setting(this.messageDistributionRulesDiv)
+		const setting = new Setting(this.messageDistributionRulesDiv)
 			.setName("Note path template")
 			.setDesc(
 				"Specify path template for storage folders and note names. Leave empty if you don't want to create any notes from filtrated messages",
@@ -83,10 +85,12 @@ export class MessageDistributionRulesModal extends Modal {
 						this.messageDistributionRule.notePathTemplate = value;
 					});
 			});
+		setSettingStyles(setting);
 	}
 
 	addFilePathTemplate() {
-		new Setting(this.messageDistributionRulesDiv)
+		const setting = new Setting(this.messageDistributionRulesDiv);
+		setting
 			.setName("File path template")
 			.setDesc(
 				"Specify path template for storage folders and file names. Leave empty if you don't want to save any files from filtrated messages",
@@ -98,6 +102,7 @@ export class MessageDistributionRulesModal extends Modal {
 						this.messageDistributionRule.filePathTemplate = value;
 					});
 			});
+		setSettingStyles(setting);
 	}
 
 	addVariablesList() {
@@ -130,7 +135,6 @@ export class MessageDistributionRulesModal extends Modal {
 						displayAndLog(this.plugin, "Please, fill at least one field", _15sec);
 						return;
 					}
-					// Push the new rule if it doesn't exist
 					if (!this.editing) this.plugin.settings.messageDistributionRules.push(this.messageDistributionRule);
 					await this.plugin.saveSettings();
 					this.saved = true;
@@ -151,5 +155,14 @@ export class MessageDistributionRulesModal extends Modal {
 	}
 	onOpen() {
 		this.display();
+	}
+}
+function setSettingStyles(setting: Setting) {
+	setting.infoEl.style.width = "65%";
+	setting.controlEl.style.width = "35%";
+	const textareaElement = setting.controlEl.querySelector("textarea");
+	if (textareaElement) {
+		textareaElement.style.height = "4.5em";
+		textareaElement.style.width = "100%";
 	}
 }

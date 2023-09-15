@@ -105,9 +105,7 @@ export function extractMessageFiltersFromQuery(messageFilterQuery: string): Mess
 }
 
 export function getMessageDistributionRuleDisplayedName(distributionRule: MessageDistributionRule): string {
-	// ro if filter = ALL then return only All messages ans skip other filters
-	// {{all}} => All messages
-
-	// {{topic=Name}}{{user=butasov}} => topic = Name; user = burtasov;
-	return "";
+	if (distributionRule.messageFilterQuery == `{{${MessageFilterType.ALL}}}`) return "All messages";
+	const regex = /\{\{([^=]+)=([^}]+)\}\}/g;
+	return distributionRule.messageFilterQuery.replace(regex, "$1 = $2; ");
 }

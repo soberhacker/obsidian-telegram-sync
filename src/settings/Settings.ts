@@ -17,7 +17,11 @@ import {
 	connectionStatusIndicatorSettingName,
 } from "src/ConnectionStatusIndicator";
 import { enqueue } from "src/utils/queues";
-import { MessageDistributionRule, createDefaultMessageDistributionRule } from "./messageDistribution";
+import {
+	MessageDistributionRule,
+	createDefaultMessageDistributionRule,
+	getMessageDistributionRuleDisplayedName,
+} from "./messageDistribution";
 import { MessageDistributionRulesModal } from "./MessageDistributionRulesModal";
 import { arrayMove } from "src/utils/arrayUtils";
 
@@ -74,6 +78,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 	plugin: TelegramSyncPlugin;
 	botStatusTimeOut: NodeJS.Timeout;
 	botSettingsTimeOut: NodeJS.Timeout;
+	userStatusTimeOut: NodeJS.Timeout;
 
 	constructor(app: App, plugin: TelegramSyncPlugin) {
 		super(app, plugin);
@@ -188,11 +193,17 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 	addUser() {
 		let userStatusComponent: TextComponent;
 		// TODO add refreshing connecting state as for bot
-		const userStatusConstructor = (userStatus: TextComponent) => {
+		const userStatusConstructor = async (userStatus: TextComponent) => {
 			userStatusComponent = userStatusComponent || userStatus;
 			userStatus.setDisabled(true);
-			if (this.plugin.userConnected) userStatus.setValue("👨🏽‍💻 connected");
+			if (this.plugin.checkingUserConnection) {
+				userStatus.setValue("⏳ connecting...");
+			} else if (this.plugin.userConnected) userStatus.setValue("👨🏽‍💻 connected");
 			else userStatus.setValue("❌ disconnected");
+			new Promise((resolve) => {
+				clearTimeout(this.userStatusTimeOut);
+				this.userStatusTimeOut = setTimeout(() => resolve(userStatusConstructor.call(this, userStatus)), _1sec);
+			});
 		};
 
 		const userLogInConstructor = (userLogInButton: ButtonComponent) => {
@@ -269,7 +280,9 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 			});
 		this.plugin.settings.messageDistributionRules.forEach((rule, index) => {
 			const setting = new Setting(this.containerEl);
-			setting.infoEl.replaceWith(rule.messageFilterQuery);
+			const preElement = document.createElement("pre");
+			preElement.textContent = "• " + getMessageDistributionRuleDisplayedName(rule);
+			setting.infoEl.replaceWith(preElement);
 			setting.settingEl.classList.add("my-custom-list-item");
 			setting.addExtraButton((btn) => {
 				btn.setIcon("up-chevron-glyph")
