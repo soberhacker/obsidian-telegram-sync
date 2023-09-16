@@ -1,5 +1,5 @@
 import TelegramBot from "node-telegram-bot-api";
-import { MessageDistributionRule, MessageFilter, MessageFilterType } from "src/settings/messageDistribution";
+import { MessageDistributionRule, MessageFilterCondition, ConditionType } from "src/settings/messageDistribution";
 import { getForwardFromName, getTopic } from "./getters";
 import TelegramSyncPlugin from "src/main";
 
@@ -42,35 +42,40 @@ export async function isTopicFiltered(
 	return topicName == topic.name;
 }
 
+export async function isContentFiltered(msg: TelegramBot.Message, substring: string): Promise<boolean> {
+	return (msg.text || msg.caption || "").contains(substring);
+}
+
 export async function isMessageFiltered(
 	plugin: TelegramSyncPlugin,
 	msg: TelegramBot.Message,
-	filter: MessageFilter,
+	condition: MessageFilterCondition,
 ): Promise<boolean> {
-	switch (filter.filterType) {
-		case MessageFilterType.ALL:
+	switch (condition.conditionType) {
+		case ConditionType.ALL:
 			return true;
-		case MessageFilterType.USER:
-			return isUserFiltered(msg, filter.value);
-		case MessageFilterType.CHAT:
-			return isChatFiltered(msg, filter.value);
-		case MessageFilterType.FORWARD_FROM:
-			return isForwardFromFiltered(msg, filter.value);
-		case MessageFilterType.TOPIC:
-			return await isTopicFiltered(plugin, msg, filter.value);
-		// TODO next: add filter content contain some text {{content~#Video}}
+		case ConditionType.USER:
+			return isUserFiltered(msg, condition.value);
+		case ConditionType.CHAT:
+			return isChatFiltered(msg, condition.value);
+		case ConditionType.FORWARD_FROM:
+			return isForwardFromFiltered(msg, condition.value);
+		case ConditionType.TOPIC:
+			return await isTopicFiltered(plugin, msg, condition.value);
+		case ConditionType.CONTENT:
+			return await isContentFiltered(msg, condition.value);
 		default:
 			return false;
 	}
 }
-// TODO next: change logic of matching filter - if type the same than OR else AND
-export async function doesMessageMatchAllFilters(
+
+export async function doesMessageMatchAllConditions(
 	plugin: TelegramSyncPlugin,
 	msg: TelegramBot.Message,
-	filters: MessageFilter[],
+	conditions: MessageFilterCondition[],
 ): Promise<boolean> {
-	for (const filter of filters) {
-		const isFiltered = await isMessageFiltered(plugin, msg, filter);
+	for (const condition of conditions) {
+		const isFiltered = await isMessageFiltered(plugin, msg, condition);
 		if (!isFiltered) return false;
 	}
 	return true;
@@ -81,7 +86,7 @@ export async function getMessageDistributionRule(
 	msg: TelegramBot.Message,
 ): Promise<MessageDistributionRule | undefined> {
 	for (const rule of plugin.settings.messageDistributionRules) {
-		if (await doesMessageMatchAllFilters(plugin, msg, rule.messageFilters)) return rule;
+		if (await doesMessageMatchAllConditions(plugin, msg, rule.messageFilterConditions)) return rule;
 	}
 	return undefined;
 }

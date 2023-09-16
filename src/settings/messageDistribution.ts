@@ -1,12 +1,13 @@
-export enum MessageFilterType {
+export enum ConditionType {
 	ALL = "all",
 	USER = "user",
 	CHAT = "chat",
 	TOPIC = "topic",
 	FORWARD_FROM = "forwardFrom",
+	CONTENT = "content",
 }
 
-export enum MessageFilterOperation {
+export enum ConditionOperation {
 	EQUAL = "=",
 	NOT_EQUAL = "!=",
 	CONTAIN = "~",
@@ -14,25 +15,25 @@ export enum MessageFilterOperation {
 	NO_OPERATION = "",
 }
 
-export interface MessageFilter {
-	filterType: MessageFilterType;
-	operation: MessageFilterOperation;
+export interface MessageFilterCondition {
+	conditionType: ConditionType;
+	operation: ConditionOperation;
 	value: string;
 }
 
-export const defaultMessageFilterQuery = `{{${MessageFilterType.ALL}}}`;
+export const defaultMessageFilterQuery = `{{${ConditionType.ALL}}}`;
 
-export function createDefaultMessageFilter(): MessageFilter {
+export function createDefaultMessageFilterCondition(): MessageFilterCondition {
 	return {
-		filterType: MessageFilterType.ALL,
-		operation: MessageFilterOperation.NO_OPERATION,
+		conditionType: ConditionType.ALL,
+		operation: ConditionOperation.NO_OPERATION,
 		value: "",
 	};
 }
 
 export interface MessageDistributionRule {
 	messageFilterQuery: string;
-	messageFilters: MessageFilter[];
+	messageFilterConditions: MessageFilterCondition[];
 	templateFilePath: string;
 	notePathTemplate: string;
 	filePathTemplate: string;
@@ -45,7 +46,7 @@ export const defaultFileNameTemplate = "{{file:name}} - {{messageTime:YYYYMMDDHH
 export function createDefaultMessageDistributionRule(): MessageDistributionRule {
 	return {
 		messageFilterQuery: defaultMessageFilterQuery,
-		messageFilters: [createDefaultMessageFilter()],
+		messageFilterConditions: [createDefaultMessageFilterCondition()],
 		templateFilePath: "",
 		notePathTemplate: `${defaultTelegramFolder}/${defaultNoteNameTemplate}`,
 		filePathTemplate: `${defaultTelegramFolder}/{{file:type}}s/${defaultFileNameTemplate}`,
@@ -55,24 +56,24 @@ export function createDefaultMessageDistributionRule(): MessageDistributionRule 
 export function createBlankMessageDistributionRule(): MessageDistributionRule {
 	return {
 		messageFilterQuery: "",
-		messageFilters: [],
+		messageFilterConditions: [],
 		templateFilePath: "",
 		notePathTemplate: "",
 		filePathTemplate: "",
 	};
 }
 
-export function extractMessageFiltersFromQuery(messageFilterQuery: string): MessageFilter[] {
-	if (!messageFilterQuery || messageFilterQuery == `{{${MessageFilterType.ALL}}}`)
+export function extractConditionsFromFilterQuery(messageFilterQuery: string): MessageFilterCondition[] {
+	if (!messageFilterQuery || messageFilterQuery == `{{${ConditionType.ALL}}}`)
 		return [
 			{
-				filterType: MessageFilterType.ALL,
-				operation: MessageFilterOperation.NO_OPERATION,
+				conditionType: ConditionType.ALL,
+				operation: ConditionOperation.NO_OPERATION,
 				value: "",
 			},
 		];
-	const filterPattern = /\{{([^{}=!~]+)(=|!=|~|!~)([^{}]+)\}}/g;
-	const matches = [...messageFilterQuery.matchAll(filterPattern)];
+	const filterQueryPattern = /\{{([^{}=!~]+)(=|!=|~|!~)([^{}]+)\}}/g;
+	const matches = [...messageFilterQuery.matchAll(filterQueryPattern)];
 
 	// Check for unbalanced braces
 	const openBracesCount = (messageFilterQuery.match(/\{{/g) || []).length;
@@ -82,30 +83,33 @@ export function extractMessageFiltersFromQuery(messageFilterQuery: string): Mess
 	}
 
 	return matches.map((match) => {
-		const [, filterType, operation, value] = match;
+		const [, conditionType, operation, value] = match;
 
 		if (!value) {
-			throw new Error(`Empty value for filter type: ${filterType}`);
+			throw new Error(`Empty value for condition type: ${conditionType}`);
 		}
 
-		if (!Object.values(MessageFilterType).includes(filterType as MessageFilterType)) {
-			throw new Error(`Unknown filter type: ${filterType}`);
+		if (!Object.values(ConditionType).includes(conditionType as ConditionType)) {
+			throw new Error(`Unknown condition type: ${conditionType}`);
 		}
 
-		if (!Object.values(MessageFilterOperation).includes(operation as MessageFilterOperation)) {
+		if (!Object.values(ConditionOperation).includes(operation as ConditionOperation)) {
 			throw new Error(`Unsupported filter operation: ${operation}`);
 		}
 
 		return {
-			filterType: filterType as MessageFilterType,
-			operation: operation as MessageFilterOperation,
+			conditionType: conditionType as ConditionType,
+			operation: operation as ConditionOperation,
 			value: value,
 		};
 	});
 }
 
 export function getMessageDistributionRuleDisplayedName(distributionRule: MessageDistributionRule): string {
-	if (distributionRule.messageFilterQuery == `{{${MessageFilterType.ALL}}}`) return "All messages";
-	const regex = /\{\{([^=]+)=([^}]+)\}\}/g;
-	return distributionRule.messageFilterQuery.replace(regex, "$1 = $2; ");
+	let displayedName = "";
+	for (const condition of distributionRule.messageFilterConditions) {
+		if (condition.conditionType == ConditionType.ALL) return "all messages";
+		displayedName = displayedName + `${condition.conditionType} ${condition.operation} ${condition.value} AND `;
+	}
+	return displayedName.slice(0, -5);
 }

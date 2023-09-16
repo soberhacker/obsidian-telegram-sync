@@ -3,7 +3,7 @@ import TelegramSyncPlugin from "../main";
 import {
 	defaultFileNameTemplate,
 	defaultNoteNameTemplate,
-	extractMessageFiltersFromQuery,
+	extractConditionsFromFilterQuery,
 	createBlankMessageDistributionRule,
 	MessageDistributionRule,
 } from "./messageDistribution";
@@ -47,9 +47,10 @@ export class MessageDistributionRulesModal extends Modal {
 			)
 			.addTextArea((text) => {
 				text.setValue(this.messageDistributionRule.messageFilterQuery)
-					.onChange(async (value: string) => {
-						this.messageDistributionRule.messageFilterQuery = value;
-						this.messageDistributionRule.messageFilters = extractMessageFiltersFromQuery(value);
+					.onChange(async (filterQuery: string) => {
+						this.messageDistributionRule.messageFilterQuery = filterQuery;
+						this.messageDistributionRule.messageFilterConditions =
+							extractConditionsFromFilterQuery(filterQuery);
 					})
 					.setPlaceholder("example: {{topic=Notes}}{{user=soberhacker}}");
 			});

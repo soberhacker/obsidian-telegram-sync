@@ -6,17 +6,19 @@
 {{chat=VALUE}} - messages in bot | group | channel with name or id equal VALUE
 {{topic=VALUE}} - messages in topic with name VALUE
 {{forwardFrom=VALUE}} - messages forwarded from chat or user with name VALUE
+{{content~VALUE}} - messages contain text VALUE
 ```
 
 #### Filter examples:
 
 ```js
-// filter by group and user names
-{{chat=My Notes}}{{user=soberhacker}}
-// filter by a few topic names
-{{topic=Memes}}{{topic=Images}}
+// messages from group "My Notes" in topic "Memes" will be selected
+{{chat=My Notes}}{{topic=Memes}}
+// messages that simultaneously have hash tags #video and #movie will be selected
+{{content~#video}}{{content~#movie}}
 ```
 
+-   AND is default operator between conditions
 -   If **Message Filter** is unspecified, filter by default will be equal {{all}}
     <br><br>
 
@@ -104,6 +106,7 @@ myNotes/{{messageDate:YYYY/MM/DD}}/{{messageTime:HHmmssSSS}}.md
 ```
 
 ```json
+⚠️ If a note path template is empty, then notes will not be created
 ⚠️ If a note with such name exists then new data will be always appended to this notes
 ```
 
@@ -124,6 +127,6 @@ myFiles/{{messageDate:YYYY/MM/DD}}/{{file:type}}.{{messageTime:HHmmssSSS}}.{{fil
 ```
 
 ```json
+⚠️ If a file path template is empty then files will not be saved
 ⚠️ If a file already exists, ` - {{messageTime:YYYYMMDDHHmmssSSS}}` will be added to its name
-⚠️ If a file path lacks {{file:extension}}, it will be automatically added
 ```

@@ -14,7 +14,7 @@ import ConnectionStatusIndicator, { checkConnectionMessage } from "./ConnectionS
 import { mainDeviceIdSettingName } from "./settings/BotSettingsModal";
 import {
 	createDefaultMessageDistributionRule,
-	createDefaultMessageFilter,
+	createDefaultMessageFilterCondition,
 	defaultFileNameTemplate,
 	defaultMessageFilterQuery,
 	defaultNoteNameTemplate,
@@ -195,7 +195,7 @@ export default class TelegramSyncPlugin extends Plugin {
 			this.settings.messageDistributionRules = [];
 			this.settings.messageDistributionRules.push({
 				messageFilterQuery: defaultMessageFilterQuery,
-				messageFilters: [createDefaultMessageFilter()],
+				messageFilterConditions: [createDefaultMessageFilterCondition()],
 				templateFilePath: this.settings.templateFileLocation,
 				notePathTemplate: `${this.settings.newNotesLocation || defaultTelegramFolder}/${
 					this.settings.appendAllToTelegramMd ? "Telegram.md" : defaultNoteNameTemplate

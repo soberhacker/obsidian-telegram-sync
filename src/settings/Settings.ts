@@ -302,9 +302,8 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 						await this.display();
 					});
 			});
-			setting.addExtraButton((extra) => {
-				extra
-					.setIcon("pencil")
+			setting.addExtraButton((btn) => {
+				btn.setIcon("pencil")
 					.setTooltip("Edit")
 					.onClick(async () => {
 						const messageDistributionRulesModal = new MessageDistributionRulesModal(
@@ -317,9 +316,8 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 						messageDistributionRulesModal.open();
 					});
 			});
-			setting.addExtraButton((extra) => {
-				extra
-					.setIcon("cross")
+			setting.addExtraButton((btn) => {
+				btn.setIcon("cross")
 					.setTooltip("Delete")
 					.onClick(async () => {
 						this.plugin.settings.messageDistributionRules.remove(
