@@ -6,7 +6,6 @@ import {
 	extractConditionsFromFilterQuery,
 	createBlankMessageDistributionRule,
 	MessageDistributionRule,
-	defaultMessageFilterQuery,
 } from "./messageDistribution";
 import { FileSuggest } from "./suggesters/FileSuggester";
 import { _15sec, displayAndLog } from "../utils/logUtils";
@@ -49,8 +48,6 @@ export class MessageDistributionRulesModal extends Modal {
 			.addTextArea((text) => {
 				text.setValue(this.messageDistributionRule.messageFilterQuery)
 					.onChange(async (filterQuery: string) => {
-						if (filterQuery.contains(defaultMessageFilterQuery) && filterQuery != defaultMessageFilterQuery)
-							filterQuery = defaultMessageFilterQuery;
 						this.messageDistributionRule.messageFilterQuery = filterQuery;
 						this.messageDistributionRule.messageFilterConditions =
 							extractConditionsFromFilterQuery(filterQuery);

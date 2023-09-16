@@ -19,7 +19,6 @@ import {
 	defaultMessageFilterQuery,
 	defaultNoteNameTemplate,
 	defaultTelegramFolder,
-	extractConditionsFromFilterQuery,
 } from "./settings/messageDistribution";
 
 // TODO: add "connecting"
@@ -218,22 +217,15 @@ export default class TelegramSyncPlugin extends Plugin {
 		} else {
 			// fixing incorrectly saved rules
 			this.settings.messageDistributionRules.forEach((rule) => {
-				if (
-					!rule.messageFilterQuery ||
-					(rule.messageFilterQuery.contains(defaultMessageFilterQuery) &&
-						rule.messageFilterQuery != defaultMessageFilterQuery)
-				) {
+				if (!rule.messageFilterQuery || !rule.messageFilterConditions) {
 					rule.messageFilterQuery = defaultMessageFilterQuery;
+					rule.messageFilterConditions = [createDefaultMessageFilterCondition()];
 					needToSaveSettings = true;
 				}
-				if (
-					!rule.messageFilterConditions ||
-					(rule.messageFilterConditions.length > 1 && rule.messageFilterQuery == defaultMessageFilterQuery)
-				)
-					rule.messageFilterConditions = extractConditionsFromFilterQuery(rule.messageFilterQuery);
 				if (!rule.filePathTemplate && !rule.notePathTemplate && !rule.templateFilePath) {
 					rule.notePathTemplate = `${defaultTelegramFolder}/${defaultNoteNameTemplate}`;
 					rule.filePathTemplate = `${defaultTelegramFolder}/${defaultFileNameTemplate}`;
+					needToSaveSettings = true;
 				}
 			});
 		}
