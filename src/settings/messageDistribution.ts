@@ -106,10 +106,12 @@ export function extractConditionsFromFilterQuery(messageFilterQuery: string): Me
 }
 
 export function getMessageDistributionRuleDisplayedName(distributionRule: MessageDistributionRule): string {
+	if (!distributionRule.messageFilterConditions || distributionRule.messageFilterConditions.length == 0)
+		return "Error! Remove messageDistributionRules from data.json";
 	let displayedName = "";
 	for (const condition of distributionRule.messageFilterConditions) {
 		if (condition.conditionType == ConditionType.ALL) return "all messages";
-		displayedName = displayedName + `${condition.conditionType} ${condition.operation} ${condition.value} AND `;
+		displayedName = displayedName + `${condition.conditionType} ${condition.operation} ${condition.value}; `;
 	}
-	return displayedName.slice(0, -5);
+	return displayedName;
 }

@@ -6,6 +6,7 @@ import {
 	extractConditionsFromFilterQuery,
 	createBlankMessageDistributionRule,
 	MessageDistributionRule,
+	defaultMessageFilterQuery,
 } from "./messageDistribution";
 import { FileSuggest } from "./suggesters/FileSuggester";
 import { _15sec, displayAndLog } from "../utils/logUtils";
@@ -48,6 +49,8 @@ export class MessageDistributionRulesModal extends Modal {
 			.addTextArea((text) => {
 				text.setValue(this.messageDistributionRule.messageFilterQuery)
 					.onChange(async (filterQuery: string) => {
+						if (filterQuery.contains(defaultMessageFilterQuery) && filterQuery != defaultMessageFilterQuery)
+							filterQuery = defaultMessageFilterQuery;
 						this.messageDistributionRule.messageFilterQuery = filterQuery;
 						this.messageDistributionRule.messageFilterConditions =
 							extractConditionsFromFilterQuery(filterQuery);
@@ -69,8 +72,7 @@ export class MessageDistributionRulesModal extends Modal {
 						this.messageDistributionRule.templateFilePath = path ? normalizePath(path) : path;
 					});
 			});
-		setting.infoEl.style.width = "65%";
-		setting.controlEl.style.width = "35%";
+		setSettingStyles(setting);
 	}
 
 	addNotePathTemplate() {
@@ -159,8 +161,8 @@ export class MessageDistributionRulesModal extends Modal {
 	}
 }
 function setSettingStyles(setting: Setting) {
-	setting.infoEl.style.width = "65%";
-	setting.controlEl.style.width = "35%";
+	setting.infoEl.style.width = "55%";
+	setting.controlEl.style.width = "45%";
 	const textareaElement = setting.controlEl.querySelector("textarea");
 	if (textareaElement) {
 		textareaElement.style.height = "4.5em";

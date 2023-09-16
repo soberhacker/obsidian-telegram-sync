@@ -19,6 +19,7 @@ import {
 	defaultMessageFilterQuery,
 	defaultNoteNameTemplate,
 	defaultTelegramFolder,
+	extractConditionsFromFilterQuery,
 } from "./settings/messageDistribution";
 
 // TODO: add "connecting"
@@ -190,6 +191,7 @@ export default class TelegramSyncPlugin extends Plugin {
 			this.settings.allowedChatFromUsernames = [];
 			needToSaveSettings = true;
 		}
+
 		// TODO in 2024: Remove this block, because messageDistributionRules should be established by that time
 		if (this.settings.newNotesLocation || this.settings.newFilesLocation || this.settings.templateFileLocation) {
 			this.settings.messageDistributionRules = [];
@@ -213,6 +215,27 @@ export default class TelegramSyncPlugin extends Plugin {
 		if (this.settings.messageDistributionRules.length == 0) {
 			this.settings.messageDistributionRules.push(createDefaultMessageDistributionRule());
 			needToSaveSettings = true;
+		} else {
+			// fixing incorrectly saved rules
+			this.settings.messageDistributionRules.forEach((rule) => {
+				if (
+					!rule.messageFilterQuery ||
+					(rule.messageFilterQuery.contains(defaultMessageFilterQuery) &&
+						rule.messageFilterQuery != defaultMessageFilterQuery)
+				) {
+					rule.messageFilterQuery = defaultMessageFilterQuery;
+					needToSaveSettings = true;
+				}
+				if (
+					!rule.messageFilterConditions ||
+					(rule.messageFilterConditions.length > 1 && rule.messageFilterQuery == defaultMessageFilterQuery)
+				)
+					rule.messageFilterConditions = extractConditionsFromFilterQuery(rule.messageFilterQuery);
+				if (!rule.filePathTemplate && !rule.notePathTemplate && !rule.templateFilePath) {
+					rule.notePathTemplate = `${defaultTelegramFolder}/${defaultNoteNameTemplate}`;
+					rule.filePathTemplate = `${defaultTelegramFolder}/${defaultFileNameTemplate}`;
+				}
+			});
 		}
 
 		needToSaveSettings && this.saveSettings();
