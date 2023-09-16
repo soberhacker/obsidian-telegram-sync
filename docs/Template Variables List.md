@@ -44,6 +44,7 @@
 {{messageTime:HHmmss}} - time, when the message was sent
 {{creationDate:YYYYMMDD}} - date, when the message was created
 {{creationTime:HHmmss}} - time, when the message was created
+{{hashtag:[X]}} - hashtag (without #) at number X in the message text
 ```
 
 -   All available formats for dates and time you can find in [Moment JS Docs](https://momentjs.com/docs/#/parsing/string-format/)

@@ -96,6 +96,14 @@ export function getUrl(msg: TelegramBot.Message, num = 1, lookInCaptions = true)
 	return matches ? matches[num - 1].url : "";
 }
 
+export function getHashtag(msg: TelegramBot.Message, num = 1, lookInCaptions = true): string {
+	const text = (msg.text || "") + (lookInCaptions && msg.caption ? msg.caption : "");
+	if (!text) return "";
+
+	const hashtags = text.match(/#\w+/g) || [];
+	return hashtags[num - 1] || "";
+}
+
 export function getInlineUrls(msg: TelegramBot.Message): string {
 	let urls = "";
 	if (!msg.reply_markup?.inline_keyboard || msg.reply_markup.inline_keyboard.length == 0) return "";

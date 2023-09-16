@@ -5,6 +5,7 @@ import {
 	getChatName,
 	getForwardFromLink,
 	getForwardFromName,
+	getHashtag,
 	getReplyMessageId,
 	getTopic,
 	getTopicId,
@@ -217,6 +218,7 @@ export async function processBasicVariables(
 		.replace(/{{topicId}}/g, getTopicId(msg)?.toString() || "") // head message id representing the topic
 		.replace(/{{messageId}}/g, msg.message_id.toString())
 		.replace(/{{replyMessageId}}/g, getReplyMessageId(msg))
+		.replace(/{{hashtag:\[(\d+)\]}}/g, (_, num) => getHashtag(msg, num))
 		.replace(/{{creationDate:(.*?)}}/g, (_, format) => formatDateTime(creationDateTime, format)) // date, when the message was created
 		.replace(/{{creationTime:(.*?)}}/g, (_, format) => formatDateTime(creationDateTime, format)); // time, when the message was created
 	return processedContent;
