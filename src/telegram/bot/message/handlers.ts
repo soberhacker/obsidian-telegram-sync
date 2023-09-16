@@ -1,19 +1,27 @@
 /* eslint-disable no-mixed-spaces-and-tabs */
 import TelegramSyncPlugin from "../../../main";
 import TelegramBot from "node-telegram-bot-api";
-import { appendContentToNote, createFolderIfNotExist, getTelegramMdPath, getUniqueFilePath } from "src/utils/fsUtils";
+import { appendContentToNote, createFolderIfNotExist, getUniqueFilePath } from "src/utils/fsUtils";
 import * as release from "../../../../release-notes.mjs";
 import { inlineKeyboard as donationInlineKeyboard } from "../../../settings/donation";
 import { SendMessageOptions } from "node-telegram-bot-api";
 import path from "path";
 import * as Client from "../../user/client";
 import { extension } from "mime-types";
-import { applyNoteContentTemplate, finalizeMessageProcessing } from "./processors";
+import {
+	applyFilesPathTemplate,
+	applyNoteContentTemplate,
+	applyNotePathTemplate,
+	finalizeMessageProcessing,
+} from "./processors";
 import { ProgressBarType, _3MB, createProgressBar, deleteProgressBar, updateProgressBar } from "../progressBar";
-import { getFileObject, getMediaGroupFileName } from "./getters";
+import { getFileObject } from "./getters";
 import { TFile } from "obsidian";
-import { enqueue, enqueueByCondition } from "src/utils/queues";
+import { enqueue } from "src/utils/queues";
 import { _15sec, _1sec, displayAndLog, displayAndLogError } from "src/utils/logUtils";
+import { getMessageDistributionRule } from "./filterEvaluations";
+import { MessageDistributionRule } from "src/settings/messageDistribution";
+import { unixTime2Date } from "src/utils/dateUtils";
 
 export interface MediaGroup {
 	id: string;
@@ -48,7 +56,7 @@ export async function handleMessageOrPost(
 	const { fileObject, fileType } = getFileObject(msg);
 	// skip system messages
 
-	if (!msg.text && !fileType) {
+	if (!msg.text && !fileObject) {
 		displayAndLog(plugin, `Got a system message from Telegram Bot`, 0);
 		return;
 	}
@@ -69,6 +77,12 @@ export async function handleMessageOrPost(
 	// Store topic name if "/topicName " command
 	if (msg.text?.includes("/topicName")) {
 		await plugin.settingsTab?.storeTopicName(msg);
+		return;
+	}
+
+	const distributionRule = await getMessageDistributionRule(plugin, msg);
+	if (!distributionRule) {
+		displayAndLog(plugin, `The message skipped, because there is no matched distribution rule`, 0);
 		return;
 	}
 
@@ -108,8 +122,8 @@ export async function handleMessageOrPost(
 
 	++plugin.messagesLeftCnt;
 	try {
-		if (!msg.text) plugin.settings.needToSaveFiles && (await handleFiles(plugin, msg));
-		else await handleMessage(plugin, msg);
+		if (!msg.text) distributionRule.filePathTemplate && (await handleFiles(plugin, msg, distributionRule));
+		else await handleMessage(plugin, msg, distributionRule);
 		msgType == "message" && (await enqueue(ifNewReleaseThenShowChanges, plugin, msg));
 	} catch (error) {
 		await displayAndLogError(plugin, error, "", "", msg, _15sec);
@@ -119,23 +133,16 @@ export async function handleMessageOrPost(
 }
 
 // handle all messages from Telegram
-export async function handleMessage(plugin: TelegramSyncPlugin, msg: TelegramBot.Message) {
-	let formattedContent = "";
-
-	formattedContent = await applyNoteContentTemplate(plugin, plugin.settings.templateFileLocation, msg);
-	const appendAllToTelegramMd = plugin.settings.appendAllToTelegramMd;
-	const notePath = appendAllToTelegramMd
-		? getTelegramMdPath(plugin.app.vault, plugin.settings.newNotesLocation)
-		: await getUniqueFilePath(
-				plugin.app.vault,
-				plugin.listOfNotePaths,
-				plugin.settings.newNotesLocation,
-				msg.text || "",
-				"md",
-				msg.date,
-		  );
-
-	await enqueueByCondition(appendAllToTelegramMd, appendContentToNote, plugin.app.vault, notePath, formattedContent);
+export async function handleMessage(
+	plugin: TelegramSyncPlugin,
+	msg: TelegramBot.Message,
+	distributionRule: MessageDistributionRule,
+) {
+	const formattedContent = await applyNoteContentTemplate(plugin, distributionRule.templateFilePath, msg);
+	const notePath = await applyNotePathTemplate(plugin, distributionRule.notePathTemplate, msg);
+	const noteFolderPath = path.dirname(notePath);
+	createFolderIfNotExist(plugin.app.vault, noteFolderPath);
+	await enqueue(appendContentToNote, plugin.app.vault, notePath, formattedContent);
 	await finalizeMessageProcessing(plugin, msg);
 }
 
@@ -143,6 +150,7 @@ async function createNoteContent(
 	plugin: TelegramSyncPlugin,
 	notePath: string,
 	msg: TelegramBot.Message,
+	distributionRule: MessageDistributionRule,
 	filesPaths: string[] = [],
 	error?: Error,
 ) {
@@ -157,15 +165,16 @@ async function createNoteContent(
 		filesLinks.push(`[❌ error while handling file](${error})`);
 	}
 
-	return await applyNoteContentTemplate(plugin, plugin.settings.templateFileLocation, msg, filesLinks);
+	return await applyNoteContentTemplate(plugin, distributionRule.templateFilePath, msg, filesLinks);
 }
 
 // Handle files received in messages
-export async function handleFiles(plugin: TelegramSyncPlugin, msg: TelegramBot.Message) {
+export async function handleFiles(
+	plugin: TelegramSyncPlugin,
+	msg: TelegramBot.Message,
+	distributionRule: MessageDistributionRule,
+) {
 	if (!plugin.bot) return;
-
-	const basePath = plugin.settings.newFilesLocation || plugin.settings.newNotesLocation || "";
-	await createFolderIfNotExist(plugin.app.vault, basePath);
 	let filePath = "";
 	let telegramFileName = "";
 	let error: Error | undefined = undefined;
@@ -181,7 +190,12 @@ export async function handleFiles(plugin: TelegramSyncPlugin, msg: TelegramBot.M
 		try {
 			const fileLink = await plugin.bot.getFileLink(fileId);
 			telegramFileName =
-				telegramFileName || fileLink?.split("/").pop()?.replace(/file/, `${fileType}_${msg.chat.id}`) || "";
+				telegramFileName ||
+				fileLink
+					?.split("/")
+					.pop()
+					?.replace(/file/, `${fileType}_${msg.chat.id.toString().slice(4)}`) ||
+				"";
 			const fileStream = plugin.bot.getFileStream(fileId);
 			const fileChunks: Uint8Array[] = [];
 
@@ -229,23 +243,30 @@ export async function handleFiles(plugin: TelegramSyncPlugin, msg: TelegramBot.M
 				plugin.botUser,
 			);
 			fileByteArray = media instanceof Buffer ? media : Buffer.alloc(0);
-			telegramFileName = telegramFileName || `${fileType}_${msg.chat.id}_${msg.message_id}`;
+			telegramFileName = telegramFileName || `${fileType}_${msg.chat.id.toString().slice(4)}_${msg.message_id}`;
 			error = undefined;
 		}
 		telegramFileName = (msg.document && msg.document.file_name) || telegramFileName;
-		const fileExtension = path.extname(telegramFileName) || `.${extension(fileObject.mime_type)}`;
-		const fileName = path.basename(telegramFileName, fileExtension);
+		const fileExtension =
+			path.extname(telegramFileName).replace(".", "") || extension(fileObject.mime_type) || "file";
+		const fileName = path.basename(telegramFileName, "." + fileExtension);
 
-		// Create a specific folder for each file type
-		const specificFolder = `${basePath}/${fileType}s`;
-		// Format the file name and path
-		filePath = await getUniqueFilePath(
-			plugin.app.vault,
-			plugin.listOfNotePaths,
-			specificFolder,
-			fileName,
+		filePath = await applyFilesPathTemplate(
+			plugin,
+			distributionRule.filePathTemplate,
+			msg,
+			fileType,
 			fileExtension,
-			msg.date,
+			fileName,
+		);
+
+		filePath = await enqueue(
+			getUniqueFilePath,
+			plugin.app.vault,
+			plugin.createdFilePaths,
+			filePath,
+			unixTime2Date(msg.date, msg.message_id),
+			fileExtension,
 		);
 		await plugin.app.vault.createBinary(filePath, fileByteArray);
 	} catch (e) {
@@ -253,15 +274,18 @@ export async function handleFiles(plugin: TelegramSyncPlugin, msg: TelegramBot.M
 		else error = e;
 	}
 
-	if (msg.caption || plugin.settings.appendAllToTelegramMd || plugin.settings.templateFileLocation)
-		await appendFileToNote(plugin, msg, filePath, telegramFileName, error);
+	if (msg.caption || distributionRule.templateFilePath)
+		await appendFileToNote(plugin, msg, distributionRule, filePath, telegramFileName, error);
 
 	if (msg.media_group_id && !handleMediaGroupIntervalId)
-		handleMediaGroupIntervalId = setInterval(async () => await enqueue(handleMediaGroup, plugin), _1sec);
+		handleMediaGroupIntervalId = setInterval(
+			async () => await enqueue(handleMediaGroup, plugin, distributionRule),
+			_1sec,
+		);
 	else if (!msg.media_group_id) await finalizeMessageProcessing(plugin, msg, error);
 }
 
-async function handleMediaGroup(plugin: TelegramSyncPlugin) {
+async function handleMediaGroup(plugin: TelegramSyncPlugin, distributionRule: MessageDistributionRule) {
 	if (mediaGroups.length > 0 && plugin.messagesLeftCnt == 0) {
 		for (const mg of mediaGroups) {
 			try {
@@ -269,16 +293,11 @@ async function handleMediaGroup(plugin: TelegramSyncPlugin) {
 					plugin,
 					mg.notePath,
 					mg.initialMsg,
+					distributionRule,
 					mg.filesPaths,
 					mg.error,
 				);
-				await enqueueByCondition(
-					plugin.settings.appendAllToTelegramMd,
-					appendContentToNote,
-					plugin.app.vault,
-					mg.notePath,
-					noteContent,
-				);
+				await enqueue(appendContentToNote, plugin.app.vault, mg.notePath, noteContent);
 				await finalizeMessageProcessing(plugin, mg.initialMsg, mg.error);
 			} catch (e) {
 				displayAndLogError(plugin, e, "", "", mg.initialMsg, 0);
@@ -292,6 +311,7 @@ async function handleMediaGroup(plugin: TelegramSyncPlugin) {
 async function appendFileToNote(
 	plugin: TelegramSyncPlugin,
 	msg: TelegramBot.Message,
+	distributionRule: MessageDistributionRule,
 	filePath: string,
 	fileName: string,
 	error?: Error,
@@ -303,17 +323,10 @@ async function appendFileToNote(
 		if (error) mediaGroup.error = error;
 		return;
 	}
-	const appendAllToTelegramMd = plugin.settings.appendAllToTelegramMd;
-	const notePath = appendAllToTelegramMd
-		? getTelegramMdPath(plugin.app.vault, plugin.settings.newNotesLocation)
-		: await getUniqueFilePath(
-				plugin.app.vault,
-				plugin.listOfNotePaths,
-				plugin.settings.newNotesLocation,
-				msg.caption || getMediaGroupFileName(msg) || fileName,
-				"md",
-				msg.date,
-		  );
+
+	const notePath = await applyNotePathTemplate(plugin, distributionRule.notePathTemplate, msg);
+	const noteFolderPath = path.dirname(notePath);
+	createFolderIfNotExist(plugin.app.vault, noteFolderPath);
 
 	if (msg.media_group_id) {
 		mediaGroup = {
@@ -327,9 +340,9 @@ async function appendFileToNote(
 		return;
 	}
 
-	const noteContent = await createNoteContent(plugin, notePath, msg, [filePath], error);
+	const noteContent = await createNoteContent(plugin, notePath, msg, distributionRule, [filePath], error);
 
-	await enqueueByCondition(appendAllToTelegramMd, appendContentToNote, plugin.app.vault, notePath, noteContent);
+	await enqueue(appendContentToNote, plugin.app.vault, notePath, noteContent);
 }
 
 // show changes about new release

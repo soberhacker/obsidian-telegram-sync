@@ -1,7 +1,5 @@
 import TelegramSyncPlugin from "src/main";
-import { App, ButtonComponent, Notice, PluginSettingTab, Setting, TextComponent, normalizePath } from "obsidian";
-import { FileSuggest } from "./suggesters/FileSuggester";
-import { FolderSuggest } from "./suggesters/FolderSuggester";
+import { App, ButtonComponent, Notice, PluginSettingTab, Setting, TextComponent } from "obsidian";
 import { boostyButton, paypalButton, buyMeACoffeeButton, kofiButton } from "./donation";
 import TelegramBot from "node-telegram-bot-api";
 import { createProgressBar, updateProgressBar, deleteProgressBar, ProgressBarType } from "src/telegram/bot/progressBar";
@@ -19,6 +17,13 @@ import {
 	connectionStatusIndicatorSettingName,
 } from "src/ConnectionStatusIndicator";
 import { enqueue } from "src/utils/queues";
+import {
+	MessageDistributionRule,
+	createDefaultMessageDistributionRule,
+	getMessageDistributionRuleDisplayedName,
+} from "./messageDistribution";
+import { MessageDistributionRulesModal } from "./MessageDistributionRulesModal";
+import { arrayMove } from "src/utils/arrayUtils";
 
 export interface Topic {
 	name: string;
@@ -28,12 +33,12 @@ export interface Topic {
 
 export interface TelegramSyncSettings {
 	botToken: string;
-	newNotesLocation: string;
-	appendAllToTelegramMd: boolean;
-	templateFileLocation: string;
+	newNotesLocation: string; //TODO in 2024: deprecated, use messageDistributionRules[].path2Note
+	appendAllToTelegramMd: boolean; //TODO in 2024: deprecated, use messageDistributionRules[].path2Note
+	templateFileLocation: string; //TODO in 2024: deprecated, use messageDistributionRules[].path2Template
 	deleteMessagesFromTelegram: boolean;
-	needToSaveFiles: boolean;
-	newFilesLocation: string;
+	needToSaveFiles: boolean; //TODO in 2024: deprecated, now if messageDistributionRules[].path2Files is empty then files will not be stored
+	newFilesLocation: string; //TODO in 2024: deprecated, use messageDistributionRules[].path2Files
 	allowedChatFromUsernames: string[]; //TODO in 2024: deprecated, use allowedChats
 	allowedChats: string[];
 	mainDeviceId: string;
@@ -43,6 +48,7 @@ export interface TelegramSyncSettings {
 	betaVersion: string;
 	connectionStatusIndicatorType: KeysOfConnectionStatusIndicatorType;
 	cacheCleanupAtStartup: boolean;
+	messageDistributionRules: MessageDistributionRule[];
 	// add new settings above this line
 	topicNames: Topic[];
 }
@@ -64,14 +70,15 @@ export const DEFAULT_SETTINGS: TelegramSyncSettings = {
 	betaVersion: "",
 	connectionStatusIndicatorType: "CONSTANT",
 	cacheCleanupAtStartup: false,
+	messageDistributionRules: [createDefaultMessageDistributionRule()],
 	// add new settings above this line
 	topicNames: [],
 };
-
 export class TelegramSyncSettingTab extends PluginSettingTab {
 	plugin: TelegramSyncPlugin;
 	botStatusTimeOut: NodeJS.Timeout;
 	botSettingsTimeOut: NodeJS.Timeout;
+	userStatusTimeOut: NodeJS.Timeout;
 
 	constructor(app: App, plugin: TelegramSyncPlugin) {
 		super(app, plugin);
@@ -84,20 +91,17 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 
 		this.addBot();
 		this.addUser();
-		this.containerEl.createEl("br");
-		this.containerEl.createEl("h2", { text: "Locations" });
-		this.addNewNotesLocation();
-		this.addNewFilesLocation();
-		this.addTemplateFileLocation();
+
 		this.containerEl.createEl("br");
 		this.containerEl.createEl("h2", { text: "Behavior settings" });
-		this.addAppendAllToTelegramMd();
-		this.addSaveFilesCheckbox();
 		this.addDeleteMessagesFromTelegram();
+		this.addMessageDistributionRules();
+
 		this.containerEl.createEl("br");
 		this.containerEl.createEl("h2", { text: "System settings" });
 		await this.addBetaRelease();
 		this.addConnectionStatusIndicator();
+
 		this.addDonation();
 	}
 
@@ -188,12 +192,20 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 
 	addUser() {
 		let userStatusComponent: TextComponent;
-		// TODO add refreshing connecting state as for bot
-		const userStatusConstructor = (userStatus: TextComponent) => {
+		const userStatusConstructor = async (userStatus: TextComponent) => {
 			userStatusComponent = userStatusComponent || userStatus;
 			userStatus.setDisabled(true);
-			if (this.plugin.userConnected) userStatus.setValue("👨🏽‍💻 connected");
+			if (
+				this.plugin.checkingUserConnection ||
+				(this.plugin.userConnected && this.plugin.checkingBotConnection)
+			) {
+				userStatus.setValue("⏳ connecting...");
+			} else if (this.plugin.userConnected) userStatus.setValue("👨🏽‍💻 connected");
 			else userStatus.setValue("❌ disconnected");
+			new Promise((resolve) => {
+				clearTimeout(this.userStatusTimeOut);
+				this.userStatusTimeOut = setTimeout(() => resolve(userStatusConstructor.call(this, userStatus)), _1sec);
+			});
 		};
 
 		const userLogInConstructor = (userLogInButton: ButtonComponent) => {
@@ -252,87 +264,80 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 			text: "a few secondary features",
 		});
 	}
-
-	addNewNotesLocation() {
-		new Setting(this.containerEl)
-			.setName("New notes location")
-			.setDesc("Folder where the new notes will be created")
-			.addSearch((cb) => {
-				new FolderSuggest(cb.inputEl);
-				cb.setPlaceholder("example: folder1/folder2")
-					.setValue(this.plugin.settings.newNotesLocation)
-					.onChange(async (newFolder) => {
-						this.plugin.settings.newNotesLocation = newFolder ? normalizePath(newFolder) : newFolder;
-						await this.plugin.saveSettings();
-					});
-			});
-	}
-
-	addNewFilesLocation() {
-		new Setting(this.containerEl)
-			.setName("New files location")
-			.setDesc("Folder where the new files will be created")
-			.addSearch((cb) => {
-				new FolderSuggest(cb.inputEl);
-				cb.setPlaceholder("example: folder1/folder2")
-					.setValue(this.plugin.settings.newFilesLocation)
-					.onChange(async (newFolder) => {
-						this.plugin.settings.newFilesLocation = newFolder ? normalizePath(newFolder) : newFolder;
-						await this.plugin.saveSettings();
-					});
-			});
-	}
-
-	addTemplateFileLocation() {
-		const templateFileLocationSetting = new Setting(this.containerEl)
-			.setName("Template file location")
-			.setDesc("Template to use when creating new notes.")
-			.addSearch((cb) => {
-				new FileSuggest(cb.inputEl, this.plugin);
-				cb.setPlaceholder("example: folder/zettelkasten.md")
-					.setValue(this.plugin.settings.templateFileLocation)
-					.onChange(async (templateFile) => {
-						this.plugin.settings.templateFileLocation = templateFile
-							? normalizePath(templateFile)
-							: templateFile;
-						await this.plugin.saveSettings();
-					});
-			});
-		// add template available variables
-		const availableTemplateVariables = document.createElement("div");
-		availableTemplateVariables.textContent = "To get list of available variables click on -> ";
-		availableTemplateVariables.createEl("a", {
-			href: "https://github.com/soberhacker/obsidian-telegram-sync/blob/main/docs/Template%20Variables%20List.md",
-			text: "Template Variables List",
-		});
-		templateFileLocationSetting.descEl.appendChild(availableTemplateVariables);
-	}
-
-	addAppendAllToTelegramMd() {
-		new Setting(this.containerEl)
-			.setName("Append all to Telegram.md")
-			.setDesc(
-				"All messages will be appended into a single file, Telegram.md. If disabled, a separate file will be created for each message",
-			)
-			.addToggle((toggle) =>
-				toggle.setValue(this.plugin.settings.appendAllToTelegramMd).onChange(async (value: boolean) => {
-					this.plugin.settings.appendAllToTelegramMd = value;
-					await this.plugin.saveSettings();
-				}),
-			);
-	}
-
-	addSaveFilesCheckbox() {
-		new Setting(this.containerEl)
-			.setName("Save files")
-			.setDesc("Files will be downloaded and saved in your vault")
-			.addToggle((cb) => {
-				cb.setValue(this.plugin.settings.needToSaveFiles).onChange(async (value) => {
-					this.plugin.settings.needToSaveFiles = value;
-					this.plugin.settingsTab?.display();
+	addMessageDistributionRules() {
+		const messageDistributionSetting = new Setting(this.containerEl);
+		messageDistributionSetting
+			.setName("Message distribution rules")
+			.setDesc("Configure message filters, content template, and storage paths for new notes and files")
+			.addButton((btn: ButtonComponent) => {
+				btn.setButtonText("+");
+				btn.setClass("mod-cta");
+				btn.onClick(async () => {
+					const messageDistributionRulesModal = new MessageDistributionRulesModal(this.plugin);
+					messageDistributionRulesModal.onClose = async () => {
+						if (messageDistributionRulesModal.saved) await this.display();
+					};
+					messageDistributionRulesModal.open();
 				});
 			});
-		if (this.plugin.settings.needToSaveFiles === false) return;
+		this.plugin.settings.messageDistributionRules.forEach((rule, index) => {
+			const setting = new Setting(this.containerEl);
+			const preElement = document.createElement("pre");
+			preElement.textContent = "• " + getMessageDistributionRuleDisplayedName(rule);
+			setting.infoEl.replaceWith(preElement);
+			setting.settingEl.classList.add("my-custom-list-item");
+			setting.addExtraButton((btn) => {
+				btn.setIcon("up-chevron-glyph")
+					.setTooltip("Move up")
+					.onClick(async () => {
+						arrayMove(this.plugin.settings.messageDistributionRules, index, index - 1);
+						await this.plugin.saveSettings();
+						await this.display();
+					});
+			});
+			setting.addExtraButton((btn) => {
+				btn.setIcon("down-chevron-glyph")
+					.setTooltip("Move down")
+					.onClick(async () => {
+						arrayMove(this.plugin.settings.messageDistributionRules, index, index + 1);
+						await this.plugin.saveSettings();
+						await this.display();
+					});
+			});
+			setting.addExtraButton((btn) => {
+				btn.setIcon("pencil")
+					.setTooltip("Edit")
+					.onClick(async () => {
+						const messageDistributionRulesModal = new MessageDistributionRulesModal(
+							this.plugin,
+							this.plugin.settings.messageDistributionRules[index],
+						);
+						messageDistributionRulesModal.onClose = async () => {
+							if (messageDistributionRulesModal.saved) await this.display();
+						};
+						messageDistributionRulesModal.open();
+					});
+			});
+			setting.addExtraButton((btn) => {
+				btn.setIcon("cross")
+					.setTooltip("Delete")
+					.onClick(async () => {
+						this.plugin.settings.messageDistributionRules.remove(
+							this.plugin.settings.messageDistributionRules[index],
+						);
+						if (this.plugin.settings.messageDistributionRules.length == 0) {
+							displayAndLog(
+								this.plugin,
+								"The default message distribution rule has been created, as at least one rule must exist!",
+								_15sec,
+							);
+							this.plugin.settings.messageDistributionRules.push(createDefaultMessageDistributionRule());
+						}
+						await this.plugin.saveSettings();
+						await this.display();
+					});
+			});
+		});
 	}
 
 	addDeleteMessagesFromTelegram() {

@@ -12,6 +12,14 @@ import { clearCachedMessagesInterval } from "./telegram/user/convertors";
 import { clearHandleMediaGroupInterval } from "./telegram/bot/message/handlers";
 import ConnectionStatusIndicator, { checkConnectionMessage } from "./ConnectionStatusIndicator";
 import { mainDeviceIdSettingName } from "./settings/BotSettingsModal";
+import {
+	createDefaultMessageDistributionRule,
+	createDefaultMessageFilterCondition,
+	defaultFileNameTemplate,
+	defaultMessageFilterQuery,
+	defaultNoteNameTemplate,
+	defaultTelegramFolder,
+} from "./settings/messageDistribution";
 
 // TODO: add "connecting"
 export type ConnectionStatus = "connected" | "disconnected";
@@ -29,7 +37,7 @@ export default class TelegramSyncPlugin extends Plugin {
 	// TODO: TelegramSyncBot extends TelegramBot
 	bot?: TelegramBot;
 	botUser?: TelegramBot.User;
-	listOfNotePaths: string[] = [];
+	createdFilePaths: string[] = [];
 	currentDeviceId = machineIdSync(true);
 	lastPollingErrors: string[] = [];
 	restartingIntervalId?: NodeJS.Timer;
@@ -170,20 +178,62 @@ export default class TelegramSyncPlugin extends Plugin {
 	}
 
 	async upgradeSettings() {
+		let needToSaveSettings = false;
 		if (this.settings.cacheCleanupAtStartup) {
 			localStorage.removeItem("GramJs:apiCache");
 			this.settings.cacheCleanupAtStartup = false;
-			await this.saveSettings();
+			needToSaveSettings = true;
 		}
 		// TODO in 2024: Remove allowedChatFromUsernames, because it is deprecated
 		if (this.settings.allowedChatFromUsernames.length != 0) {
 			this.settings.allowedChats = [...this.settings.allowedChatFromUsernames];
 			this.settings.allowedChatFromUsernames = [];
-			await this.saveSettings();
+			needToSaveSettings = true;
 		}
+
+		// TODO in 2024: Remove this block, because messageDistributionRules should be established by that time
+		if (this.settings.newNotesLocation || this.settings.newFilesLocation || this.settings.templateFileLocation) {
+			this.settings.messageDistributionRules = [];
+			this.settings.messageDistributionRules.push({
+				messageFilterQuery: defaultMessageFilterQuery,
+				messageFilterConditions: [createDefaultMessageFilterCondition()],
+				templateFilePath: this.settings.templateFileLocation,
+				notePathTemplate: `${this.settings.newNotesLocation || defaultTelegramFolder}/${
+					this.settings.appendAllToTelegramMd ? "Telegram.md" : defaultNoteNameTemplate
+				}`,
+				filePathTemplate: this.settings.needToSaveFiles
+					? `${this.settings.newFilesLocation || defaultTelegramFolder}/${defaultFileNameTemplate}`
+					: "",
+			});
+			this.settings.newNotesLocation = "";
+			this.settings.newFilesLocation = "";
+			this.settings.templateFileLocation = "";
+			needToSaveSettings = true;
+		}
+
+		if (this.settings.messageDistributionRules.length == 0) {
+			this.settings.messageDistributionRules.push(createDefaultMessageDistributionRule());
+			needToSaveSettings = true;
+		} else {
+			// fixing incorrectly saved rules
+			this.settings.messageDistributionRules.forEach((rule) => {
+				if (!rule.messageFilterQuery || !rule.messageFilterConditions) {
+					rule.messageFilterQuery = defaultMessageFilterQuery;
+					rule.messageFilterConditions = [createDefaultMessageFilterCondition()];
+					needToSaveSettings = true;
+				}
+				if (!rule.filePathTemplate && !rule.notePathTemplate && !rule.templateFilePath) {
+					rule.notePathTemplate = `${defaultTelegramFolder}/${defaultNoteNameTemplate}`;
+					rule.filePathTemplate = `${defaultTelegramFolder}/${defaultFileNameTemplate}`;
+					needToSaveSettings = true;
+				}
+			});
+		}
+
+		needToSaveSettings && this.saveSettings();
 	}
 
-	async getBotUser(msg: TelegramBot.Message): Promise<TelegramBot.User> {
+	async getBotUser(): Promise<TelegramBot.User> {
 		this.botUser = this.botUser || (await this.bot?.getMe());
 		if (!this.botUser) throw new Error("Can't get access to bot info. Restart the Telegram Sync plugin");
 		return this.botUser;

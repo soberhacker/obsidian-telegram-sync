@@ -1,20 +1,25 @@
 import { compareVersions } from "compare-versions";
 
-export const version = "1.10.0";
+export const version = "2.0.0";
 // TODO getting messages one by one instead of parallel processing
 // TODO add Demo gif and screenshots to readme.md
 // ## Demo
 //![](https://raw.githubusercontent.com/vslinko/obsidian-outliner/main/demos/demo1.gif)<br>
 export const showNewFeatures = true;
-export let showBreakingChanges = false;
+export let showBreakingChanges = true;
 
 const newFeatures =
-	"This release introduces connection status indicator instead of notifications, along with 5 other important features.";
+	"This release introduces the long-awaited feature of Path Templates. " +
+	"This feature will help personalize your experience in many many ways, including:\n" +
+	" - customizing note and file names\n" +
+	" - appending data to any periodic notes (daily notes, etc)\n" +
+	" - distributing messages across different folders\n" +
+	"Many thanks to all contributors, especially to @ro_mashaaa, @fokinevgenij!";
 export const breakingChanges =
-	"⚠️ <b><i>If you were connected as a user, due to API changes, the user has been disconnected and needs to be reconnected! Apologies</i></b> ⚠️";
+	"⚠️ <b><i>Due to breaking changes, it is better to check all plugin settings again! Apologies</i></b> ⚠️";
 
 const telegramChannelLink = "<a href='https://t.me/obsidian_telegram_sync_insider'>channel</a>";
-const telegramChannelIntroduction = `Find the complete list of new features on the plugin's ${telegramChannelLink}.`;
+const telegramChannelIntroduction = `Subscribe to the plugin's ${telegramChannelLink} to not only silence these informational messages in your bot, but also to be the first to get all the latest updates and a complete list of new features.`;
 const telegramChatLink = "<a href='https://t.me/ObsidianTelegramSync'>chat</a>";
 const telegramChatIntroduction = `For discussions, please feel free to join the plugin's ${telegramChatLink}.`;
 const donation =

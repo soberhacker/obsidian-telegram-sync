@@ -57,6 +57,12 @@ export async function stop() {
 export async function init(sessionId: number, sessionType: SessionType, deviceId: string) {
 	if (!client || _sessionType !== sessionType || _sessionId !== sessionId) {
 		await stop();
+		const logger = new Logger(LogLevel.ERROR);
+		logger.log = (level, message, color) => {
+			console.log(`Telegram Sync: Error with user connection -> ${message}`);
+			// TODO: add user connection status checking and setting by controlling error and info logs
+			//if (message == "Automatic reconnection failed 2 time(s)")
+		};
 		const session = new StoreSession(`${sessionType}_${sessionId}_${deviceId}`);
 		_sessionId = sessionId;
 		_sessionType = sessionType;
@@ -66,7 +72,7 @@ export async function init(sessionId: number, sessionType: SessionType, deviceId
 			appVersion: version,
 			useWSS: true,
 			networkSocket: PromisedWebSockets,
-			baseLogger: new Logger(LogLevel.ERROR),
+			baseLogger: logger,
 		});
 	}
 
