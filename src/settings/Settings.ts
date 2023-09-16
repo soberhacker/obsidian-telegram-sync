@@ -192,11 +192,13 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 
 	addUser() {
 		let userStatusComponent: TextComponent;
-		// TODO add refreshing connecting state as for bot
 		const userStatusConstructor = async (userStatus: TextComponent) => {
 			userStatusComponent = userStatusComponent || userStatus;
 			userStatus.setDisabled(true);
-			if (this.plugin.checkingUserConnection) {
+			if (
+				this.plugin.checkingUserConnection ||
+				(this.plugin.userConnected && this.plugin.checkingBotConnection)
+			) {
 				userStatus.setValue("⏳ connecting...");
 			} else if (this.plugin.userConnected) userStatus.setValue("👨🏽‍💻 connected");
 			else userStatus.setValue("❌ disconnected");
