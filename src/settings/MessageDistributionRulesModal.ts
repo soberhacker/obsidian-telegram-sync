@@ -112,9 +112,8 @@ export class MessageDistributionRulesModal extends Modal {
 			.addButton((btn) => {
 				btn.setButtonText("Open in browser");
 				btn.onClick(() => {
-					// TODO next: revert link after beta testing to "https://github.com/soberhacker/obsidian-telegram-sync/blob/main/docs/Template%20Variables%20List.md",
 					window.open(
-						"https://github.com/soberhacker/obsidian-telegram-sync/blob/path-templates/docs/Template%20Variables%20List.md",
+						"https://github.com/soberhacker/obsidian-telegram-sync/blob/main/docs/Template%20Variables%20List.md",
 						"_blank",
 					);
 				});
