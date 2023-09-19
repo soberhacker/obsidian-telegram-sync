@@ -1,6 +1,14 @@
 # Changelog
 
 
+## [1.11.0](https://github.com/soberhacker/obsidian-telegram-sync/compare/1.10.0...1.11.0) (2023-09-19)
+
+
+### Features
+
+* add path templates ([04242e7](https://github.com/soberhacker/obsidian-telegram-sync/commit/04242e7951b6ff5ae07fddc68de52ad31ef9c42c))
+* add path templates ([04242e7](https://github.com/soberhacker/obsidian-telegram-sync/commit/04242e7951b6ff5ae07fddc68de52ad31ef9c42c))
+
 ## [1.10.0](https://github.com/soberhacker/obsidian-telegram-sync/compare/1.9.0...1.10.0) (2023-08-25)
 
 
