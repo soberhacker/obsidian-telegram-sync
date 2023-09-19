@@ -35,7 +35,7 @@ export function sanitizeFileName(fileName: string): string {
 
 export function sanitizeFilePath(filePath: string): string {
 	const invalidCharacters = /[\\:*?"<>|\n\r]/g;
-	return normalizePath(filePath.replace(invalidCharacters, "_"));
+	return normalizePath(truncatePathComponents(filePath.replace(invalidCharacters, "_")));
 }
 
 export async function getUniqueFilePath(
@@ -96,6 +96,27 @@ export async function appendContentToNote(
 
 export function base64ToString(base64: string): string {
 	return Buffer.from(base64, "base64").toString("utf-8");
+}
+
+export function truncatePathComponents(filePath: string, maxLength = 200): string {
+	const parsedPath = path.parse(filePath);
+
+	// Split the path into its components (folders, subfolders, etc.)
+	const pathComponents = parsedPath.dir.split("/");
+
+	// Truncate each path component if it exceeds maxLength characters
+	const truncatedComponents = pathComponents.map((component) =>
+		component.length > maxLength ? component.substring(0, maxLength) : component,
+	);
+
+	// Truncate the file name if it exceeds maxLength characters
+	const truncatedFileName =
+		parsedPath.name.length > maxLength ? parsedPath.name.substring(0, maxLength) : parsedPath.name;
+
+	// Reassemble the full path
+	const truncatedPath = path.join(...truncatedComponents, truncatedFileName + parsedPath.ext);
+
+	return truncatedPath;
 }
 
 export async function replaceMainJs(vault: Vault, mainJs: Buffer | "main-prod.js") {

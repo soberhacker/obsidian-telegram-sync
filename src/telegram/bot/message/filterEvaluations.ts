@@ -2,6 +2,7 @@ import TelegramBot from "node-telegram-bot-api";
 import { MessageDistributionRule, MessageFilterCondition, ConditionType } from "src/settings/messageDistribution";
 import { getForwardFromName, getTopic } from "./getters";
 import TelegramSyncPlugin from "src/main";
+import * as Client from "src/telegram/user/client";
 
 export function isUserFiltered(msg: TelegramBot.Message, userNameOrId: string): boolean {
 	if (!msg?.from || !userNameOrId) return false;
@@ -46,6 +47,16 @@ export async function isContentFiltered(msg: TelegramBot.Message, substring: str
 	return (msg.text || msg.caption || "").contains(substring);
 }
 
+export async function isVoiceTranscriptFiltered(
+	plugin: TelegramSyncPlugin,
+	msg: TelegramBot.Message,
+	substring: string,
+): Promise<boolean> {
+	let voiceTranscript = "";
+	if (plugin.bot) voiceTranscript = await Client.transcribeAudio(plugin.bot, msg, await plugin.getBotUser());
+	return voiceTranscript.contains(substring);
+}
+
 export async function isMessageFiltered(
 	plugin: TelegramSyncPlugin,
 	msg: TelegramBot.Message,
@@ -64,17 +75,19 @@ export async function isMessageFiltered(
 			return await isTopicFiltered(plugin, msg, condition.value);
 		case ConditionType.CONTENT:
 			return await isContentFiltered(msg, condition.value);
+		case ConditionType.VOICE_TRANSCRIPT:
+			return await isVoiceTranscriptFiltered(plugin, msg, condition.value);
 		default:
 			return false;
 	}
 }
 
-export async function doesMessageMatchAllConditions(
+export async function doesMessageMatchRule(
 	plugin: TelegramSyncPlugin,
 	msg: TelegramBot.Message,
-	conditions: MessageFilterCondition[],
+	rule: MessageDistributionRule,
 ): Promise<boolean> {
-	for (const condition of conditions) {
+	for (const condition of rule.messageFilterConditions) {
 		const isFiltered = await isMessageFiltered(plugin, msg, condition);
 		if (!isFiltered) return false;
 	}
@@ -86,7 +99,7 @@ export async function getMessageDistributionRule(
 	msg: TelegramBot.Message,
 ): Promise<MessageDistributionRule | undefined> {
 	for (const rule of plugin.settings.messageDistributionRules) {
-		if (await doesMessageMatchAllConditions(plugin, msg, rule.messageFilterConditions)) return rule;
+		if (await doesMessageMatchRule(plugin, msg, rule)) return rule;
 	}
 	return undefined;
 }

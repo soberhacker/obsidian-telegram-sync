@@ -5,6 +5,7 @@ export enum ConditionType {
 	TOPIC = "topic",
 	FORWARD_FROM = "forwardFrom",
 	CONTENT = "content",
+	VOICE_TRANSCRIPT = "voiceTranscript",
 }
 
 export enum ConditionOperation {
@@ -107,11 +108,11 @@ export function extractConditionsFromFilterQuery(messageFilterQuery: string): Me
 
 export function getMessageDistributionRuleDisplayedName(distributionRule: MessageDistributionRule): string {
 	if (!distributionRule.messageFilterConditions || distributionRule.messageFilterConditions.length == 0)
-		return "Error! Remove messageDistributionRules from data.json";
+		return "• error: wrong filter query!";
 	let displayedName = "";
 	for (const condition of distributionRule.messageFilterConditions) {
-		if (condition.conditionType == ConditionType.ALL) return "all messages";
+		if (condition.conditionType == ConditionType.ALL) return "• all messages";
 		displayedName = displayedName + `${condition.conditionType} ${condition.operation} ${condition.value}; `;
 	}
-	return displayedName;
+	return "• " + (displayedName.length > 50 ? displayedName.slice(0, 50) + "..." : displayedName);
 }

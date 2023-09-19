@@ -135,12 +135,12 @@ export async function applyNotePathTemplate(
 ): Promise<string> {
 	if (!notePathTemplate) return "";
 
-	let textContentMd = "";
-	if (notePathTemplate.includes("{{content")) textContentMd = (await convertMessageTextToMarkdown(msg)).slice(0, 100);
-
 	let processedPath = notePathTemplate.endsWith("/") ? notePathTemplate + defaultNoteNameTemplate : notePathTemplate;
+	let textContentMd = "";
+	if (processedPath.includes("{{content")) textContentMd = await convertMessageTextToMarkdown(msg);
 	processedPath = await processBasicVariables(plugin, msg, processedPath, textContentMd);
 	if (!path.extname(processedPath)) processedPath = processedPath + ".md";
+	if (processedPath.endsWith(".")) processedPath = processedPath + "md";
 	return sanitizeFilePath(processedPath);
 }
 
@@ -161,6 +161,7 @@ export async function applyFilesPathTemplate(
 		.replace(/{{file:name}}/g, fileName)
 		.replace(/{{file:extension}}/g, fileExtension);
 	if (!path.extname(processedPath)) processedPath = processedPath + "." + fileExtension;
+	if (processedPath.endsWith(".")) processedPath = processedPath + fileExtension;
 	return sanitizeFilePath(processedPath);
 }
 
@@ -186,7 +187,7 @@ export async function processBasicVariables(
 	for (let i = 0; i < lines.length; i++) {
 		const line = lines[i];
 
-		if (line.includes("{{content") && (messageContent || messageText)) {
+		if (line.includes("{{content")) {
 			lines[i] = pasteText(plugin, "content", line, messageContent || messageText || "", messageText || "");
 		}
 

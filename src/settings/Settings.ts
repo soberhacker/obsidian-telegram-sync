@@ -283,7 +283,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 		this.plugin.settings.messageDistributionRules.forEach((rule, index) => {
 			const setting = new Setting(this.containerEl);
 			const preElement = document.createElement("pre");
-			preElement.textContent = "• " + getMessageDistributionRuleDisplayedName(rule);
+			preElement.textContent = getMessageDistributionRuleDisplayedName(rule);
 			setting.infoEl.replaceWith(preElement);
 			setting.settingEl.classList.add("my-custom-list-item");
 			setting.addExtraButton((btn) => {

@@ -1,9 +1,18 @@
 import { compareVersions } from "compare-versions";
 
 export const version = "2.0.0";
-// TODO getting messages one by one instead of parallel processing
 // TODO add Demo gif and screenshots to readme.md
-// ## Demo
+// --------F----------
+// TODO logging what distribution rule was selected
+// TODO getting messages one by one instead of parallel processing
+// TODO add possibility to change appending order
+// TODO add messagesLeftCnt displaying in status bar
+// TODO translating messages
+// --------P--------
+// TODO getting messages older than 24 hours
+// TODO getting messages from other bots in group chats
+// TODO post messages in selected chats
+// ## Demo gif example
 //![](https://raw.githubusercontent.com/vslinko/obsidian-outliner/main/demos/demo1.gif)<br>
 export const showNewFeatures = true;
 export let showBreakingChanges = true;
