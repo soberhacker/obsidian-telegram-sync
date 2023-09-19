@@ -1,5 +1,6 @@
 import { TFile, TFolder, Vault, normalizePath } from "obsidian";
 import { date2DateString, date2TimeString } from "./dateUtils";
+import path from "path";
 
 export const defaultDelimiter = "\n\n***\n\n";
 
@@ -29,45 +30,45 @@ export async function createFolderIfNotExist(vault: Vault, folderPath: string) {
 
 export function sanitizeFileName(fileName: string): string {
 	const invalidCharacters = /[\\/:*?"<>|\n\r]/g;
-	const replacementCharacter = "_";
-	return fileName.replace(invalidCharacters, replacementCharacter);
+	return fileName.replace(invalidCharacters, "_");
+}
+
+export function sanitizeFilePath(filePath: string): string {
+	const invalidCharacters = /[\\:*?"<>|\n\r]/g;
+	return normalizePath(truncatePathComponents(filePath.replace(invalidCharacters, "_")));
 }
 
 export async function getUniqueFilePath(
 	vault: Vault,
-	generatedFilePaths: string[],
-	locationPath: string,
-	baseForFileName: string,
-	fileExtension: string, // with dot
-	unixTime: number,
+	createdFilePaths: string[],
+	initialFilePath: string,
+	date: Date,
+	fileExtension: string,
 ): Promise<string> {
-	const _fileExtension = fileExtension.startsWith(".") ? fileExtension.slice(1) : fileExtension;
-	await createFolderIfNotExist(vault, locationPath);
-	const title = sanitizeFileName(baseForFileName.slice(0, 30));
-	const messageDate = new Date(unixTime * 1000);
-	const messageDateString = date2DateString(messageDate);
-	let fileId = Number(date2TimeString(messageDate));
-	let fileName = `${title} - ${messageDateString}${fileId}.${_fileExtension}`;
-	let filePath = normalizePath(locationPath ? `${locationPath}/${fileName}` : fileName);
+	const fileFolderPath = path.dirname(initialFilePath);
+	await createFolderIfNotExist(vault, fileFolderPath);
+
+	let filePath = initialFilePath;
+	if (!(vault.getAbstractFileByPath(filePath) instanceof TFile)) return filePath;
+
+	const initialFileName = path.basename(filePath, "." + fileExtension);
+	const dateString = date2DateString(date);
+	let fileId = Number(date2TimeString(date));
+	const collectFileName = () => `${initialFileName} - ${dateString}${fileId}.${fileExtension}`;
+	let fileName = collectFileName();
+
 	let previousFilePath = "";
 	while (
 		previousFilePath != filePath &&
-		(generatedFilePaths.includes(filePath) || vault.getAbstractFileByPath(filePath) instanceof TFile)
+		(createdFilePaths.includes(filePath) || vault.getAbstractFileByPath(filePath) instanceof TFile)
 	) {
 		previousFilePath = filePath;
 		fileId += 1;
-		fileName = `${title} - ${messageDateString}${fileId}.${_fileExtension}`;
-		filePath = normalizePath(locationPath ? `${locationPath}/${fileName}` : fileName);
+		fileName = collectFileName();
+		filePath = fileFolderPath ? `${fileFolderPath}/${fileName}` : fileName;
 	}
-	generatedFilePaths.push(filePath);
+	createdFilePaths.push(filePath);
 	return filePath;
-}
-
-export function getTelegramMdPath(vault: Vault, location: string) {
-	// Determine the location for the Telegram.md file
-	createFolderIfNotExist(vault, location);
-	const telegramMdPath = normalizePath(location ? `${location}/Telegram.md` : "Telegram.md");
-	return telegramMdPath;
 }
 
 export async function appendContentToNote(
@@ -95,6 +96,27 @@ export async function appendContentToNote(
 
 export function base64ToString(base64: string): string {
 	return Buffer.from(base64, "base64").toString("utf-8");
+}
+
+export function truncatePathComponents(filePath: string, maxLength = 200): string {
+	const parsedPath = path.parse(filePath);
+
+	// Split the path into its components (folders, subfolders, etc.)
+	const pathComponents = parsedPath.dir.split("/");
+
+	// Truncate each path component if it exceeds maxLength characters
+	const truncatedComponents = pathComponents.map((component) =>
+		component.length > maxLength ? component.substring(0, maxLength) : component,
+	);
+
+	// Truncate the file name if it exceeds maxLength characters
+	const truncatedFileName =
+		parsedPath.name.length > maxLength ? parsedPath.name.substring(0, maxLength) : parsedPath.name;
+
+	// Reassemble the full path
+	const truncatedPath = path.join(...truncatedComponents, truncatedFileName + parsedPath.ext);
+
+	return truncatedPath;
 }
 
 export async function replaceMainJs(vault: Vault, mainJs: Buffer | "main-prod.js") {

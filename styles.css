@@ -5,3 +5,11 @@
     text-align: center;
     color: var(--text-normal);
   }
+.my-custom-list-item {
+	padding-top: 0;
+	padding-bottom: 0;
+	border-top: none;
+	margin-top: 0;
+	margin-bottom: 0;
+}
+

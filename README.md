@@ -1,4 +1,5 @@
 # Telegram Sync for Obsidian
+
 <a href="https://github.com/soberhacker/obsidian-telegram-sync/releases/latest">
 <img src="https://img.shields.io/github/v/release/soberhacker/obsidian-telegram-sync?label=plugin&display_name=tag&logo=obsidian&color=purple&logoColor=violet">
 </a>&nbsp;<a href="https://github.com/soberhacker/obsidian-telegram-sync">
@@ -9,41 +10,40 @@
 <img src="https://img.shields.io/badge/Telegram-Support-red.svg?logo=telegram&logoColor=f5f5f5&color=red">
 </a><br><br>
 
-Transfer messages and files from Telegram to your Obsidian vault. You can easily save text, voice transcripts, images, and other files from your Telegram chats to Obsidian for further processing and organization. This plugin is only available for desktops and would never be available on mobile platforms.
+Transfer messages and files from [Telegram](https://telegram.org/) to your [Obsidian](https://obsidian.md/plugins?id=telegram-sync) vault. You can easily save text, voice transcripts, images, and other files from your Telegram chats to Obsidian for further processing and organization. This plugin is only available for desktops and would never be available on mobile platforms.
 
 ---
 
 ## 📚 Table of Contents
 
-- [Features](#-features)
-- [Installation](#-installation)
-- [Manual Installation](#-manual-installation)
-- [Usage](#-usage)
-- [Supporters & Donations](#-supporters--donations)
-- [Contributing](#-contributing)
+-   [Features](#-features)
+-   [Installation](#-installation)
+-   [Manual Installation](#-manual-installation)
+-   [Usage](#-usage)
+-   [Supporters & Donations](#-supporters--donations)
+-   [Contributing](#-contributing)
 
 ## 🚀 Features
 
-- Synchronize text messages and files
-- Save messages as individual notes or append to an existing note
-- Transcript voices and video notes (for Telegram Premium subscribers only)
-- Use customizable templates for new notes
-- Set folders for new notes and files
-- Automatically format text messages with markdown
-- Delete processed messages from Telegram
+-   Synchronize text messages and files
+-   Save messages as individual notes or append to an existing note
+-   Transcript voices and video notes (for Telegram Premium subscribers only)
+-   Use customizable templates for new notes
+-   Set folders for new notes and files
+-   Automatically format text messages with markdown
+-   Delete processed messages from Telegram
 
 ## 📦 Installation
 
-1. Open Obsidian and navigate to Settings > Third-party plugin
-2. Make sure Safe mode is off
-3. Click the Browse button to open the Community plugins window
-4. Search for **Telegram Sync** in the search bar
-5. Click the Install button, then enable the plugin by toggling the switch
+1. Click on [Telegram Sync](https://obsidian.md/plugins?id=telegram-sync) link
+2. Allow to open Obsidian app
+3. Make sure that community plugins is turned on
+4. Click the Install button, then enable the plugin by toggling the switch
 
 ## 👏 Manual Installation
 
 1. Download main.js, styles.css, manifest.json from the [latest release](https://github.com/soberhacker/obsidian-telegram-sync/releases//latest)
-2. Copy the downloaded files to <pathToYourVault>/.obsidian/plugins/telegram-sync/
+2. Copy the downloaded files to <path-to-your-vault>/.obsidian/plugins/telegram-sync/
 3. Restart Obsidian and enable **Telegram Sync** in the Community plugins tab
 
 ## 📮 Usage

@@ -1,6 +1,18 @@
 # Changelog
 
 
+## [2.0.0](https://github.com/soberhacker/obsidian-telegram-sync/compare/v1.12.0...2.0.0) (2023-09-19)
+
+
+### ⚠ BREAKING CHANGES
+
+* add message distribution by rules
+
+
+### Features
+
+* add path templates ([04242e7](https://github.com/soberhacker/obsidian-telegram-sync/commit/04242e7951b6ff5ae07fddc68de52ad31ef9c42c))
+
 ## [1.10.0](https://github.com/soberhacker/obsidian-telegram-sync/compare/1.9.0...1.10.0) (2023-08-25)
 
 

@@ -11,3 +11,7 @@ export function date2DateString(date: Date): string {
 export function date2TimeString(date: Date): string {
 	return moment(date).format("HHmmssSSS");
 }
+
+export function unixTime2Date(unixTime: number, offset = 0): Date {
+	return new Date(unixTime * 1000 + new Date().getMilliseconds() + (offset % 1000));
+}
