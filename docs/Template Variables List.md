@@ -7,6 +7,7 @@
 {{topic=VALUE}} - messages in topic with name VALUE
 {{forwardFrom=VALUE}} - messages forwarded from chat or user with name VALUE
 {{content~VALUE}} - messages contain text VALUE
+{{voiceTranscript~VALUE}} - voice transcripts contain text VALUE
 ```
 
 #### Filter examples:
@@ -26,6 +27,7 @@
 
 ```ts
 {{content:XX}} - XX characters of the message text
+{{voiceTranscript:XX}} - XX characters of voice transcript
 {{chat}} - link to the chat (bot | group | channel)
 {{chatId}} - id of the chat (bot | group | channel)
 {{chat:name}} - name of the chat (bot | group | channel)

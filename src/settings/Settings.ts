@@ -49,7 +49,6 @@ export interface TelegramSyncSettings {
 	connectionStatusIndicatorType: KeysOfConnectionStatusIndicatorType;
 	cacheCleanupAtStartup: boolean;
 	messageDistributionRules: MessageDistributionRule[];
-	defaultMessageDelimiter: boolean;
 	// add new settings above this line
 	topicNames: Topic[];
 }
@@ -72,7 +71,6 @@ export const DEFAULT_SETTINGS: TelegramSyncSettings = {
 	connectionStatusIndicatorType: "CONSTANT",
 	cacheCleanupAtStartup: false,
 	messageDistributionRules: [createDefaultMessageDistributionRule()],
-	defaultMessageDelimiter: true,
 	// add new settings above this line
 	topicNames: [],
 };
@@ -97,7 +95,6 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 		this.containerEl.createEl("br");
 		this.containerEl.createEl("h2", { text: "Behavior settings" });
 		this.addDeleteMessagesFromTelegram();
-		this.addMessageDelimiterSetting();
 		this.addMessageDistributionRules();
 
 		this.containerEl.createEl("br");
@@ -267,21 +264,6 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 			text: "a few secondary features",
 		});
 	}
-	addMessageDelimiterSetting() {
-		new Setting(this.containerEl)
-			.setName("Use default delimiter between messages (***)")
-			.setDesc(
-				"If you want to use custom delimiter, turn off this setting and set the delimiter in the template file.",
-			)
-			.addToggle((toggle) => {
-				toggle.setValue(this.plugin.settings.defaultMessageDelimiter);
-				toggle.onChange(async (value) => {
-					this.plugin.settings.defaultMessageDelimiter = value;
-					console.log(value);
-					await this.plugin.saveSettings();
-				});
-			});
-	}
 	addMessageDistributionRules() {
 		const messageDistributionSetting = new Setting(this.containerEl);
 		messageDistributionSetting
@@ -301,7 +283,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 		this.plugin.settings.messageDistributionRules.forEach((rule, index) => {
 			const setting = new Setting(this.containerEl);
 			const preElement = document.createElement("pre");
-			preElement.textContent = "• " + getMessageDistributionRuleDisplayedName(rule);
+			preElement.textContent = getMessageDistributionRuleDisplayedName(rule);
 			setting.infoEl.replaceWith(preElement);
 			setting.settingEl.classList.add("my-custom-list-item");
 			setting.addExtraButton((btn) => {

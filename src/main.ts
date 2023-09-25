@@ -42,7 +42,6 @@ export default class TelegramSyncPlugin extends Plugin {
 	lastPollingErrors: string[] = [];
 	restartingIntervalId?: NodeJS.Timer;
 	restartingIntervalTime = _15sec;
-	// TODO: add messagesLeftCnt displaying in status bar
 	messagesLeftCnt = 0;
 	connectionStatusIndicator? = new ConnectionStatusIndicator(this);
 	status: PluginStatus = "loading";

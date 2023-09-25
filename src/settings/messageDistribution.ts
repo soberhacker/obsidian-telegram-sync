@@ -5,6 +5,7 @@ export enum ConditionType {
 	TOPIC = "topic",
 	FORWARD_FROM = "forwardFrom",
 	CONTENT = "content",
+	VOICE_TRANSCRIPT = "voiceTranscript",
 }
 
 export enum ConditionOperation {
@@ -37,7 +38,6 @@ export interface MessageDistributionRule {
 	templateFilePath: string;
 	notePathTemplate: string;
 	filePathTemplate: string;
-	reversedSorting: boolean;
 }
 
 export const defaultTelegramFolder = "Telegram";
@@ -51,7 +51,6 @@ export function createDefaultMessageDistributionRule(): MessageDistributionRule 
 		templateFilePath: "",
 		notePathTemplate: `${defaultTelegramFolder}/${defaultNoteNameTemplate}`,
 		filePathTemplate: `${defaultTelegramFolder}/{{file:type}}s/${defaultFileNameTemplate}`,
-		reversedSorting: false,
 	};
 }
 
@@ -62,7 +61,6 @@ export function createBlankMessageDistributionRule(): MessageDistributionRule {
 		templateFilePath: "",
 		notePathTemplate: "",
 		filePathTemplate: "",
-		reversedSorting: false,
 	};
 }
 
@@ -110,11 +108,11 @@ export function extractConditionsFromFilterQuery(messageFilterQuery: string): Me
 
 export function getMessageDistributionRuleDisplayedName(distributionRule: MessageDistributionRule): string {
 	if (!distributionRule.messageFilterConditions || distributionRule.messageFilterConditions.length == 0)
-		return "Error! Remove messageDistributionRules from data.json";
+		return "• error: wrong filter query!";
 	let displayedName = "";
 	for (const condition of distributionRule.messageFilterConditions) {
-		if (condition.conditionType == ConditionType.ALL) return "all messages";
+		if (condition.conditionType == ConditionType.ALL) return "• all messages";
 		displayedName = displayedName + `${condition.conditionType} ${condition.operation} ${condition.value}; `;
 	}
-	return displayedName;
+	return "• " + (displayedName.length > 50 ? displayedName.slice(0, 50) + "..." : displayedName);
 }
