@@ -49,6 +49,7 @@ export interface TelegramSyncSettings {
 	connectionStatusIndicatorType: KeysOfConnectionStatusIndicatorType;
 	cacheCleanupAtStartup: boolean;
 	messageDistributionRules: MessageDistributionRule[];
+	defaultMessageDelimiter: boolean;
 	// add new settings above this line
 	topicNames: Topic[];
 }
@@ -71,6 +72,7 @@ export const DEFAULT_SETTINGS: TelegramSyncSettings = {
 	connectionStatusIndicatorType: "CONSTANT",
 	cacheCleanupAtStartup: false,
 	messageDistributionRules: [createDefaultMessageDistributionRule()],
+	defaultMessageDelimiter: true,
 	// add new settings above this line
 	topicNames: [],
 };
@@ -95,6 +97,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 		this.containerEl.createEl("br");
 		this.containerEl.createEl("h2", { text: "Behavior settings" });
 		this.addDeleteMessagesFromTelegram();
+		this.addMessageDelimiterSetting();
 		this.addMessageDistributionRules();
 
 		this.containerEl.createEl("br");
@@ -263,6 +266,21 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 			href: "https://github.com/soberhacker/obsidian-telegram-sync/blob/main/docs/Authorized%20User%20Features.md",
 			text: "a few secondary features",
 		});
+	}
+	addMessageDelimiterSetting() {
+		new Setting(this.containerEl)
+			.setName("Use default delimiter between messages (***)")
+			.setDesc(
+				"If you want to use custom delimiter, turn off this setting and set the delimiter in the template file.",
+			)
+			.addToggle((toggle) => {
+				toggle.setValue(this.plugin.settings.defaultMessageDelimiter);
+				toggle.onChange(async (value) => {
+					this.plugin.settings.defaultMessageDelimiter = value;
+					console.log(value);
+					await this.plugin.saveSettings();
+				});
+			});
 	}
 	addMessageDistributionRules() {
 		const messageDistributionSetting = new Setting(this.containerEl);
