@@ -141,7 +141,6 @@ export async function handleMessage(
 	const formattedContent = await applyNoteContentTemplate(plugin, distributionRule.templateFilePath, msg);
 	const notePath = await applyNotePathTemplate(plugin, distributionRule.notePathTemplate, msg);
 	const noteFolderPath = path.dirname(notePath);
-	const messageOrder = distributionRule.reversedSorting;
 	createFolderIfNotExist(plugin.app.vault, noteFolderPath);
 	await enqueue(
 		appendContentToNote,
@@ -150,7 +149,7 @@ export async function handleMessage(
 		formattedContent,
 		"",
 		plugin.settings.defaultMessageDelimiter ? defaultDelimiter : "",
-		messageOrder,
+		distributionRule.reversedSorting,
 	);
 	await finalizeMessageProcessing(plugin, msg);
 }
