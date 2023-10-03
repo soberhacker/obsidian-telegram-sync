@@ -268,15 +268,12 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 	}
 	addMessageDelimiterSetting() {
 		new Setting(this.containerEl)
-			.setName("Use default delimiter between messages (***)")
-			.setDesc(
-				"If you want to use custom delimiter, turn off this setting and set the delimiter in the template file.",
-			)
+			.setName(`Default delimiter "***" between messages`)
+			.setDesc("Turn off this setting to use a custom delimiter, which you can set in the template file")
 			.addToggle((toggle) => {
 				toggle.setValue(this.plugin.settings.defaultMessageDelimiter);
 				toggle.onChange(async (value) => {
 					this.plugin.settings.defaultMessageDelimiter = value;
-					console.log(value);
 					await this.plugin.saveSettings();
 				});
 			});

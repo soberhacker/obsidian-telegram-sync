@@ -149,7 +149,7 @@ export async function handleMessage(
 		formattedContent,
 		"",
 		plugin.settings.defaultMessageDelimiter ? defaultDelimiter : "",
-		distributionRule.reversedSorting,
+		distributionRule.reversedOrder,
 	);
 	await finalizeMessageProcessing(plugin, msg);
 }

@@ -109,14 +109,12 @@ export class MessageDistributionRulesModal extends Modal {
 	addMessageSortingMode() {
 		const setting = new Setting(this.messageDistributionRulesDiv);
 		setting
-			.setName("Message sorting")
-			.setDesc(
-				"Turn on this switch if you want to sort messages from new ones to old ones. Leave turned off, if messages should be sorted from older to newer.",
-			)
+			.setName("New messages first")
+			.setDesc("Turn on to have new messages appear at the beginning of the note")
 			.addToggle((toggle) => {
-				toggle.setValue(this.messageDistributionRule.reversedSorting);
+				toggle.setValue(this.messageDistributionRule.reversedOrder);
 				toggle.onChange(async (value) => {
-					this.messageDistributionRule.reversedSorting = value;
+					this.messageDistributionRule.reversedOrder = value;
 				});
 			});
 		setSettingStyles(setting);
