@@ -111,11 +111,11 @@ export function extractConditionsFromFilterQuery(messageFilterQuery: string): Me
 
 export function getMessageDistributionRuleDisplayedName(distributionRule: MessageDistributionRule): string {
 	if (!distributionRule.messageFilterConditions || distributionRule.messageFilterConditions.length == 0)
-		return "• error: wrong filter query!";
+		return "  • error: wrong filter query!";
 	let displayedName = "";
 	for (const condition of distributionRule.messageFilterConditions) {
-		if (condition.conditionType == ConditionType.ALL) return "• all messages";
+		if (condition.conditionType == ConditionType.ALL) return " • all messages";
 		displayedName = displayedName + `${condition.conditionType} ${condition.operation} ${condition.value}; `;
 	}
-	return "• " + (displayedName.length > 50 ? displayedName.slice(0, 50) + "..." : displayedName);
+	return "  • " + (displayedName.length > 50 ? displayedName.slice(0, 50) + "..." : displayedName);
 }

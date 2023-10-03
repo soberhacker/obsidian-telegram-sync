@@ -12,13 +12,17 @@ export class BotSettingsModal extends Modal {
 	}
 
 	async display() {
-		this.contentEl.empty();
-		this.botSettingsDiv = this.contentEl.createDiv();
-		this.botSettingsDiv.createEl("h4", { text: "Bot settings" });
+		this.addHeader();
 		this.addBotToken();
 		this.addAllowedChatsSetting();
 		this.addDeviceId();
 		this.addFooterButtons();
+	}
+
+	addHeader() {
+		this.contentEl.empty();
+		this.botSettingsDiv = this.contentEl.createDiv();
+		this.titleEl.setText("Bot settings");
 	}
 
 	addBotToken() {
@@ -106,6 +110,7 @@ export class BotSettingsModal extends Modal {
 	}
 
 	addFooterButtons() {
+		this.botSettingsDiv.createEl("br");
 		const footerButtons = new Setting(this.contentEl.createDiv());
 		footerButtons.addButton((b) => {
 			b.setTooltip("Connect")

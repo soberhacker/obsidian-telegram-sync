@@ -27,19 +27,26 @@ export class MessageDistributionRulesModal extends Modal {
 	}
 
 	async display() {
-		this.contentEl.empty();
-		this.messageDistributionRulesDiv = this.contentEl.createDiv();
-		this.messageDistributionRulesDiv.createEl("h4", {
-			text: `${this.editing ? "Editing" : "Adding"} message distribution rule`,
-		});
+		this.addHeader();
 		this.addMessageFilter();
 		this.addTemplateFilePath();
 		this.addNotePathTemplate();
 		this.addFilePathTemplate();
 		this.addMessageSortingMode();
-		this.addVariablesList();
 		this.addFooterButtons();
 	}
+
+	addHeader() {
+		this.contentEl.empty();
+		this.messageDistributionRulesDiv = this.contentEl.createDiv();
+		//this.messageDistributionRulesDiv.createEl("br");
+		this.titleEl.setText(`${this.editing ? "Editing" : "Adding"} message distribution rule`);
+		new Setting(this.messageDistributionRulesDiv).descEl.createEl("a", {
+			text: "🗎 User guide",
+			href: "https://github.com/soberhacker/obsidian-telegram-sync/blob/main/docs/Template%20Variables%20List.md",
+		});
+	}
+
 	addMessageFilter() {
 		const setting = new Setting(this.messageDistributionRulesDiv)
 			.setName("Message filter")
@@ -120,22 +127,8 @@ export class MessageDistributionRulesModal extends Modal {
 		setSettingStyles(setting);
 	}
 
-	addVariablesList() {
-		new Setting(this.messageDistributionRulesDiv)
-			.setName("Variables list")
-			.setDesc("List of variables that are available to use in filters, templates and storage paths")
-			.addButton((btn) => {
-				btn.setButtonText("Open in browser");
-				btn.onClick(() => {
-					window.open(
-						"https://github.com/soberhacker/obsidian-telegram-sync/blob/main/docs/Template%20Variables%20List.md",
-						"_blank",
-					);
-				});
-			});
-	}
-
 	addFooterButtons() {
+		this.messageDistributionRulesDiv.createEl("br");
 		const footerButtons = new Setting(this.contentEl.createDiv());
 		footerButtons.addButton((b) => {
 			b.setTooltip("Submit")
