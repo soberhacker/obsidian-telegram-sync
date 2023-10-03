@@ -38,6 +38,7 @@ export interface MessageDistributionRule {
 	templateFilePath: string;
 	notePathTemplate: string;
 	filePathTemplate: string;
+	reversedSorting: boolean;
 }
 
 export const defaultTelegramFolder = "Telegram";
@@ -51,6 +52,7 @@ export function createDefaultMessageDistributionRule(): MessageDistributionRule 
 		templateFilePath: "",
 		notePathTemplate: `${defaultTelegramFolder}/${defaultNoteNameTemplate}`,
 		filePathTemplate: `${defaultTelegramFolder}/{{file:type}}s/${defaultFileNameTemplate}`,
+		reversedSorting: false,
 	};
 }
 
@@ -61,6 +63,7 @@ export function createBlankMessageDistributionRule(): MessageDistributionRule {
 		templateFilePath: "",
 		notePathTemplate: "",
 		filePathTemplate: "",
+		reversedSorting: false,
 	};
 }
 

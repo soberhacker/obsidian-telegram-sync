@@ -36,6 +36,7 @@ export class MessageDistributionRulesModal extends Modal {
 		this.addTemplateFilePath();
 		this.addNotePathTemplate();
 		this.addFilePathTemplate();
+		this.addMessageSortingMode();
 		this.addVariablesList();
 		this.addFooterButtons();
 	}
@@ -101,6 +102,22 @@ export class MessageDistributionRulesModal extends Modal {
 					.onChange(async (value: string) => {
 						this.messageDistributionRule.filePathTemplate = value;
 					});
+			});
+		setSettingStyles(setting);
+	}
+
+	addMessageSortingMode() {
+		const setting = new Setting(this.messageDistributionRulesDiv);
+		setting
+			.setName("Message sorting")
+			.setDesc(
+				"Turn on this switch if you want to sort messages from new ones to old ones. Leave turned off, if messages should be sorted from older to newer.",
+			)
+			.addToggle((toggle) => {
+				toggle.setValue(this.messageDistributionRule.reversedSorting);
+				toggle.onChange(async (value) => {
+					this.messageDistributionRule.reversedSorting = value;
+				});
 			});
 		setSettingStyles(setting);
 	}

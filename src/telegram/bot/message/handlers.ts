@@ -1,7 +1,7 @@
 /* eslint-disable no-mixed-spaces-and-tabs */
 import TelegramSyncPlugin from "../../../main";
 import TelegramBot from "node-telegram-bot-api";
-import { appendContentToNote, createFolderIfNotExist, getUniqueFilePath } from "src/utils/fsUtils";
+import { appendContentToNote, createFolderIfNotExist, defaultDelimiter, getUniqueFilePath } from "src/utils/fsUtils";
 import * as release from "../../../../release-notes.mjs";
 import { inlineKeyboard as donationInlineKeyboard } from "../../../settings/donation";
 import { SendMessageOptions } from "node-telegram-bot-api";
@@ -142,7 +142,15 @@ export async function handleMessage(
 	const notePath = await applyNotePathTemplate(plugin, distributionRule.notePathTemplate, msg);
 	const noteFolderPath = path.dirname(notePath);
 	createFolderIfNotExist(plugin.app.vault, noteFolderPath);
-	await enqueue(appendContentToNote, plugin.app.vault, notePath, formattedContent);
+	await enqueue(
+		appendContentToNote,
+		plugin.app.vault,
+		notePath,
+		formattedContent,
+		"",
+		plugin.settings.defaultMessageDelimiter ? defaultDelimiter : "",
+		distributionRule.reversedSorting,
+	);
 	await finalizeMessageProcessing(plugin, msg);
 }
 
