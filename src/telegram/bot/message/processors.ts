@@ -92,7 +92,9 @@ export async function applyNoteContentTemplate(
 
 	const itemsForReplacing: [string, string][] = [];
 
-	let processedContent = (await processBasicVariables(plugin, msg, templateContent, textContentMd, fullContent))
+	let processedContent = (
+		await processBasicVariables(plugin, msg, templateContent, textContentMd, fullContent, false)
+	)
 		.replace(/{{file}}/g, allEmbeddedFilesLinks) // TODO in 2024: deprecated, remove
 		.replace(/{{file:link}}/g, allFilesLinks) // TODO in 2024: deprecated, remove
 
@@ -137,7 +139,7 @@ export async function applyNotePathTemplate(
 
 	let processedPath = notePathTemplate.endsWith("/") ? notePathTemplate + defaultNoteNameTemplate : notePathTemplate;
 	let textContentMd = "";
-	if (processedPath.includes("{{content")) textContentMd = await convertMessageTextToMarkdown(msg);
+	if (processedPath.includes("{{content")) textContentMd = sanitizeFileName(await convertMessageTextToMarkdown(msg));
 	processedPath = await processBasicVariables(plugin, msg, processedPath, textContentMd);
 	if (!path.extname(processedPath)) processedPath = processedPath + ".md";
 	if (processedPath.endsWith(".")) processedPath = processedPath + "md";
@@ -172,7 +174,7 @@ export async function processBasicVariables(
 	processThis: string,
 	messageText?: string,
 	messageContent?: string,
-	isPath = false,
+	isPath = true,
 ): Promise<string> {
 	const dateTimeNow = new Date();
 	const messageDateTime = unixTime2Date(msg.date, msg.message_id);
@@ -180,7 +182,10 @@ export async function processBasicVariables(
 
 	let voiceTranscript = "";
 	if (processThis.includes("{{voiceTranscript") && plugin.bot) {
-		voiceTranscript = await Client.transcribeAudio(plugin.bot, msg, await plugin.getBotUser());
+		voiceTranscript = prepareIfPath(
+			isPath,
+			await Client.transcribeAudio(plugin.bot, msg, await plugin.getBotUser()),
+		);
 	}
 
 	const lines = processThis.split("\n");

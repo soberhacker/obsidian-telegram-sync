@@ -283,7 +283,7 @@ export async function handleFiles(
 	}
 
 	if (msg.caption || distributionRule.templateFilePath)
-		await appendFileToNote(plugin, msg, distributionRule, filePath, telegramFileName, error);
+		await appendFileToNote(plugin, msg, distributionRule, filePath, error);
 
 	if (msg.media_group_id && !handleMediaGroupIntervalId)
 		handleMediaGroupIntervalId = setInterval(
@@ -321,7 +321,6 @@ async function appendFileToNote(
 	msg: TelegramBot.Message,
 	distributionRule: MessageDistributionRule,
 	filePath: string,
-	fileName: string,
 	error?: Error,
 ) {
 	let mediaGroup = mediaGroups.find((mg) => mg.id == msg.media_group_id);
