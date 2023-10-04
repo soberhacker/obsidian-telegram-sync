@@ -39,7 +39,6 @@ export class MessageDistributionRulesModal extends Modal {
 	addHeader() {
 		this.contentEl.empty();
 		this.messageDistributionRulesDiv = this.contentEl.createDiv();
-		//this.messageDistributionRulesDiv.createEl("br");
 		this.titleEl.setText(`${this.editing ? "Editing" : "Adding"} message distribution rule`);
 		new Setting(this.messageDistributionRulesDiv).descEl.createEl("a", {
 			text: "🗎 User guide",

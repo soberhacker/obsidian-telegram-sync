@@ -203,6 +203,7 @@ export default class TelegramSyncPlugin extends Plugin {
 				filePathTemplate: this.settings.needToSaveFiles
 					? `${this.settings.newFilesLocation || defaultTelegramFolder}/${defaultFileNameTemplate}`
 					: "",
+				reversedOrder: false,
 			});
 			this.settings.newNotesLocation = "";
 			this.settings.newFilesLocation = "";

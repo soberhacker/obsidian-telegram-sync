@@ -1,6 +1,6 @@
 import TelegramSyncPlugin from "src/main";
 import { App, ButtonComponent, Notice, PluginSettingTab, Setting, TextComponent } from "obsidian";
-import { boostyButton, paypalButton, buyMeACoffeeButton, kofiButton } from "./donation";
+import { boostyButton, paypalButton, buyMeACoffeeButton, kofiButton, insiderChannelLink } from "./buttons";
 import TelegramBot from "node-telegram-bot-api";
 import { createProgressBar, updateProgressBar, deleteProgressBar, ProgressBarType } from "src/telegram/bot/progressBar";
 import * as Client from "src/telegram/user/client";
@@ -81,18 +81,23 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 	botStatusTimeOut: NodeJS.Timeout;
 	botSettingsTimeOut: NodeJS.Timeout;
 	userStatusTimeOut: NodeJS.Timeout;
+	subscribedOnInsiderChannel: boolean;
 
 	constructor(app: App, plugin: TelegramSyncPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
+		this.subscribedOnInsiderChannel = false;
 	}
 
 	async display(): Promise<void> {
+		this.subscribedOnInsiderChannel = await Client.subscribedOnInsiderChannel();
+
 		this.containerEl.empty();
 		this.addSettingsHeader();
 
 		this.addBot();
 		this.addUser();
+		this.addTelegramChannel();
 
 		this.containerEl.createEl("br");
 		this.containerEl.createEl("h2", { text: "Behavior settings" });
@@ -369,8 +374,25 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 			});
 	}
 
+	addTelegramChannel() {
+		if (this.subscribedOnInsiderChannel) return;
+
+		const telegramChannelSetting = new Setting(this.containerEl)
+			.setName("Telegram channel")
+			.setDesc("Get plugin updates, insider tips, beta versions, secrets 🤫 and ")
+			.addButton((btn) => {
+				btn.setButtonText("Subscribe");
+				btn.onClick(() => window.open(insiderChannelLink, "_blank"));
+			});
+		// TODO next: replace "develop" -> "main" before release to prod
+		telegramChannelSetting.descEl.createEl("a", {
+			href: "https://github.com/soberhacker/obsidian-telegram-sync/blob/develop/docs/Telegram%20Sync%20Insider%20Features.md",
+			text: "exclusive features",
+		});
+	}
+
 	async addBetaRelease() {
-		if (!this.plugin.userConnected || !(await Client.subscribedOnInsiderChannel())) return;
+		if (!this.plugin.userConnected || !this.subscribedOnInsiderChannel) return;
 
 		const installed = "Installed\n\nRestart the plugin or Obsidian to apply the changes";
 
@@ -435,7 +457,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 		this.containerEl.createEl("hr");
 
 		const donationDiv = this.containerEl.createEl("div");
-		donationDiv.addClass("telegramSyncSettingsDonationSection");
+		donationDiv.addClass("settings-donation-container");
 
 		const donationText = createEl("p");
 		donationText.appendText(

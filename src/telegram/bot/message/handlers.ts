@@ -3,7 +3,7 @@ import TelegramSyncPlugin from "../../../main";
 import TelegramBot from "node-telegram-bot-api";
 import { appendContentToNote, createFolderIfNotExist, defaultDelimiter, getUniqueFilePath } from "src/utils/fsUtils";
 import * as release from "../../../../release-notes.mjs";
-import { inlineKeyboard as donationInlineKeyboard } from "../../../settings/donation";
+import { donationInlineKeyboard } from "../../../settings/buttons";
 import { SendMessageOptions } from "node-telegram-bot-api";
 import path from "path";
 import * as Client from "../../user/client";
