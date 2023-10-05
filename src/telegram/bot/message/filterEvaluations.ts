@@ -4,7 +4,7 @@ import { getForwardFromName, getTopic } from "./getters";
 import TelegramSyncPlugin from "src/main";
 import * as Client from "src/telegram/user/client";
 
-export function isUserFiltered(msg: TelegramBot.Message, userNameOrId: string): boolean {
+function isUserFiltered(msg: TelegramBot.Message, userNameOrId: string): boolean {
 	if (!msg?.from || !userNameOrId) return false;
 
 	const user = msg.from;
@@ -13,7 +13,7 @@ export function isUserFiltered(msg: TelegramBot.Message, userNameOrId: string): 
 	return [user.username, user.id.toString().slice(4), fullName].includes(userNameOrId);
 }
 
-export function isChatFiltered(msg: TelegramBot.Message, chatNameOrId: string): boolean {
+function isChatFiltered(msg: TelegramBot.Message, chatNameOrId: string): boolean {
 	if (!msg?.chat || !chatNameOrId) return false;
 
 	const chat = msg.chat;
@@ -29,7 +29,7 @@ export function isChatFiltered(msg: TelegramBot.Message, chatNameOrId: string): 
 	return [chatId, chatName].includes(chatNameOrId);
 }
 
-export function isForwardFromFiltered(msg: TelegramBot.Message, forwardFromName: string): boolean {
+function isForwardFromFiltered(msg: TelegramBot.Message, forwardFromName: string): boolean {
 	return forwardFromName == getForwardFromName(msg);
 }
 

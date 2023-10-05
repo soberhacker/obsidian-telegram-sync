@@ -23,7 +23,7 @@ import { getMessageDistributionRule } from "./filterEvaluations";
 import { MessageDistributionRule } from "src/settings/messageDistribution";
 import { unixTime2Date } from "src/utils/dateUtils";
 
-export interface MediaGroup {
+interface MediaGroup {
 	id: string;
 	notePath: string;
 	initialMsg: TelegramBot.Message;
@@ -217,7 +217,7 @@ export async function handleFiles(
 			let stage = 0;
 			// show progress bar only if file size > 3MB
 			const progressBarMessage =
-				totalBytes > _3MB ? await createProgressBar(plugin.bot, msg, ProgressBarType.downloading) : undefined;
+				totalBytes > _3MB ? await createProgressBar(plugin.bot, msg, ProgressBarType.DOWNLOADING) : undefined;
 			try {
 				for await (const chunk of fileStream) {
 					fileChunks.push(new Uint8Array(chunk));

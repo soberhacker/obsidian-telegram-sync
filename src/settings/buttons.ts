@@ -28,15 +28,6 @@ export const donationInlineKeyboard = [
 	],
 ];
 
-export const insiderChannelLink = "https://t.me/+OQ4Jyhd5uaI5MjVk";
-export const insiderChannelImgLink = "https://img.shields.io/badge/Telegram-Channel-blue.svg?logo=telegram";
-export const insiderChannelButton = createButton(insiderChannelLink, insiderChannelImgLink);
-
-export const telegramGroupLink = "https://t.me/ObsidianTelegramSync";
-export const telegramGroupImgLink =
-	"https://img.shields.io/badge/Telegram-Support-red.svg?logo=telegram&logoColor=f5f5f5&color=red";
-export const telegramGroupButton = createButton(telegramGroupLink, telegramGroupImgLink, 30, 155);
-
 function createButton(link: string, imgLink: string, height?: number, width?: number): HTMLElement {
 	const a = createEl("a");
 	a.setAttribute("href", link);

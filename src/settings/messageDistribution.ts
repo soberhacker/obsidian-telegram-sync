@@ -8,7 +8,7 @@ export enum ConditionType {
 	VOICE_TRANSCRIPT = "voiceTranscript",
 }
 
-export enum ConditionOperation {
+enum ConditionOperation {
 	EQUAL = "=",
 	NOT_EQUAL = "!=",
 	CONTAIN = "~",

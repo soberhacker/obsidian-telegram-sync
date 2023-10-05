@@ -2,10 +2,10 @@ import TelegramBot from "node-telegram-bot-api";
 import { checkIfTooManyRequests, isTooManyRequests } from "./tooManyRequests";
 
 export enum ProgressBarType {
-	downloading = "downloading",
-	deleting = "deleting",
-	stored = "stored",
-	transcribing = "transcribing",
+	DOWNLOADING = "downloading",
+	DELETING = "deleting",
+	STORED = "stored",
+	TRANSCRIBING = "transcribing",
 }
 
 export const _3MB = 3 * 1024 * 1024;
@@ -57,7 +57,7 @@ export async function deleteProgressBar(
 	await bot.deleteMessage(msg.chat.id, progressBarMessage.message_id);
 }
 // Create a progress bar keyboard
-export function createProgressBarKeyboard(progress: number) {
+function createProgressBarKeyboard(progress: number) {
 	const progressBar = "▓".repeat(progress) + "░".repeat(10 - progress);
 	return {
 		inline_keyboard: [

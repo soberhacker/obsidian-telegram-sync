@@ -1,12 +1,12 @@
 import TelegramSyncPlugin from "src/main";
 import { App, ButtonComponent, Notice, PluginSettingTab, Setting, TextComponent } from "obsidian";
-import { boostyButton, paypalButton, buyMeACoffeeButton, kofiButton, insiderChannelLink } from "./buttons";
+import { boostyButton, paypalButton, buyMeACoffeeButton, kofiButton } from "./buttons";
 import TelegramBot from "node-telegram-bot-api";
 import { createProgressBar, updateProgressBar, deleteProgressBar, ProgressBarType } from "src/telegram/bot/progressBar";
 import * as Client from "src/telegram/user/client";
 import { BotSettingsModal } from "./BotSettingsModal";
 import { UserLogInModal } from "./UserLogInModal";
-import { version, versionALessThanVersionB } from "release-notes.mjs";
+import { version, versionALessThanVersionB, telegramChannelLink } from "release-notes.mjs";
 import { _15sec, _1sec, _5sec, displayAndLog, doNotHide } from "src/utils/logUtils";
 import { getTopicId } from "src/telegram/bot/message/getters";
 import * as User from "../telegram/user/user";
@@ -382,7 +382,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 			.setDesc("Get plugin updates, insider tips, beta versions, secrets 🤫 and ")
 			.addButton((btn) => {
 				btn.setButtonText("Subscribe");
-				btn.onClick(() => window.open(insiderChannelLink, "_blank"));
+				btn.onClick(() => window.open(telegramChannelLink, "_blank"));
 			});
 		// TODO next: replace "develop" -> "main" before release to prod
 		telegramChannelSetting.descEl.createEl("a", {
@@ -496,7 +496,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 			} else this.plugin.settings.topicNames.push(newTopic);
 			await this.plugin.saveSettings();
 
-			const progressBarMessage = await createProgressBar(bot, msg, ProgressBarType.stored);
+			const progressBarMessage = await createProgressBar(bot, msg, ProgressBarType.STORED);
 
 			// Update the progress bar during the delay
 			let stage = 0;

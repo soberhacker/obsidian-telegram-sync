@@ -68,7 +68,7 @@ export async function reconnect(plugin: TelegramSyncPlugin, displayError = false
 			await displayAndLogError(
 				plugin,
 				error,
-				StatusMessages.userDisconnected,
+				StatusMessages.USER_DISCONNECTED,
 				"Try restore the connection manually by restarting Obsidian or by refresh button in the plugin settings!",
 			);
 		}

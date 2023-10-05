@@ -98,7 +98,7 @@ export function base64ToString(base64: string): string {
 	return Buffer.from(base64, "base64").toString("utf-8");
 }
 
-export function truncatePathComponents(filePath: string, maxLength = 200): string {
+function truncatePathComponents(filePath: string, maxLength = 200): string {
 	const parsedPath = path.parse(filePath);
 
 	// Split the path into its components (folders, subfolders, etc.)

@@ -3,7 +3,7 @@ import LinkifyIt from "linkify-it";
 import TelegramSyncPlugin from "src/main";
 import { Topic } from "src/settings/Settings";
 
-export const fileTypes = ["photo", "video", "voice", "document", "audio", "video_note"];
+const fileTypes = ["photo", "video", "voice", "document", "audio", "video_note"];
 
 export function getForwardFromName(msg: TelegramBot.Message): string {
 	let forwardFromName = "";
