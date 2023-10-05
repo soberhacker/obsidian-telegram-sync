@@ -190,10 +190,11 @@ export async function processBasicVariables(
 
 	const lines = processThis.split("\n");
 	for (let i = 0; i < lines.length; i++) {
-		const line = lines[i];
+		let line = lines[i];
 
 		if (line.includes("{{content")) {
 			lines[i] = pasteText(plugin, "content", line, messageContent || messageText || "", messageText || "");
+			line = lines[i];
 		}
 
 		if (line.includes("{{voiceTranscript")) {
