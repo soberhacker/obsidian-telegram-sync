@@ -6,6 +6,7 @@ export const version = "2.0.0";
 // TODO getting messages one by one instead of parallel processing
 // TODO add messagesLeftCnt displaying in status bar
 // TODO translating messages
+// TODO fix {{chat}} to provide bot names instead user names https://t.me/ObsidianTelegramSync/421
 // TODO add Demo gif and screenshots to readme.md
 // ## Demo gif example
 //![](https://raw.githubusercontent.com/vslinko/obsidian-outliner/main/demos/demo1.gif)<br>
