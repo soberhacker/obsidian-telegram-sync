@@ -72,6 +72,16 @@ export function getChatName(msg: TelegramBot.Message, botUser?: TelegramBot.User
 	return chatName;
 }
 
+export function getChatId(msg: TelegramBot.Message, botUser?: TelegramBot.User): string {
+	let chatId = "";
+	if (botUser?.username && msg.chat.id == msg.from?.id) {
+		chatId = botUser.id.toString();
+	} else {
+		chatId = msg.chat.id.toString();
+	}
+	return chatId;
+}
+
 export function getChatLink(msg: TelegramBot.Message, botUser?: TelegramBot.User): string {
 	let userName = "";
 	if (botUser?.username && msg.chat.id == msg.from?.id) {

@@ -1,6 +1,7 @@
 import TelegramBot from "node-telegram-bot-api";
 import TelegramSyncPlugin from "../../../main";
 import {
+	getChatId,
 	getChatLink,
 	getChatName,
 	getForwardFromLink,
@@ -217,9 +218,9 @@ export async function processBasicVariables(
 			prepareIfPath(isPath, `${msg.from?.first_name} ${msg.from?.last_name || ""}`.trim()),
 		)
 		.replace(/{{userId}}/g, msg.from?.id.toString() || msg.message_id.toString()) // id of the user who sent the message
-		.replace(/{{chat}}/g, getChatLink(msg)) // link to the chat with the message
-		.replace(/{{chatId}}/g, msg.chat.id.toString()) // id of the chat with the message
-		.replace(/{{chat:name}}/g, prepareIfPath(isPath, getChatName(msg))) // name of the chat (bot / group / channel)
+		.replace(/{{chat}}/g, getChatLink(msg, plugin.botUser)) // link to the chat with the message
+		.replace(/{{chatId}}/g, getChatId(msg, plugin.botUser)) // id of the chat with the message
+		.replace(/{{chat:name}}/g, prepareIfPath(isPath, getChatName(msg, plugin.botUser))) // name of the chat (bot / group / channel)
 		.replace(/{{topic}}/g, await getTopicLink(plugin, msg)) // link to the topic with the message
 		.replace(/{{topic:name}}/g, prepareIfPath(isPath, (await getTopic(plugin, msg))?.name || "")) // link to the topic with the message
 		.replace(/{{topicId}}/g, getTopicId(msg)?.toString() || "") // head message id representing the topic
