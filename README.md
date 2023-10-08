@@ -12,7 +12,7 @@
 
 Transfer messages and files from [Telegram](https://telegram.org/) to your [Obsidian](https://obsidian.md/plugins?id=telegram-sync) vault. You can easily save text, voice transcripts, images, and other files from your Telegram chats to Obsidian for further processing and organization. This plugin is only available for desktops and would never be available on mobile platforms.
 
-![PreviewSmall_resized](https://github.com/soberhacker/obsidian-telegram-sync/assets/128756825/e592230e-5ff4-4eee-bbfe-2ef150be947c)
+![PreviewSmall](https://github.com/soberhacker/obsidian-telegram-sync/assets/128756825/1abc4929-1ea4-4295-a5d5-a64018935ad5)
 
 ---
 
