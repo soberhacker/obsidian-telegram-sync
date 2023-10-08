@@ -1,15 +1,13 @@
 import { compareVersions } from "compare-versions";
 
-export const version = "2.0.0";
-// TODO notify in setting that new beta version is ready for installing
-// TODO logging what distribution rule was selected
-// TODO getting messages one by one instead of parallel processing
-// TODO add messagesLeftCnt displaying in status bar
-// TODO translating messages
+export const version = "2.1.0";
 // TODO fix {{chat}} to provide bot names instead user names https://t.me/ObsidianTelegramSync/421
-// TODO add Demo gif and screenshots to readme.md
-// ## Demo gif example
-//![](https://raw.githubusercontent.com/vslinko/obsidian-outliner/main/demos/demo1.gif)<br>
+// TODO getting messages one by one instead of parallel processing
+// TODO logging what distribution rule was selected
+
+// TODO translating messages
+// TODO notify in setting that new beta version is ready for installing
+// TODO add messagesLeftCnt displaying in status bar
 export const showNewFeatures = true;
 export let showBreakingChanges = false;
 
