@@ -16,7 +16,7 @@ const newFeatures =
 export const breakingChanges =
 	"⚠️ <b><i>Due to breaking changes, it is better to check all plugin settings again! Apologies</i></b> ⚠️";
 
-export const telegramChannelLink = "https://t.me/+FJ2zDTyyFM0yMGZk";
+export const telegramChannelLink = "https://t.me/+J23BEZyLgoYzOTBk";
 const telegramChannelAHref = `<a href='${telegramChannelLink}'>channel</a>`;
 const telegramChannelIntroduction = `Subscribe to the plugin's ${telegramChannelAHref} to not only silence these informational messages in your bot, but also to be the first to get all the latest updates and a complete list of new features.`;
 const telegramChatLink = "<a href='https://t.me/ObsidianTelegramSync'>chat</a>";
