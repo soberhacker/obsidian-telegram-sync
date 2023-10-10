@@ -1,10 +1,10 @@
-.telegramSyncSettingsDonationSection {
-    width: 80%;
-    height: 50vh;
-    margin: 0 auto;
-    text-align: center;
-    color: var(--text-normal);
-  }
+.settings-donation-container {
+	width: 80%;
+	height: 50vh;
+	margin: 0 auto;
+	text-align: center;
+	color: var(--text-normal);
+}
 .my-custom-list-item {
 	padding-top: 0;
 	padding-bottom: 0;
@@ -12,4 +12,3 @@
 	margin-top: 0;
 	margin-bottom: 0;
 }
-

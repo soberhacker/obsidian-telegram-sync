@@ -4,7 +4,7 @@ import * as Client from "src/telegram/user/client";
 import * as User from "src/telegram/user/user";
 
 export class UserLogInModal extends Modal {
-	botSettingsDiv: HTMLDivElement;
+	userLoginDiv: HTMLDivElement;
 	qrCodeContainer: HTMLDivElement;
 	password = "";
 	constructor(public plugin: TelegramSyncPlugin) {
@@ -12,9 +12,7 @@ export class UserLogInModal extends Modal {
 	}
 
 	async display() {
-		this.contentEl.empty();
-		this.botSettingsDiv = this.contentEl.createDiv();
-		this.botSettingsDiv.createEl("h4", { text: "User authorization" });
+		this.addHeader();
 		this.addPassword();
 		this.addScanner();
 		this.addQrCode();
@@ -22,8 +20,14 @@ export class UserLogInModal extends Modal {
 		this.addFooterButtons();
 	}
 
+	addHeader() {
+		this.contentEl.empty();
+		this.userLoginDiv = this.contentEl.createDiv();
+		this.titleEl.setText("User authorization");
+	}
+
 	addPassword() {
-		new Setting(this.botSettingsDiv)
+		new Setting(this.userLoginDiv)
 			.setName("1. Enter password (optionally)")
 			.setDesc(
 				"Enter your password before scanning QR code only if you use two-step authorization. Password will not be stored",
@@ -38,13 +42,13 @@ export class UserLogInModal extends Modal {
 	}
 
 	addScanner() {
-		new Setting(this.botSettingsDiv)
+		new Setting(this.userLoginDiv)
 			.setName("2. Prepare QR code scanner")
 			.setDesc("Open Telegram on your phone. Go to Settings > Devices > Link Desktop Device");
 	}
 
 	addQrCode() {
-		new Setting(this.botSettingsDiv)
+		new Setting(this.userLoginDiv)
 			.setName("3. Generate & scan QR code")
 			.setDesc(`Generate QR code and point your phone at it to confirm login`)
 			.addButton((b) => {
@@ -63,19 +67,20 @@ export class UserLogInModal extends Modal {
 					}
 				});
 			});
-		this.qrCodeContainer = this.botSettingsDiv.createDiv({
+		this.qrCodeContainer = this.userLoginDiv.createDiv({
 			cls: "qr-code-container",
 		});
 	}
 
 	addCheck() {
-		new Setting(this.botSettingsDiv)
+		new Setting(this.userLoginDiv)
 			.setName("4. Check active sessions")
 			.setDesc(
 				`If the login is successful, you will find the 'Obsidian Telegram Sync' session in the list of active sessions. If you find it in the list of inactive sessions, then you have probably entered the wrong password`,
 			);
 	}
 	addFooterButtons() {
+		this.userLoginDiv.createEl("br");
 		const footerButtons = new Setting(this.contentEl.createDiv());
 		footerButtons.addButton((b) => {
 			b.setIcon("checkmark");

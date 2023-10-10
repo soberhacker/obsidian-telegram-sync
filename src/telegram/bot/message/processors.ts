@@ -1,6 +1,7 @@
 import TelegramBot from "node-telegram-bot-api";
 import TelegramSyncPlugin from "../../../main";
 import {
+	getChatId,
 	getChatLink,
 	getChatName,
 	getForwardFromLink,
@@ -92,7 +93,9 @@ export async function applyNoteContentTemplate(
 
 	const itemsForReplacing: [string, string][] = [];
 
-	let processedContent = (await processBasicVariables(plugin, msg, templateContent, textContentMd, fullContent))
+	let processedContent = (
+		await processBasicVariables(plugin, msg, templateContent, textContentMd, fullContent, false)
+	)
 		.replace(/{{file}}/g, allEmbeddedFilesLinks) // TODO in 2024: deprecated, remove
 		.replace(/{{file:link}}/g, allFilesLinks) // TODO in 2024: deprecated, remove
 
@@ -137,7 +140,7 @@ export async function applyNotePathTemplate(
 
 	let processedPath = notePathTemplate.endsWith("/") ? notePathTemplate + defaultNoteNameTemplate : notePathTemplate;
 	let textContentMd = "";
-	if (processedPath.includes("{{content")) textContentMd = await convertMessageTextToMarkdown(msg);
+	if (processedPath.includes("{{content")) textContentMd = sanitizeFileName(await convertMessageTextToMarkdown(msg));
 	processedPath = await processBasicVariables(plugin, msg, processedPath, textContentMd);
 	if (!path.extname(processedPath)) processedPath = processedPath + ".md";
 	if (processedPath.endsWith(".")) processedPath = processedPath + "md";
@@ -172,7 +175,7 @@ export async function processBasicVariables(
 	processThis: string,
 	messageText?: string,
 	messageContent?: string,
-	isPath = false,
+	isPath = true,
 ): Promise<string> {
 	const dateTimeNow = new Date();
 	const messageDateTime = unixTime2Date(msg.date, msg.message_id);
@@ -180,15 +183,19 @@ export async function processBasicVariables(
 
 	let voiceTranscript = "";
 	if (processThis.includes("{{voiceTranscript") && plugin.bot) {
-		voiceTranscript = await Client.transcribeAudio(plugin.bot, msg, await plugin.getBotUser());
+		voiceTranscript = prepareIfPath(
+			isPath,
+			await Client.transcribeAudio(plugin.bot, msg, await plugin.getBotUser()),
+		);
 	}
 
 	const lines = processThis.split("\n");
 	for (let i = 0; i < lines.length; i++) {
-		const line = lines[i];
+		let line = lines[i];
 
 		if (line.includes("{{content")) {
 			lines[i] = pasteText(plugin, "content", line, messageContent || messageText || "", messageText || "");
+			line = lines[i];
 		}
 
 		if (line.includes("{{voiceTranscript")) {
@@ -211,9 +218,9 @@ export async function processBasicVariables(
 			prepareIfPath(isPath, `${msg.from?.first_name} ${msg.from?.last_name || ""}`.trim()),
 		)
 		.replace(/{{userId}}/g, msg.from?.id.toString() || msg.message_id.toString()) // id of the user who sent the message
-		.replace(/{{chat}}/g, getChatLink(msg)) // link to the chat with the message
-		.replace(/{{chatId}}/g, msg.chat.id.toString()) // id of the chat with the message
-		.replace(/{{chat:name}}/g, prepareIfPath(isPath, getChatName(msg))) // name of the chat (bot / group / channel)
+		.replace(/{{chat}}/g, getChatLink(msg, plugin.botUser)) // link to the chat with the message
+		.replace(/{{chatId}}/g, getChatId(msg, plugin.botUser)) // id of the chat with the message
+		.replace(/{{chat:name}}/g, prepareIfPath(isPath, getChatName(msg, plugin.botUser))) // name of the chat (bot / group / channel)
 		.replace(/{{topic}}/g, await getTopicLink(plugin, msg)) // link to the topic with the message
 		.replace(/{{topic:name}}/g, prepareIfPath(isPath, (await getTopic(plugin, msg))?.name || "")) // link to the topic with the message
 		.replace(/{{topicId}}/g, getTopicId(msg)?.toString() || "") // head message id representing the topic

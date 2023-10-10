@@ -48,7 +48,7 @@ export function clearCachedMessagesInterval() {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function getMediaId(media: any): bigint | undefined {
+function getMediaId(media: any): bigint | undefined {
 	if (!media) return undefined;
 	if (media.document && media.document.id) return media.document.id;
 	if (media.photo && media.photo.id) return media.photo.id;

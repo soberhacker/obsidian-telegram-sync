@@ -12,13 +12,26 @@ export class BotSettingsModal extends Modal {
 	}
 
 	async display() {
-		this.contentEl.empty();
-		this.botSettingsDiv = this.contentEl.createDiv();
-		this.botSettingsDiv.createEl("h4", { text: "Bot settings" });
+		this.addHeader();
 		this.addBotToken();
 		this.addAllowedChatsSetting();
 		this.addDeviceId();
 		this.addFooterButtons();
+	}
+
+	addHeader() {
+		this.contentEl.empty();
+		this.botSettingsDiv = this.contentEl.createDiv();
+		this.titleEl.setText("Bot settings");
+		const limitations = new Setting(this.botSettingsDiv).setDesc("⚠ Limitations of Telegram bot:");
+		const lim24Hours = document.createElement("div");
+		lim24Hours.setText("- It can get and delete only messages sent within the last 24 hours");
+		lim24Hours.style.marginLeft = "10px";
+		const limBlocks = document.createElement("div");
+		limBlocks.style.marginLeft = "10px";
+		limBlocks.setText("- Use VPN or proxy to bypass blocks in China, Iran, and some corporate networks");
+		limitations.descEl.appendChild(lim24Hours);
+		limitations.descEl.appendChild(limBlocks);
 	}
 
 	addBotToken() {
@@ -106,6 +119,7 @@ export class BotSettingsModal extends Modal {
 	}
 
 	addFooterButtons() {
+		this.botSettingsDiv.createEl("br");
 		const footerButtons = new Setting(this.contentEl.createDiv());
 		footerButtons.addButton((b) => {
 			b.setTooltip("Connect")

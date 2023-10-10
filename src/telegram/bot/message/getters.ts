@@ -3,7 +3,7 @@ import LinkifyIt from "linkify-it";
 import TelegramSyncPlugin from "src/main";
 import { Topic } from "src/settings/Settings";
 
-export const fileTypes = ["photo", "video", "voice", "document", "audio", "video_note"];
+const fileTypes = ["photo", "video", "voice", "document", "audio", "video_note"];
 
 export function getForwardFromName(msg: TelegramBot.Message): string {
 	let forwardFromName = "";
@@ -60,9 +60,11 @@ export function getUserLink(msg: TelegramBot.Message): string {
 	return `[${fullName}](https://t.me/${username})`;
 }
 
-export function getChatName(msg: TelegramBot.Message): string {
+export function getChatName(msg: TelegramBot.Message, botUser?: TelegramBot.User): string {
 	let chatName = "";
-	if (msg.chat.type == "private") {
+	if (botUser?.username && msg.chat.id == msg.from?.id) {
+		chatName = `${botUser.first_name} ${botUser.last_name || ""}`.trim() || botUser.username;
+	} else if (msg.chat.type == "private") {
 		chatName = `${msg.chat.first_name} ${msg.chat.last_name || ""}`.trim();
 	} else {
 		chatName = msg.chat.title || msg.chat.type + msg.chat.id;
@@ -70,9 +72,21 @@ export function getChatName(msg: TelegramBot.Message): string {
 	return chatName;
 }
 
-export function getChatLink(msg: TelegramBot.Message): string {
+export function getChatId(msg: TelegramBot.Message, botUser?: TelegramBot.User): string {
+	let chatId = "";
+	if (botUser?.username && msg.chat.id == msg.from?.id) {
+		chatId = botUser.id.toString();
+	} else {
+		chatId = msg.chat.id.toString();
+	}
+	return chatId;
+}
+
+export function getChatLink(msg: TelegramBot.Message, botUser?: TelegramBot.User): string {
 	let userName = "";
-	if (msg.chat.type == "private") {
+	if (botUser?.username && msg.chat.id == msg.from?.id) {
+		userName = botUser?.username;
+	} else if (msg.chat.type == "private") {
 		userName = msg.chat.username || "no_username_" + msg.chat.id.toString().slice(4);
 	} else {
 		const threadId = msg.chat.is_forum
@@ -82,7 +96,7 @@ export function getChatLink(msg: TelegramBot.Message): string {
 		userName = msg.chat.username || `c/${chatId}/${threadId}/${msg.message_id}`;
 		userName = userName.replace(/\/\//g, "/"); // because threadId can be empty
 	}
-	const chatName = getChatName(msg);
+	const chatName = getChatName(msg, botUser);
 	const chatLink = `[${chatName}](https://t.me/${userName})`;
 	return chatLink;
 }

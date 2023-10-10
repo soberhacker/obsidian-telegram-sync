@@ -1,12 +1,12 @@
 import TelegramSyncPlugin from "src/main";
 import { App, ButtonComponent, Notice, PluginSettingTab, Setting, TextComponent } from "obsidian";
-import { boostyButton, paypalButton, buyMeACoffeeButton, kofiButton } from "./donation";
+import { nowPaymentsButton, paypalButton, buyMeACoffeeButton, kofiButton } from "./buttons";
 import TelegramBot from "node-telegram-bot-api";
 import { createProgressBar, updateProgressBar, deleteProgressBar, ProgressBarType } from "src/telegram/bot/progressBar";
 import * as Client from "src/telegram/user/client";
 import { BotSettingsModal } from "./BotSettingsModal";
 import { UserLogInModal } from "./UserLogInModal";
-import { version, versionALessThanVersionB } from "release-notes.mjs";
+import { version, versionALessThanVersionB, telegramChannelLink } from "release-notes.mjs";
 import { _15sec, _1sec, _5sec, displayAndLog, doNotHide } from "src/utils/logUtils";
 import { getTopicId } from "src/telegram/bot/message/getters";
 import * as User from "../telegram/user/user";
@@ -49,6 +49,7 @@ export interface TelegramSyncSettings {
 	connectionStatusIndicatorType: KeysOfConnectionStatusIndicatorType;
 	cacheCleanupAtStartup: boolean;
 	messageDistributionRules: MessageDistributionRule[];
+	defaultMessageDelimiter: boolean;
 	// add new settings above this line
 	topicNames: Topic[];
 }
@@ -71,6 +72,7 @@ export const DEFAULT_SETTINGS: TelegramSyncSettings = {
 	connectionStatusIndicatorType: "CONSTANT",
 	cacheCleanupAtStartup: false,
 	messageDistributionRules: [createDefaultMessageDistributionRule()],
+	defaultMessageDelimiter: true,
 	// add new settings above this line
 	topicNames: [],
 };
@@ -79,24 +81,29 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 	botStatusTimeOut: NodeJS.Timeout;
 	botSettingsTimeOut: NodeJS.Timeout;
 	userStatusTimeOut: NodeJS.Timeout;
+	subscribedOnInsiderChannel: boolean;
 
 	constructor(app: App, plugin: TelegramSyncPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
+		this.subscribedOnInsiderChannel = false;
 	}
 
 	async display(): Promise<void> {
+		this.subscribedOnInsiderChannel = await Client.subscribedOnInsiderChannel();
+
 		this.containerEl.empty();
 		this.addSettingsHeader();
 
 		this.addBot();
 		this.addUser();
+		this.addTelegramChannel();
 
 		this.containerEl.createEl("br");
 		this.containerEl.createEl("h2", { text: "Behavior settings" });
 		this.addDeleteMessagesFromTelegram();
+		this.addMessageDelimiterSetting();
 		this.addMessageDistributionRules();
-
 		this.containerEl.createEl("br");
 		this.containerEl.createEl("h2", { text: "System settings" });
 		await this.addBetaRelease();
@@ -264,6 +271,18 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 			text: "a few secondary features",
 		});
 	}
+	addMessageDelimiterSetting() {
+		new Setting(this.containerEl)
+			.setName(`Default delimiter "***" between messages`)
+			.setDesc("Turn off this setting to use a custom delimiter, which you can set in the template file")
+			.addToggle((toggle) => {
+				toggle.setValue(this.plugin.settings.defaultMessageDelimiter);
+				toggle.onChange(async (value) => {
+					this.plugin.settings.defaultMessageDelimiter = value;
+					await this.plugin.saveSettings();
+				});
+			});
+	}
 	addMessageDistributionRules() {
 		const messageDistributionSetting = new Setting(this.containerEl);
 		messageDistributionSetting
@@ -355,8 +374,24 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 			});
 	}
 
+	addTelegramChannel() {
+		if (this.subscribedOnInsiderChannel) return;
+
+		const telegramChannelSetting = new Setting(this.containerEl)
+			.setName("Telegram channel")
+			.setDesc("Get plugin updates, insider tips, beta versions, secrets 🤫 and ")
+			.addButton((btn) => {
+				btn.setButtonText("Subscribe");
+				btn.onClick(() => window.open(telegramChannelLink, "_blank"));
+			});
+		telegramChannelSetting.descEl.createEl("a", {
+			href: "https://github.com/soberhacker/obsidian-telegram-sync/blob/main/docs/Telegram%20Sync%20Insider%20Features.md",
+			text: "exclusive features",
+		});
+	}
+
 	async addBetaRelease() {
-		if (!this.plugin.userConnected || !(await Client.subscribedOnInsiderChannel())) return;
+		if (!this.plugin.userConnected || !this.subscribedOnInsiderChannel) return;
 
 		const installed = "Installed\n\nRestart the plugin or Obsidian to apply the changes";
 
@@ -421,7 +456,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 		this.containerEl.createEl("hr");
 
 		const donationDiv = this.containerEl.createEl("div");
-		donationDiv.addClass("telegramSyncSettingsDonationSection");
+		donationDiv.addClass("settings-donation-container");
 
 		const donationText = createEl("p");
 		donationText.appendText(
@@ -429,8 +464,8 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 		);
 		donationDiv.appendChild(donationText);
 
-		boostyButton.style.marginRight = "20px";
-		donationDiv.appendChild(boostyButton);
+		nowPaymentsButton.style.marginRight = "20px";
+		donationDiv.appendChild(nowPaymentsButton);
 		buyMeACoffeeButton.style.marginRight = "20px";
 		donationDiv.appendChild(buyMeACoffeeButton);
 		donationDiv.appendChild(createEl("p"));
@@ -460,7 +495,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 			} else this.plugin.settings.topicNames.push(newTopic);
 			await this.plugin.saveSettings();
 
-			const progressBarMessage = await createProgressBar(bot, msg, ProgressBarType.stored);
+			const progressBarMessage = await createProgressBar(bot, msg, ProgressBarType.STORED);
 
 			// Update the progress bar during the delay
 			let stage = 0;

@@ -7,13 +7,13 @@ import TelegramSyncPlugin from "src/main";
 export class FileSuggest extends TextInputSuggest<TFile> {
 	constructor(
 		public inputEl: HTMLInputElement,
-		private plugin: TelegramSyncPlugin,
+		public plugin: TelegramSyncPlugin,
 	) {
 		super(inputEl);
 	}
 
 	getSuggestions(input_str: string): TFile[] {
-		const all_files = app.vault.getAllLoadedFiles();
+		const all_files = this.plugin.app.vault.getAllLoadedFiles();
 
 		if (!all_files) {
 			return [];

@@ -70,8 +70,8 @@ Big thanks to everyone who's already been supporting this project - you rock!
 <div align="center">
 If you like this plugin and are considering donating 🌠 to support continued development, use the buttons below.<br><br>
 
-<a href="https://boosty.to/soberhacker/donate">
-<img src="https://img.buymeacoffee.com/button-api/?text=boosty&emoji=💰&slug=soberhacker&button_colour=f17d1e&font_colour=000000&font_family=Bree&outline_colour=000000&coffee_colour=FFDD00" width=155 height=91>
+<a href="https://nowpayments.io/donation?api_key=JMM7NE1-M4X4JY6-N8EK1GJ-H8XQXFK">
+<img src="https://img.buymeacoffee.com/button-api/?text=Cryptocurrency&emoji=%F0%9F%9A%80&slug=soberhacker&button_colour=e38215&font_colour=FFFFFF&font_family=Bree&outline_colour=000000&coffee_colour=FFDD00" width=235 height=91>
 </a>&nbsp;&nbsp;<a href="https://www.buymeacoffee.com/soberhacker">
 <img src="https://img.buymeacoffee.com/button-api/?text=Buy%20me%20a%20coffee&emoji=%E2%98%95&slug=soberhacker&button_colour=5F7FFF&font_colour=ffffff&font_family=Cookie&outline_colour=000000&coffee_colour=FFFFFF"  width=235 height=91>
 </a><br>

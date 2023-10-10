@@ -1,9 +1,9 @@
 /* eslint-disable no-mixed-spaces-and-tabs */
 import TelegramSyncPlugin from "../../../main";
 import TelegramBot from "node-telegram-bot-api";
-import { appendContentToNote, createFolderIfNotExist, getUniqueFilePath } from "src/utils/fsUtils";
+import { appendContentToNote, createFolderIfNotExist, defaultDelimiter, getUniqueFilePath } from "src/utils/fsUtils";
 import * as release from "../../../../release-notes.mjs";
-import { inlineKeyboard as donationInlineKeyboard } from "../../../settings/donation";
+import { donationInlineKeyboard } from "../../../settings/buttons";
 import { SendMessageOptions } from "node-telegram-bot-api";
 import path from "path";
 import * as Client from "../../user/client";
@@ -23,7 +23,7 @@ import { getMessageDistributionRule } from "./filterEvaluations";
 import { MessageDistributionRule } from "src/settings/messageDistribution";
 import { unixTime2Date } from "src/utils/dateUtils";
 
-export interface MediaGroup {
+interface MediaGroup {
 	id: string;
 	notePath: string;
 	initialMsg: TelegramBot.Message;
@@ -142,7 +142,15 @@ export async function handleMessage(
 	const notePath = await applyNotePathTemplate(plugin, distributionRule.notePathTemplate, msg);
 	const noteFolderPath = path.dirname(notePath);
 	createFolderIfNotExist(plugin.app.vault, noteFolderPath);
-	await enqueue(appendContentToNote, plugin.app.vault, notePath, formattedContent);
+	await enqueue(
+		appendContentToNote,
+		plugin.app.vault,
+		notePath,
+		formattedContent,
+		"",
+		plugin.settings.defaultMessageDelimiter ? defaultDelimiter : "",
+		distributionRule.reversedOrder,
+	);
 	await finalizeMessageProcessing(plugin, msg);
 }
 
@@ -209,7 +217,7 @@ export async function handleFiles(
 			let stage = 0;
 			// show progress bar only if file size > 3MB
 			const progressBarMessage =
-				totalBytes > _3MB ? await createProgressBar(plugin.bot, msg, ProgressBarType.downloading) : undefined;
+				totalBytes > _3MB ? await createProgressBar(plugin.bot, msg, ProgressBarType.DOWNLOADING) : undefined;
 			try {
 				for await (const chunk of fileStream) {
 					fileChunks.push(new Uint8Array(chunk));
@@ -275,7 +283,7 @@ export async function handleFiles(
 	}
 
 	if (msg.caption || distributionRule.templateFilePath)
-		await appendFileToNote(plugin, msg, distributionRule, filePath, telegramFileName, error);
+		await appendFileToNote(plugin, msg, distributionRule, filePath, error);
 
 	if (msg.media_group_id && !handleMediaGroupIntervalId)
 		handleMediaGroupIntervalId = setInterval(
@@ -313,7 +321,6 @@ async function appendFileToNote(
 	msg: TelegramBot.Message,
 	distributionRule: MessageDistributionRule,
 	filePath: string,
-	fileName: string,
 	error?: Error,
 ) {
 	let mediaGroup = mediaGroups.find((mg) => mg.id == msg.media_group_id);

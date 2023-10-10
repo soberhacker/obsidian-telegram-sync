@@ -203,6 +203,7 @@ export default class TelegramSyncPlugin extends Plugin {
 				filePathTemplate: this.settings.needToSaveFiles
 					? `${this.settings.newFilesLocation || defaultTelegramFolder}/${defaultFileNameTemplate}`
 					: "",
+				reversedOrder: false,
 			});
 			this.settings.newNotesLocation = "";
 			this.settings.newFilesLocation = "";
@@ -248,8 +249,8 @@ export default class TelegramSyncPlugin extends Plugin {
 		this.botStatus = status;
 		this.connectionStatusIndicator?.update(error);
 
-		if (this.isBotConnected()) displayAndLog(this, StatusMessages.botConnected, 0);
-		else if (!error) displayAndLog(this, StatusMessages.botDisconnected, 0);
-		else displayAndLogError(this, error, StatusMessages.botDisconnected, checkConnectionMessage, undefined, 0);
+		if (this.isBotConnected()) displayAndLog(this, StatusMessages.BOT_CONNECTED, 0);
+		else if (!error) displayAndLog(this, StatusMessages.BOT_DISCONNECTED, 0);
+		else displayAndLogError(this, error, StatusMessages.BOT_DISCONNECTED, checkConnectionMessage, undefined, 0);
 	}
 }

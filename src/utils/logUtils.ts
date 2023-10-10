@@ -16,9 +16,9 @@ export const doNotHide = 24 * _1h;
 
 // TODO: connect with ConnectionStatus
 export enum StatusMessages {
-	botConnected = "Telegram bot is connected!",
-	botDisconnected = "Telegram bot is disconnected!",
-	userDisconnected = "Telegram user is disconnected!",
+	BOT_CONNECTED = "Telegram bot is connected!",
+	BOT_DISCONNECTED = "Telegram bot is disconnected!",
+	USER_DISCONNECTED = "Telegram user is disconnected!",
 }
 
 interface PersistentNotice {
@@ -34,10 +34,10 @@ export function displayAndLog(plugin: TelegramSyncPlugin, message: string, timeo
 	if (timeout == 0) return;
 	const notice = new Notice(message, timeout || doNotHide);
 
-	const hideBotDisconnectedMessages = message.contains(StatusMessages.botConnected);
+	const hideBotDisconnectedMessages = message.contains(StatusMessages.BOT_CONNECTED);
 	persistentNotices = persistentNotices.filter((persistentNotice) => {
 		const shouldHide =
-			(hideBotDisconnectedMessages && persistentNotice.message.contains(StatusMessages.botDisconnected)) ||
+			(hideBotDisconnectedMessages && persistentNotice.message.contains(StatusMessages.BOT_DISCONNECTED)) ||
 			persistentNotice.message == message;
 		if (shouldHide) {
 			persistentNotice.notice.hide();

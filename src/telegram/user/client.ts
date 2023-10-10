@@ -58,6 +58,7 @@ export async function init(sessionId: number, sessionType: SessionType, deviceId
 	if (!client || _sessionType !== sessionType || _sessionId !== sessionId) {
 		await stop();
 		const logger = new Logger(LogLevel.ERROR);
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		logger.log = (level, message, color) => {
 			console.log(`Telegram Sync: Error with user connection -> ${message}`);
 			// TODO: add user connection status checking and setting by controlling error and info logs
@@ -160,6 +161,7 @@ export async function signInAsUserWithQrCode(container: HTMLDivElement, password
 					}
 					container.appendChild(svg);
 				},
+				// eslint-disable-next-line @typescript-eslint/no-unused-vars
 				password: async (hint) => {
 					return password ? password : "";
 				},
@@ -209,7 +211,7 @@ export async function downloadMedia(
 	}
 
 	const progressBarMessage =
-		fileSize > _3MB ? await createProgressBar(bot, botMsg, ProgressBarType.downloading) : undefined;
+		fileSize > _3MB ? await createProgressBar(bot, botMsg, ProgressBarType.DOWNLOADING) : undefined;
 	return await checkedClient
 		.downloadMedia(message || convertBotFileToMessageMedia(fileId || "", fileSize), {
 			progressCallback: async (receivedBytes, totalBytes) => {
@@ -271,7 +273,7 @@ export async function transcribeAudio(
 	let transcribedAudio: Api.messages.TranscribedAudio | undefined;
 
 	let stage = 0;
-	const progressBarMessage = await createProgressBar(bot, botMsg, ProgressBarType.transcribing);
+	const progressBarMessage = await createProgressBar(bot, botMsg, ProgressBarType.TRANSCRIBING);
 	try {
 		// to avoid endless loop, limited waiting
 		for (let i = 1; i <= limit * 14; i++) {

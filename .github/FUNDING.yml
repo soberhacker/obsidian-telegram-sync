@@ -1,3 +1,8 @@
 github: soberhacker
 ko_fi: soberhacker
-custom: ["https://www.buymeacoffee.com/soberhacker", "https://www.paypal.com/donate/?hosted_button_id=VYSCUZX8MYGCU", "https://boosty.to/soberhacker/donate"]
+custom:
+    [
+        "https://www.buymeacoffee.com/soberhacker",
+        "https://www.paypal.com/donate/?hosted_button_id=VYSCUZX8MYGCU",
+        "https://nowpayments.io/donation?api_key=JMM7NE1-M4X4JY6-N8EK1GJ-H8XQXFK",
+    ]
