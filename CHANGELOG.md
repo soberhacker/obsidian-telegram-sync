@@ -1,6 +1,22 @@
 # Changelog
 
 
+## [2.1.0](https://github.com/soberhacker/obsidian-telegram-sync/compare/2.0.0...2.1.0) (2023-10-10)
+
+
+### Features
+
+* message appending order and delimiters ([59ee79a](https://github.com/soberhacker/obsidian-telegram-sync/commit/59ee79aff77c20719c6d83e58c8bd4468ac6a0d3))
+* message appending order and delimiters ([59ee79a](https://github.com/soberhacker/obsidian-telegram-sync/commit/59ee79aff77c20719c6d83e58c8bd4468ac6a0d3))
+
+
+### Bug Fixes
+
+* {{chat..}} variables for bots show user data ([8fc1f45](https://github.com/soberhacker/obsidian-telegram-sync/commit/8fc1f45bd687a94079d8efc611dafcdd5d271a65))
+* {{voiceTranscr}} and{{content}} compatibility ([be81d1c](https://github.com/soberhacker/obsidian-telegram-sync/commit/be81d1c47912a338dc688297fcaad1b260bbc5f9))
+* UI improvements ([8655a6d](https://github.com/soberhacker/obsidian-telegram-sync/commit/8655a6d40dd865081c468b33b7bd4c9e7414e4b9))
+* unnecessary characters in path templates ([c0c76c9](https://github.com/soberhacker/obsidian-telegram-sync/commit/c0c76c904baf767f265891ca469cc63716c7e282))
+
 ## [2.0.0](https://github.com/soberhacker/obsidian-telegram-sync/compare/v1.12.0...2.0.0) (2023-09-19)
 
 
