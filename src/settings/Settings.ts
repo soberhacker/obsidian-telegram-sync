@@ -1,6 +1,6 @@
 import TelegramSyncPlugin from "src/main";
 import { App, ButtonComponent, Notice, PluginSettingTab, Setting, TextComponent } from "obsidian";
-import { boostyButton, paypalButton, buyMeACoffeeButton, kofiButton } from "./buttons";
+import { nowPaymentsButton, paypalButton, buyMeACoffeeButton, kofiButton } from "./buttons";
 import TelegramBot from "node-telegram-bot-api";
 import { createProgressBar, updateProgressBar, deleteProgressBar, ProgressBarType } from "src/telegram/bot/progressBar";
 import * as Client from "src/telegram/user/client";
@@ -384,9 +384,8 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 				btn.setButtonText("Subscribe");
 				btn.onClick(() => window.open(telegramChannelLink, "_blank"));
 			});
-		// TODO next: replace "develop" -> "main" before release to prod
 		telegramChannelSetting.descEl.createEl("a", {
-			href: "https://github.com/soberhacker/obsidian-telegram-sync/blob/develop/docs/Telegram%20Sync%20Insider%20Features.md",
+			href: "https://github.com/soberhacker/obsidian-telegram-sync/blob/main/docs/Telegram%20Sync%20Insider%20Features.md",
 			text: "exclusive features",
 		});
 	}
@@ -465,8 +464,8 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 		);
 		donationDiv.appendChild(donationText);
 
-		boostyButton.style.marginRight = "20px";
-		donationDiv.appendChild(boostyButton);
+		nowPaymentsButton.style.marginRight = "20px";
+		donationDiv.appendChild(nowPaymentsButton);
 		buyMeACoffeeButton.style.marginRight = "20px";
 		donationDiv.appendChild(buyMeACoffeeButton);
 		donationDiv.appendChild(createEl("p"));

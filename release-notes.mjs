@@ -12,7 +12,7 @@ export const showNewFeatures = true;
 export let showBreakingChanges = false;
 
 const newFeatures =
-	"This release introduces the capability to modify both the order in which messages are appended and the delimiter used between messages when they are appended to a single note";
+	"This release introduces the capability to modify the order in which messages are appended to a single note and other important features";
 export const breakingChanges =
 	"⚠️ <b><i>Due to breaking changes, it is better to check all plugin settings again! Apologies</i></b> ⚠️";
 
