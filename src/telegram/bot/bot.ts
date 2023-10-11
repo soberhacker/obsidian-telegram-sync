@@ -3,6 +3,7 @@ import TelegramSyncPlugin from "src/main";
 import { _1sec, displayAndLog } from "src/utils/logUtils";
 import { handleMessageOrPost } from "./message/handlers";
 import { reconnect } from "../user/user";
+import { enqueueByCondition } from "src/utils/queues";
 
 // Initialize the Telegram bot and set up message handling
 export async function connect(plugin: TelegramSyncPlugin) {
@@ -22,11 +23,17 @@ export async function connect(plugin: TelegramSyncPlugin) {
 	});
 
 	bot.on("channel_post", async (msg) => {
-		await handleMessageOrPost(plugin, msg, "post");
+		await enqueueByCondition(!plugin.settings.parallelMessageProcessing, handleMessageOrPost, plugin, msg, "post");
 	});
 
 	bot.on("message", async (msg) => {
-		await handleMessageOrPost(plugin, msg, "message");
+		await enqueueByCondition(
+			!plugin.settings.parallelMessageProcessing,
+			handleMessageOrPost,
+			plugin,
+			msg,
+			"message",
+		);
 	});
 
 	try {

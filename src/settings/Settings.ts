@@ -50,6 +50,7 @@ export interface TelegramSyncSettings {
 	cacheCleanupAtStartup: boolean;
 	messageDistributionRules: MessageDistributionRule[];
 	defaultMessageDelimiter: boolean;
+	parallelMessageProcessing: boolean;
 	// add new settings above this line
 	topicNames: Topic[];
 }
@@ -73,6 +74,7 @@ export const DEFAULT_SETTINGS: TelegramSyncSettings = {
 	cacheCleanupAtStartup: false,
 	messageDistributionRules: [createDefaultMessageDistributionRule()],
 	defaultMessageDelimiter: true,
+	parallelMessageProcessing: false,
 	// add new settings above this line
 	topicNames: [],
 };
@@ -103,6 +105,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 		this.containerEl.createEl("h2", { text: "Behavior settings" });
 		this.addDeleteMessagesFromTelegram();
 		this.addMessageDelimiterSetting();
+		this.addParallelMessageProcessing();
 		this.addMessageDistributionRules();
 		this.containerEl.createEl("br");
 		this.containerEl.createEl("h2", { text: "System settings" });
@@ -274,11 +277,23 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 	addMessageDelimiterSetting() {
 		new Setting(this.containerEl)
 			.setName(`Default delimiter "***" between messages`)
-			.setDesc("Turn off this setting to use a custom delimiter, which you can set in the template file")
+			.setDesc("Turn off for using a custom delimiter, which you can set in the template file")
 			.addToggle((toggle) => {
 				toggle.setValue(this.plugin.settings.defaultMessageDelimiter);
 				toggle.onChange(async (value) => {
 					this.plugin.settings.defaultMessageDelimiter = value;
+					await this.plugin.saveSettings();
+				});
+			});
+	}
+	addParallelMessageProcessing() {
+		new Setting(this.containerEl)
+			.setName(`Parallel Message Processing`)
+			.setDesc("Turn on for faster message and file processing. Caution: may disrupt message order")
+			.addToggle((toggle) => {
+				toggle.setValue(this.plugin.settings.parallelMessageProcessing);
+				toggle.onChange(async (value) => {
+					this.plugin.settings.parallelMessageProcessing = value;
 					await this.plugin.saveSettings();
 				});
 			});
