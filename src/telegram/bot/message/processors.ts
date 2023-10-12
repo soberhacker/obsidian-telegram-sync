@@ -141,7 +141,8 @@ export async function applyNotePathTemplate(
 	let processedPath = notePathTemplate.endsWith("/") ? notePathTemplate + defaultNoteNameTemplate : notePathTemplate;
 	let textContentMd = "";
 	if (processedPath.includes("{{content")) textContentMd = await convertMessageTextToMarkdown(msg);
-	processedPath = sanitizeFileName(await processBasicVariables(plugin, msg, processedPath, textContentMd));
+	processedPath = await processBasicVariables(plugin, msg, processedPath, textContentMd);
+	if (processedPath.endsWith("/.md")) processedPath = processedPath.replace("/.md", "/_.md");
 	if (!path.extname(processedPath)) processedPath = processedPath + ".md";
 	if (processedPath.endsWith(".")) processedPath = processedPath + "md";
 	return sanitizeFilePath(processedPath);
@@ -183,10 +184,7 @@ export async function processBasicVariables(
 
 	let voiceTranscript = "";
 	if (processThis.includes("{{voiceTranscript") && plugin.bot) {
-		voiceTranscript = prepareIfPath(
-			isPath,
-			await Client.transcribeAudio(plugin.bot, msg, await plugin.getBotUser()),
-		);
+		voiceTranscript = await Client.transcribeAudio(plugin.bot, msg, await plugin.getBotUser());
 	}
 
 	const lines = processThis.split("\n");
@@ -194,12 +192,19 @@ export async function processBasicVariables(
 		let line = lines[i];
 
 		if (line.includes("{{content")) {
-			lines[i] = pasteText(plugin, "content", line, messageContent || messageText || "", messageText || "");
+			lines[i] = pasteText(
+				plugin,
+				"content",
+				line,
+				messageContent || messageText || "",
+				messageText || "",
+				isPath,
+			);
 			line = lines[i];
 		}
 
 		if (line.includes("{{voiceTranscript")) {
-			lines[i] = pasteText(plugin, "voiceTranscript", line, voiceTranscript, voiceTranscript);
+			lines[i] = pasteText(plugin, "voiceTranscript", line, voiceTranscript, voiceTranscript, isPath);
 		}
 	}
 	let processedContent = lines.join("\n");
@@ -301,22 +306,23 @@ function pasteText(
 	plugin: TelegramSyncPlugin,
 	pasteType: "content" | "voiceTranscript",
 	pasteHere: string,
-	pasteContent: string,
-	pasteText: string,
+	content: string,
+	text: string,
+	isPath: boolean,
 ) {
 	const leadingRE = new RegExp(`^([>\\s]+){{${pasteType}}}`);
 	const leadingAndPropertyRE = new RegExp(`^([>\\s]+){{${pasteType}:(.*?)}}`);
 	const propertyRE = new RegExp(`{{${pasteType}:(.*?)}}`, "g");
 	const allRE = new RegExp(`{{${pasteType}}}`, "g");
 	return pasteHere
-		.replace(leadingRE, (_, leadingChars) => processText(pasteContent, leadingChars))
+		.replace(leadingRE, (_, leadingChars) => prepareIfPath(isPath, processText(content, leadingChars)))
 		.replace(leadingAndPropertyRE, (_, leadingChars, property) => {
-			const processedText = processText(pasteText, leadingChars, property);
-			if (!processedText && property && pasteText) {
+			const processedText = processText(text, leadingChars, property);
+			if (!processedText && property && text) {
 				displayAndLog(plugin, `Template variable {{${pasteType}}:${property}}} isn't supported!`, _5sec);
 			}
-			return processedText;
+			return prepareIfPath(isPath, processedText);
 		})
-		.replace(allRE, pasteContent)
-		.replace(propertyRE, (_, property: string) => processText(pasteText, undefined, property));
+		.replace(allRE, prepareIfPath(isPath, content))
+		.replace(propertyRE, (_, property: string) => prepareIfPath(isPath, processText(text, undefined, property)));
 }

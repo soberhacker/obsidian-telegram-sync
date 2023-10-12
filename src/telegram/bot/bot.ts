@@ -1,7 +1,7 @@
 import TelegramBot from "node-telegram-bot-api";
 import TelegramSyncPlugin from "src/main";
 import { _1sec, displayAndLog } from "src/utils/logUtils";
-import { handleMessageOrPost } from "./message/handlers";
+import { handleMessage } from "./message/handlers";
 import { reconnect } from "../user/user";
 import { enqueueByCondition } from "src/utils/queues";
 
@@ -23,17 +23,11 @@ export async function connect(plugin: TelegramSyncPlugin) {
 	});
 
 	bot.on("channel_post", async (msg) => {
-		await enqueueByCondition(!plugin.settings.parallelMessageProcessing, handleMessageOrPost, plugin, msg, "post");
+		await enqueueByCondition(!plugin.settings.parallelMessageProcessing, handleMessage, plugin, msg, true);
 	});
 
 	bot.on("message", async (msg) => {
-		await enqueueByCondition(
-			!plugin.settings.parallelMessageProcessing,
-			handleMessageOrPost,
-			plugin,
-			msg,
-			"message",
-		);
+		await enqueueByCondition(!plugin.settings.parallelMessageProcessing, handleMessage, plugin, msg);
 	});
 
 	try {

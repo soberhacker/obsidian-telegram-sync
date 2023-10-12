@@ -40,11 +40,8 @@ export function clearHandleMediaGroupInterval() {
 	handleMediaGroupIntervalId = undefined;
 }
 
-export async function handleMessageOrPost(
-	plugin: TelegramSyncPlugin,
-	msg: TelegramBot.Message,
-	msgType: "post" | "message",
-) {
+// handle all messages from Telegram
+export async function handleMessage(plugin: TelegramSyncPlugin, msg: TelegramBot.Message, isChannelPost = false) {
 	if (!plugin.isBotConnected()) {
 		plugin.setBotStatus("connected");
 		plugin.lastPollingErrors = [];
@@ -57,7 +54,7 @@ export async function handleMessageOrPost(
 	// skip system messages
 
 	if (!msg.text && !fileObject) {
-		displayAndLog(plugin, `Got a system message from Telegram Bot`, 0);
+		displayAndLog(plugin, `System message skipped`, 0);
 		return;
 	}
 	let fileInfo = "binary";
@@ -82,7 +79,7 @@ export async function handleMessageOrPost(
 	let msgText = (msg.text || msg.caption || fileInfo).replace("\n", "..");
 	if (msgText.length > 30) msgText = msgText.slice(1, 30) + "...";
 	if (!distributionRule) {
-		displayAndLog(plugin, `Message "${msgText}" skipped \nNo matched distribution rule`, 0);
+		displayAndLog(plugin, `Message "${msgText}" skipped \nNo matched distribution rule!`, 0);
 		return;
 	} else {
 		displayAndLog(
@@ -128,10 +125,9 @@ export async function handleMessageOrPost(
 
 	++plugin.messagesLeftCnt;
 	try {
-		if (!msg.text && !msg.caption)
-			distributionRule.filePathTemplate && (await handleFiles(plugin, msg, distributionRule));
-		else await handleMessage(plugin, msg, distributionRule);
-		msgType == "message" && (await enqueue(ifNewReleaseThenShowChanges, plugin, msg));
+		if (!msg.text && distributionRule.filePathTemplate) await handleFiles(plugin, msg, distributionRule);
+		else await handleMessageText(plugin, msg, distributionRule);
+		isChannelPost && (await enqueue(ifNewReleaseThenShowChanges, plugin, msg));
 	} catch (error) {
 		await displayAndLogError(plugin, error, "", "", msg, _15sec);
 	} finally {
@@ -139,8 +135,7 @@ export async function handleMessageOrPost(
 	}
 }
 
-// handle all messages from Telegram
-export async function handleMessage(
+export async function handleMessageText(
 	plugin: TelegramSyncPlugin,
 	msg: TelegramBot.Message,
 	distributionRule: MessageDistributionRule,
