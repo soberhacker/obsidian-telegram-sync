@@ -28,6 +28,8 @@ interface PersistentNotice {
 let persistentNotices: PersistentNotice[] = [];
 
 // Show notification and log message into console.
+// timeout = 0 - logging without showing notification
+// timeout = undefined - constant notification
 export function displayAndLog(plugin: TelegramSyncPlugin, message: string, timeout?: number) {
 	console.log(`${plugin.manifest.name}: ${message}`);
 
