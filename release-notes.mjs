@@ -1,12 +1,8 @@
-import { compareVersions } from "compare-versions";
-
-export const version = "2.1.0";
-// TODO fix {{chat}} to provide bot names instead user names https://t.me/ObsidianTelegramSync/421
-// TODO getting messages one by one instead of parallel processing
-
 // TODO translating messages
 // TODO notify in setting that new beta version is ready for installing
 // TODO add messagesLeftCnt displaying in status bar
+import { compareVersions } from "compare-versions";
+export const version = "2.1.0";
 export const showNewFeatures = true;
 export let showBreakingChanges = false;
 
