@@ -128,7 +128,8 @@ export async function handleMessageOrPost(
 
 	++plugin.messagesLeftCnt;
 	try {
-		if (!msg.text) distributionRule.filePathTemplate && (await handleFiles(plugin, msg, distributionRule));
+		if (!msg.text && !msg.caption)
+			distributionRule.filePathTemplate && (await handleFiles(plugin, msg, distributionRule));
 		else await handleMessage(plugin, msg, distributionRule);
 		msgType == "message" && (await enqueue(ifNewReleaseThenShowChanges, plugin, msg));
 	} catch (error) {
