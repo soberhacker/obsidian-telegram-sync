@@ -14,25 +14,26 @@ Telegram Sync is designed to transfer messages and files from Telegram to your O
 
 #### Information We Collect
 
-As an open-source plugin, Telegram Sync does **not** collect any personal and non-personal data from its users. All data transfers occur solely between your Telegram account and your Obsidian vault. We do not store, share, or have access to any of this information.
+As an open-source plugin, Telegram Sync does **not** collect any personal or non-personal data from its users. All data transfers occur solely between your Telegram account and your Obsidian vault. We do not store, share, or have access to any of this information.
 
 ---
 
 #### Data Transfer and Storage
 
-All data transferred by Telegram Sync are processed locally on your computer. Your Telegram messages and files are transferred directly to your Obsidian vault without any third-party intervention. We only communicate with Telegram servers for the purpose of transferring data as per your settings.
+All data transferred by Telegram Sync are processed locally on your computer. Your Telegram messages and files are transferred directly to your Obsidian vault without any third-party intervention.
+There are no external servers that might compromise the security or confidentiality of your data. This direct approach allows for more secure and reliable communication between your Telegram account and Obsidian vault. The plugin essentially serves as an alternative Telegram client, similar to other third-party Telegram clients like Plus Messenger and Nekogram.
+
+---
+
+#### User Authentication and Session Management
+
+If you choose to connect as a user, you'll go through Telegram's standard two-factor authentication process, and the plugin will register a new session within your Telegram account's list of devices. This ensures that your Telegram login credentials are verified, secure, and directly linked to your device or current location (IP address). All data, including session information, is stored locally on your machine, bolstering your data's safety. However, as the plugin connects to Telegram servers, it is advisable to secure your Telegram account with a strong, unique password and two-factor authentication.
 
 ---
 
 #### Data Deletion
 
 Telegram Sync offers the option to delete processed messages from Telegram once they have been transferred to your Obsidian vault. The deletion of these messages is entirely within your control and is not mandatory to use this plugin.
-
----
-
-#### Security
-
-As all data processing occurs locally, we rely on the inherent security features of the Obsidian platform and your computer's operating system to protect your data. However, as the plugin connects to Telegram servers, it is advisable to secure your Telegram account with a strong, unique password and two-factor authentication.
 
 ---
 

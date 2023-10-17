@@ -133,6 +133,10 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 			text: "soberhacker🍃🧘💻",
 			href: "https://github.com/soberhacker",
 		});
+		this.containerEl.createEl("p").createEl("a", {
+			text: "🛡 Privacy Policy",
+			href: "https://github.com/soberhacker/obsidian-telegram-sync/blob/develop/docs/Privacy%20Policy.md",
+		});
 		this.containerEl.createEl("br");
 	}
 
