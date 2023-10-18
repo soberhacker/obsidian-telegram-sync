@@ -29,7 +29,7 @@ let persistentNotices: PersistentNotice[] = [];
 
 // Show notification and log message into console.
 export function displayAndLog(plugin: TelegramSyncPlugin, message: string, timeout?: number) {
-	console.log(`${plugin.manifest.name}: ${message}`);
+	console.log(`${plugin.manifest.name} => ${message}`);
 
 	if (timeout == 0) return;
 	const notice = new Notice(message, timeout || doNotHide);

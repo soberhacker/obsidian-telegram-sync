@@ -20,7 +20,7 @@ import { TFile } from "obsidian";
 import { enqueue } from "src/utils/queues";
 import { _15sec, _1sec, displayAndLog, displayAndLogError } from "src/utils/logUtils";
 import { getMessageDistributionRule } from "./filterEvaluations";
-import { MessageDistributionRule } from "src/settings/messageDistribution";
+import { MessageDistributionRule, getMessageDistributionRuleDisplayedName } from "src/settings/messageDistribution";
 import { unixTime2Date } from "src/utils/dateUtils";
 
 interface MediaGroup {
@@ -40,11 +40,8 @@ export function clearHandleMediaGroupInterval() {
 	handleMediaGroupIntervalId = undefined;
 }
 
-export async function handleMessageOrPost(
-	plugin: TelegramSyncPlugin,
-	msg: TelegramBot.Message,
-	msgType: "post" | "message",
-) {
+// handle all messages from Telegram
+export async function handleMessage(plugin: TelegramSyncPlugin, msg: TelegramBot.Message, isChannelPost = false) {
 	if (!plugin.isBotConnected()) {
 		plugin.setBotStatus("connected");
 		plugin.lastPollingErrors = [];
@@ -57,7 +54,7 @@ export async function handleMessageOrPost(
 	// skip system messages
 
 	if (!msg.text && !fileObject) {
-		displayAndLog(plugin, `Got a system message from Telegram Bot`, 0);
+		displayAndLog(plugin, `System message skipped`, 0);
 		return;
 	}
 	let fileInfo = "binary";
@@ -65,8 +62,6 @@ export async function handleMessageOrPost(
 		fileInfo = `${fileType} ${
 			fileObject instanceof Array ? fileObject[0]?.file_unique_id : fileObject.file_unique_id
 		}`;
-
-	displayAndLog(plugin, `Got a message from Telegram Bot: ${msg.text || fileInfo}`, 0);
 
 	// Skip processing if the message is a "/start" command
 	// https://github.com/soberhacker/obsidian-telegram-sync/issues/109
@@ -81,9 +76,17 @@ export async function handleMessageOrPost(
 	}
 
 	const distributionRule = await getMessageDistributionRule(plugin, msg);
+	let msgText = (msg.text || msg.caption || fileInfo).replace("\n", "..");
+	if (msgText.length > 30) msgText = msgText.slice(1, 30) + "...";
 	if (!distributionRule) {
-		displayAndLog(plugin, `The message skipped, because there is no matched distribution rule`, 0);
+		displayAndLog(plugin, `Message "${msgText}" skipped \nNo matched distribution rule!`, 0);
 		return;
+	} else {
+		displayAndLog(
+			plugin,
+			`Message: ${msgText}\nDistribution rule: ${getMessageDistributionRuleDisplayedName(distributionRule)}`,
+			0,
+		);
 	}
 
 	// Check if message has been sended by allowed users or chats
@@ -122,9 +125,9 @@ export async function handleMessageOrPost(
 
 	++plugin.messagesLeftCnt;
 	try {
-		if (!msg.text) distributionRule.filePathTemplate && (await handleFiles(plugin, msg, distributionRule));
-		else await handleMessage(plugin, msg, distributionRule);
-		msgType == "message" && (await enqueue(ifNewReleaseThenShowChanges, plugin, msg));
+		if (!msg.text && distributionRule.filePathTemplate) await handleFiles(plugin, msg, distributionRule);
+		else await handleMessageText(plugin, msg, distributionRule);
+		!isChannelPost && (await enqueue(ifNewReleaseThenShowChanges, plugin, msg));
 	} catch (error) {
 		await displayAndLogError(plugin, error, "", "", msg, _15sec);
 	} finally {
@@ -132,8 +135,7 @@ export async function handleMessageOrPost(
 	}
 }
 
-// handle all messages from Telegram
-export async function handleMessage(
+export async function handleMessageText(
 	plugin: TelegramSyncPlugin,
 	msg: TelegramBot.Message,
 	distributionRule: MessageDistributionRule,

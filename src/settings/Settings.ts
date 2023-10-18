@@ -6,7 +6,7 @@ import { createProgressBar, updateProgressBar, deleteProgressBar, ProgressBarTyp
 import * as Client from "src/telegram/user/client";
 import { BotSettingsModal } from "./BotSettingsModal";
 import { UserLogInModal } from "./UserLogInModal";
-import { version, versionALessThanVersionB, telegramChannelLink } from "release-notes.mjs";
+import { version, versionALessThanVersionB, telegramChannelLink, privacyPolicyLink } from "release-notes.mjs";
 import { _15sec, _1sec, _5sec, displayAndLog, doNotHide } from "src/utils/logUtils";
 import { getTopicId } from "src/telegram/bot/message/getters";
 import * as User from "../telegram/user/user";
@@ -50,6 +50,7 @@ export interface TelegramSyncSettings {
 	cacheCleanupAtStartup: boolean;
 	messageDistributionRules: MessageDistributionRule[];
 	defaultMessageDelimiter: boolean;
+	parallelMessageProcessing: boolean;
 	// add new settings above this line
 	topicNames: Topic[];
 }
@@ -73,6 +74,7 @@ export const DEFAULT_SETTINGS: TelegramSyncSettings = {
 	cacheCleanupAtStartup: false,
 	messageDistributionRules: [createDefaultMessageDistributionRule()],
 	defaultMessageDelimiter: true,
+	parallelMessageProcessing: false,
 	// add new settings above this line
 	topicNames: [],
 };
@@ -103,6 +105,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 		this.containerEl.createEl("h2", { text: "Behavior settings" });
 		this.addDeleteMessagesFromTelegram();
 		this.addMessageDelimiterSetting();
+		this.addParallelMessageProcessing();
 		this.addMessageDistributionRules();
 		this.containerEl.createEl("br");
 		this.containerEl.createEl("h2", { text: "System settings" });
@@ -119,17 +122,27 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 	}
 
 	addSettingsHeader() {
-		this.containerEl.createEl("h1", {
+		const versionContainer = this.containerEl.createDiv();
+		versionContainer.style.display = "flex";
+		versionContainer.style.justifyContent = "space-between";
+		versionContainer.createSpan().createEl("h1", {
 			text: `Telegram Sync ${
 				versionALessThanVersionB(this.plugin.manifest.version, this.plugin.settings.betaVersion)
 					? this.plugin.settings.betaVersion
 					: version
 			}`,
 		});
-		this.containerEl.createEl("p", { text: "Created by " }).createEl("a", {
+
+		versionContainer.createSpan().createEl("a", {
+			text: "Privacy Policy",
+			href: privacyPolicyLink,
+		}).style.fontSize = "0.75em";
+
+		this.containerEl.createEl("div", { text: "Created by " }).createEl("a", {
 			text: "soberhacker🍃🧘💻",
 			href: "https://github.com/soberhacker",
 		});
+
 		this.containerEl.createEl("br");
 	}
 
@@ -274,11 +287,23 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 	addMessageDelimiterSetting() {
 		new Setting(this.containerEl)
 			.setName(`Default delimiter "***" between messages`)
-			.setDesc("Turn off this setting to use a custom delimiter, which you can set in the template file")
+			.setDesc("Turn off for using a custom delimiter, which you can set in the template file")
 			.addToggle((toggle) => {
 				toggle.setValue(this.plugin.settings.defaultMessageDelimiter);
 				toggle.onChange(async (value) => {
 					this.plugin.settings.defaultMessageDelimiter = value;
+					await this.plugin.saveSettings();
+				});
+			});
+	}
+	addParallelMessageProcessing() {
+		new Setting(this.containerEl)
+			.setName(`Parallel Message Processing`)
+			.setDesc("Turn on for faster message and file processing. Caution: may disrupt message order")
+			.addToggle((toggle) => {
+				toggle.setValue(this.plugin.settings.parallelMessageProcessing);
+				toggle.onChange(async (value) => {
+					this.plugin.settings.parallelMessageProcessing = value;
 					await this.plugin.saveSettings();
 				});
 			});
@@ -302,7 +327,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 		this.plugin.settings.messageDistributionRules.forEach((rule, index) => {
 			const setting = new Setting(this.containerEl);
 			const preElement = document.createElement("pre");
-			preElement.textContent = getMessageDistributionRuleDisplayedName(rule);
+			preElement.textContent = "  • " + getMessageDistributionRuleDisplayedName(rule);
 			setting.infoEl.replaceWith(preElement);
 			setting.settingEl.classList.add("my-custom-list-item");
 			setting.addExtraButton((btn) => {

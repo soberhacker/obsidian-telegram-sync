@@ -79,6 +79,7 @@ export async function appendContentToNote(
 	delimiter = defaultDelimiter,
 	reversedOrder = false,
 ) {
+	if (!notePath || !newContent.trim()) return;
 	let noteFile: TFile = vault.getAbstractFileByPath(notePath) as TFile;
 
 	if (!noteFile) {

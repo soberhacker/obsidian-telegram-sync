@@ -1,21 +1,15 @@
-import { compareVersions } from "compare-versions";
-
-export const version = "2.1.0";
-// TODO fix {{chat}} to provide bot names instead user names https://t.me/ObsidianTelegramSync/421
-// TODO getting messages one by one instead of parallel processing
-// TODO logging what distribution rule was selected
-
 // TODO translating messages
 // TODO notify in setting that new beta version is ready for installing
 // TODO add messagesLeftCnt displaying in status bar
+import { compareVersions } from "compare-versions";
+export const version = "2.2.0";
 export const showNewFeatures = true;
-export let showBreakingChanges = false;
+export let showBreakingChanges = true;
 
 const newFeatures =
-	"This release introduces the capability to modify the order in which messages are appended to a single note and other important features";
-export const breakingChanges =
-	"⚠️ <b><i>Due to breaking changes, it is better to check all plugin settings again! Apologies</i></b> ⚠️";
-
+	"Main feature of this release is possibility to choose between keeping message appending order and parallel message processing";
+export const privacyPolicyLink = "https://github.com/soberhacker/obsidian-telegram-sync/blob/main/PRIVACY-POLICY.md";
+export const breakingChanges = `⚠️ <b><i><a href='${privacyPolicyLink}'>Privacy Policy</a> now implemented. Review before continued use advised.</i></b> ⚠️`;
 export const telegramChannelLink = "https://t.me/+J23BEZyLgoYzOTBk";
 const telegramChannelAHref = `<a href='${telegramChannelLink}'>channel</a>`;
 const telegramChannelIntroduction = `Subscribe to the plugin's ${telegramChannelAHref} to not only silence these informational messages in your bot, but also to be the first to get all the latest updates and a complete list of new features.`;
