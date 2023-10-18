@@ -2,15 +2,14 @@
 // TODO notify in setting that new beta version is ready for installing
 // TODO add messagesLeftCnt displaying in status bar
 import { compareVersions } from "compare-versions";
-export const version = "2.1.0";
+export const version = "2.2.0";
 export const showNewFeatures = true;
-export let showBreakingChanges = false;
+export let showBreakingChanges = true;
 
 const newFeatures =
 	"Main feature of this release is possibility to choose between keeping message appending order and parallel message processing";
-export const breakingChanges =
-	"⚠️ <b><i>Due to breaking changes, it is better to check all plugin settings again! Apologies</i></b> ⚠️";
-
+export const privacyPolicyLink = "https://github.com/soberhacker/obsidian-telegram-sync/blob/main/PRIVACY-POLICY.md";
+export const breakingChanges = `⚠️ <b><i><a href='${privacyPolicyLink}'>Privacy Policy</a> now implemented. Review before continued use advised.</i></b> ⚠️`;
 export const telegramChannelLink = "https://t.me/+J23BEZyLgoYzOTBk";
 const telegramChannelAHref = `<a href='${telegramChannelLink}'>channel</a>`;
 const telegramChannelIntroduction = `Subscribe to the plugin's ${telegramChannelAHref} to not only silence these informational messages in your bot, but also to be the first to get all the latest updates and a complete list of new features.`;

@@ -6,7 +6,7 @@ import { createProgressBar, updateProgressBar, deleteProgressBar, ProgressBarTyp
 import * as Client from "src/telegram/user/client";
 import { BotSettingsModal } from "./BotSettingsModal";
 import { UserLogInModal } from "./UserLogInModal";
-import { version, versionALessThanVersionB, telegramChannelLink } from "release-notes.mjs";
+import { version, versionALessThanVersionB, telegramChannelLink, privacyPolicyLink } from "release-notes.mjs";
 import { _15sec, _1sec, _5sec, displayAndLog, doNotHide } from "src/utils/logUtils";
 import { getTopicId } from "src/telegram/bot/message/getters";
 import * as User from "../telegram/user/user";
@@ -122,21 +122,27 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 	}
 
 	addSettingsHeader() {
-		this.containerEl.createEl("h1", {
+		const versionContainer = this.containerEl.createDiv();
+		versionContainer.style.display = "flex";
+		versionContainer.style.justifyContent = "space-between";
+		versionContainer.createSpan().createEl("h1", {
 			text: `Telegram Sync ${
 				versionALessThanVersionB(this.plugin.manifest.version, this.plugin.settings.betaVersion)
 					? this.plugin.settings.betaVersion
 					: version
 			}`,
 		});
-		this.containerEl.createEl("p", { text: "Created by " }).createEl("a", {
+
+		versionContainer.createSpan().createEl("a", {
+			text: "Privacy Policy",
+			href: privacyPolicyLink,
+		}).style.fontSize = "0.75em";
+
+		this.containerEl.createEl("div", { text: "Created by " }).createEl("a", {
 			text: "soberhacker🍃🧘💻",
 			href: "https://github.com/soberhacker",
 		});
-		this.containerEl.createEl("p").createEl("a", {
-			text: "🛡 Privacy Policy",
-			href: "https://github.com/soberhacker/obsidian-telegram-sync/blob/develop/docs/Privacy%20Policy.md",
-		});
+
 		this.containerEl.createEl("br");
 	}
 

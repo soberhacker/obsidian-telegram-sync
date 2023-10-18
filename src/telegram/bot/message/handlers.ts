@@ -127,7 +127,7 @@ export async function handleMessage(plugin: TelegramSyncPlugin, msg: TelegramBot
 	try {
 		if (!msg.text && distributionRule.filePathTemplate) await handleFiles(plugin, msg, distributionRule);
 		else await handleMessageText(plugin, msg, distributionRule);
-		isChannelPost && (await enqueue(ifNewReleaseThenShowChanges, plugin, msg));
+		!isChannelPost && (await enqueue(ifNewReleaseThenShowChanges, plugin, msg));
 	} catch (error) {
 		await displayAndLogError(plugin, error, "", "", msg, _15sec);
 	} finally {

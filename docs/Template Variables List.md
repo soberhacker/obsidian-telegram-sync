@@ -4,7 +4,7 @@
 {{all}} - all messages
 {{user=VALUE}} - messages from user with username, full name or id equal VALUE
 {{chat=VALUE}} - messages in bot | group | channel with name or id equal VALUE
-{{topic=VALUE}} - messages in topic with name VALUE
+{{topic=VALUE}} - messages in topic with name VALUE (if filter fails, try to update topic name manually by bot command "/topicName NAME")
 {{forwardFrom=VALUE}} - messages forwarded from chat or user with name VALUE
 {{content~VALUE}} - messages contain text VALUE
 {{voiceTranscript~VALUE}} - voice transcripts contain text VALUE
