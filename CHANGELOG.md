@@ -1,6 +1,19 @@
 # Changelog
 
 
+## [2.2.0](https://github.com/soberhacker/obsidian-telegram-sync/compare/2.1.0...2.2.0) (2023-10-18)
+
+
+### Features
+
+* add privacy policy ([c8d843b](https://github.com/soberhacker/obsidian-telegram-sync/commit/c8d843b82d98d639563ba339bd2a232c88aec97d))
+
+
+### Bug Fixes
+
+* broken {{content:[1]}} in note path template ([bc6278d](https://github.com/soberhacker/obsidian-telegram-sync/commit/bc6278d6de7183fa078f7f391ba4b11a66fbbcef))
+* skipping messages when file download disabled ([aab142b](https://github.com/soberhacker/obsidian-telegram-sync/commit/aab142bed4789fc70bca72984a09e1b3e7b74a80))
+
 ## [2.1.0](https://github.com/soberhacker/obsidian-telegram-sync/compare/2.0.0...2.1.0) (2023-10-10)
 
 
