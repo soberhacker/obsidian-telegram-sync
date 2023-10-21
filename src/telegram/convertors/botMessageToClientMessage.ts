@@ -1,7 +1,7 @@
 import TelegramBot from "node-telegram-bot-api";
 import { Api, TelegramClient } from "telegram";
 import { getFileObject } from "../bot/message/getters";
-import { extractMediaId } from "./convertBotFileToMessageMedia";
+import { extractMediaId } from "./botFileToMessageMedia";
 import { TotalList } from "telegram/Helpers";
 import { _1h, _1sec, _2h } from "src/utils/logUtils";
 import { unixTime2Date } from "src/utils/dateUtils";

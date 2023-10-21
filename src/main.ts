@@ -8,7 +8,7 @@ import * as Bot from "./telegram/bot/bot";
 import * as User from "./telegram/user/user";
 import { enqueue } from "./utils/queues";
 import { clearTooManyRequestsInterval } from "./telegram/bot/tooManyRequests";
-import { clearCachedMessagesInterval } from "./telegram/user/convertors";
+import { clearCachedMessagesInterval } from "./telegram/convertors/botMessageToClientMessage";
 import { clearHandleMediaGroupInterval } from "./telegram/bot/message/handlers";
 import ConnectionStatusIndicator, { checkConnectionMessage } from "./ConnectionStatusIndicator";
 import { mainDeviceIdSettingName } from "./settings/BotSettingsModal";
