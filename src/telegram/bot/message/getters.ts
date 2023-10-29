@@ -115,7 +115,7 @@ export function getHashtag(msg: TelegramBot.Message, num = 1, lookInCaptions = t
 	if (!text) return "";
 
 	const hashtags = text.match(/#\w+/g) || [];
-	return hashtags[num - 1] || "";
+	return hashtags[num - 1]?.replace("#", "") || "";
 }
 
 export function getInlineUrls(msg: TelegramBot.Message): string {
