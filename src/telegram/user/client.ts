@@ -1,6 +1,6 @@
 import { Api, TelegramClient } from "telegram";
 import { StoreSession } from "telegram/sessions";
-import { version, versionALessThanVersionB } from "release-notes.mjs";
+import { releaseVersion, versionALessThanVersionB } from "release-notes.mjs";
 import TelegramBot from "node-telegram-bot-api";
 import QRCode from "qrcode";
 import os from "os";
@@ -60,7 +60,7 @@ export async function init(sessionId: number, sessionType: SessionType, deviceId
 		const logger = new Logger(LogLevel.ERROR);
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		logger.log = (level, message, color) => {
-			console.log(`Telegram Sync: Error with user connection -> ${message}`);
+			console.log(`Telegram Sync => User connection error: ${message}`);
 			// TODO: add user connection status checking and setting by controlling error and info logs
 			//if (message == "Automatic reconnection failed 2 time(s)")
 		};
@@ -70,7 +70,7 @@ export async function init(sessionId: number, sessionType: SessionType, deviceId
 		client = new TelegramClient(session, config.dIipa, config.hsaHipa, {
 			connectionRetries: 2,
 			deviceModel: os.hostname() || os.type(),
-			appVersion: version,
+			appVersion: releaseVersion,
 			useWSS: true,
 			networkSocket: PromisedWebSockets,
 			baseLogger: logger,
@@ -172,7 +172,7 @@ export async function signInAsUserWithQrCode(container: HTMLDivElement, password
 			},
 		)
 		.then((clientUser) => {
-			_clientUser = clientUser as Api.User;
+			clientUser = clientUser as Api.User;
 			return clientUser;
 		})
 		.catch(() => {
@@ -186,7 +186,7 @@ async function checkBotService(): Promise<TelegramClient> {
 	return client;
 }
 
-async function checkUserService(): Promise<{ checkedClient: TelegramClient; checkedUser: Api.User }> {
+export async function checkUserService(): Promise<{ checkedClient: TelegramClient; checkedUser: Api.User }> {
 	const checkedClient = await checkBotService();
 	if ((await checkedClient.isBot()) || !_clientUser) throw NotAuthorizedAsUser;
 	return { checkedClient, checkedUser: _clientUser };
@@ -317,7 +317,7 @@ export async function subscribedOnInsiderChannel(): Promise<boolean> {
 		return false;
 	}
 }
-export async function getLastBetaRelease(currentVersion: string): Promise<{ version: string; mainJs: Buffer }> {
+export async function getLastBetaRelease(currentVersion: string): Promise<{ betaVersion: string; mainJs: Buffer }> {
 	const { checkedClient } = await checkUserService();
 	const messages = await checkedClient.getMessages(insiderChannel, {
 		limit: 10,
@@ -327,13 +327,13 @@ export async function getLastBetaRelease(currentVersion: string): Promise<{ vers
 	if (messages.length == 0) throw new Error("No beta versions in Insider channel!");
 	const message = messages[0];
 	const match = message.message.match(/Obsidian Telegram Sync (\S+)/);
-	const version = match ? match[1] : "";
-	if (!version) throw new Error("Can't find the version label in the message: " + message.message);
-	if (versionALessThanVersionB(version, currentVersion))
+	const betaVersion = match ? match[1] : "";
+	if (!betaVersion) throw new Error("Can't find the version label in the message: " + message.message);
+	if (versionALessThanVersionB(betaVersion, currentVersion))
 		throw new Error(
-			`The last beta version ${version} can't be installed because it less than current version ${currentVersion}!`,
+			`The last beta version ${betaVersion} can't be installed because it less than current version ${currentVersion}!`,
 		);
 	const mainJs = (await messages[0].downloadMedia()) as Buffer;
 	if (!mainJs) throw new Error("Can't find main.js in the last 10 messages of Insider channel");
-	return { version, mainJs };
+	return { betaVersion: betaVersion, mainJs };
 }
