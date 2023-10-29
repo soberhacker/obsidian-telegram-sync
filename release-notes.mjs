@@ -2,7 +2,7 @@
 // TODO notify in setting that new beta version is ready for installing
 // TODO add messagesLeftCnt displaying in status bar
 import { compareVersions } from "compare-versions";
-export const version = "2.2.0";
+export const releaseVersion = "2.2.0";
 export const showNewFeatures = true;
 export let showBreakingChanges = true;
 
@@ -20,7 +20,7 @@ const donation =
 const bestRegards = "Best regards,\nYour soberhacker🍃🧘💻\n⌞";
 
 export const notes = `
-<u><b>Telegram Sync ${version}</b></u>\n
+<u><b>Telegram Sync ${releaseVersion}</b></u>\n
 🆕 ${newFeatures}\n
 💡 ${telegramChannelIntroduction}\n
 💬 ${telegramChatIntroduction}\n
@@ -41,8 +41,8 @@ const check = process.argv[2] === "check";
 if (check) {
 	const packageVersion = process.env.npm_package_version;
 
-	if (packageVersion !== version) {
-		console.error(`Failed! Release notes are outdated! ${packageVersion} !== ${version}`);
+	if (packageVersion !== releaseVersion) {
+		console.error(`Failed! Release notes are outdated! ${packageVersion} !== ${releaseVersion}`);
 		process.exit(1);
 	}
 }
