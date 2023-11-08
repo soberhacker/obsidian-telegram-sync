@@ -61,7 +61,7 @@ export async function init(sessionId: number, sessionType: SessionType, deviceId
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		logger.log = (level, message, color) => {
 			console.log(`Telegram Sync => User connection error: ${message}`);
-			// TODO: add user connection status checking and setting by controlling error and info logs
+			// TODO in 2024: add user connection status checking and setting by controlling error and info logs
 			//if (message == "Automatic reconnection failed 2 time(s)")
 		};
 		const session = new StoreSession(`${sessionType}_${sessionId}_${deviceId}`);

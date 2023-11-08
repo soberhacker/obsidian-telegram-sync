@@ -29,22 +29,29 @@ export function getForwardFromName(msg: TelegramBot.Message): string {
 
 export function getForwardFromLink(msg: TelegramBot.Message): string {
 	let forwardFromLink = "";
-
+	// TODO if msg.from then created by not forwarded from
 	if (msg.forward_from || msg.forward_from_chat || msg.forward_sender_name || msg.from) {
 		const forwardFromName = getForwardFromName(msg);
 		let username = "";
 
 		if (msg.forward_from) {
-			username = msg.forward_from.username || "no_username_" + msg.forward_from.id.toString().slice(4);
+			const forward_from_id =
+				msg.forward_from.id < 0 ? msg.forward_from.id.toString().slice(4) : msg.forward_from.id.toString();
+			username = msg.forward_from.username || "no_username_" + forward_from_id;
 		} else if (msg.forward_from_chat) {
+			const forward_from_chat_id =
+				msg.forward_from_chat.id < 0
+					? msg.forward_from_chat.id.toString().slice(4)
+					: msg.forward_from_chat.id.toString();
 			username =
-				(msg.forward_from_chat.username || "c/" + msg.forward_from_chat.id.toString().slice(4)) +
+				(msg.forward_from_chat.username || "c/" + forward_from_chat_id) +
 				"/" +
 				(msg.forward_from_message_id || "999999999");
 		} else if (msg.forward_sender_name) {
 			username = "hidden_account_" + msg.forward_date;
 		} else if (msg.from) {
-			username = msg.from.username || "no_username_" + msg.from.id.toString().slice(4);
+			const from_id = msg.from.id < 0 ? msg.from.id.toString().slice(4) : msg.from.id.toString();
+			username = msg.from.username || "no_username_" + from_id;
 		}
 		forwardFromLink = `[${forwardFromName}](https://t.me/${username})`;
 	}
@@ -54,8 +61,8 @@ export function getForwardFromLink(msg: TelegramBot.Message): string {
 
 export function getUserLink(msg: TelegramBot.Message): string {
 	if (!msg.from) return "";
-
-	const username = msg.from.username || "no_username_" + msg.from.id.toString().slice(4);
+	const from_id = msg.from.id < 0 ? msg.from.id.toString().slice(4) : msg.from.id.toString();
+	const username = msg.from.username || "no_username_" + from_id;
 	const fullName = `${msg.from.first_name} ${msg.from.last_name || ""}`.trim();
 	return `[${fullName}](https://t.me/${username})`;
 }
@@ -87,12 +94,13 @@ export function getChatLink(msg: TelegramBot.Message, botUser?: TelegramBot.User
 	if (botUser?.username && msg.chat.id == msg.from?.id) {
 		userName = botUser?.username;
 	} else if (msg.chat.type == "private") {
-		userName = msg.chat.username || "no_username_" + msg.chat.id.toString().slice(4);
+		const chat_id = msg.chat.id < 0 ? msg.chat.id.toString().slice(4) : msg.chat.id.toString();
+		userName = msg.chat.username || "no_username_" + chat_id;
 	} else {
 		const threadId = msg.chat.is_forum
 			? msg.message_thread_id || msg.reply_to_message?.message_thread_id || "1"
 			: "";
-		const chatId = msg.chat.id.toString().slice(4);
+		const chatId = msg.chat.id < 0 ? msg.chat.id.toString().slice(4) : msg.chat.id.toString();
 		userName = msg.chat.username || `c/${chatId}/${threadId}/${msg.message_id}`;
 		userName = userName.replace(/\/\//g, "/"); // because threadId can be empty
 	}
@@ -166,7 +174,8 @@ export async function getTopicLink(plugin: TelegramSyncPlugin, msg: TelegramBot.
 	if (!msg.chat.is_forum) return "";
 	const topic = await getTopic(plugin, msg);
 	if (!topic) return "";
-	const path = (msg.chat.username || `c/${topic.chatId.toString().slice(4)}`) + `/${topic.topicId}`;
+	const chatId = topic.chatId < 0 ? topic.chatId.toString().slice(4) : topic.chatId.toString();
+	const path = (msg.chat.username || `c/${chatId}`) + `/${topic.topicId}`;
 	return `[${topic.name}](https://t.me/${path})`;
 }
 

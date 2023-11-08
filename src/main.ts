@@ -11,7 +11,7 @@ import { clearTooManyRequestsInterval } from "./telegram/bot/tooManyRequests";
 import { clearCachedMessagesInterval } from "./telegram/convertors/botMessageToClientMessage";
 import { clearHandleMediaGroupInterval } from "./telegram/bot/message/handlers";
 import ConnectionStatusIndicator, { checkConnectionMessage } from "./ConnectionStatusIndicator";
-import { mainDeviceIdSettingName } from "./settings/BotSettingsModal";
+import { mainDeviceIdSettingName } from "./settings/modals/BotSettings";
 import {
 	createDefaultMessageDistributionRule,
 	createDefaultMessageFilterCondition,
@@ -21,7 +21,7 @@ import {
 	defaultTelegramFolder,
 } from "./settings/messageDistribution";
 
-// TODO: add "connecting"
+// TODO in 2024: add "connecting"
 export type ConnectionStatus = "connected" | "disconnected";
 export type PluginStatus = "unloading" | "unloaded" | "loading" | "loaded";
 
@@ -30,11 +30,11 @@ export default class TelegramSyncPlugin extends Plugin {
 	settings: TelegramSyncSettings;
 	settingsTab?: TelegramSyncSettingTab;
 	private botStatus: ConnectionStatus = "disconnected";
-	// TODO: change to userStatus and display in status bar
+	// TODO in 2024: change to userStatus and display in status bar
 	userConnected = false;
 	checkingBotConnection = false;
 	checkingUserConnection = false;
-	// TODO: TelegramSyncBot extends TelegramBot
+	// TODO in 2024: TelegramSyncBot extends TelegramBot
 	bot?: TelegramBot;
 	botUser?: TelegramBot.User;
 	createdFilePaths: string[] = [];
@@ -58,6 +58,9 @@ export default class TelegramSyncPlugin extends Plugin {
 			);
 			return;
 		}
+		// Uncomment timeout to debug if test during plugin loading
+		// await new Promise((resolve) => setTimeout(resolve, 3000));
+
 		if (!initType || initType == "user") {
 			try {
 				this.checkingUserConnection = true;
@@ -66,6 +69,7 @@ export default class TelegramSyncPlugin extends Plugin {
 				this.checkingUserConnection = false;
 			}
 		}
+
 		if (!initType || initType == "bot") {
 			try {
 				this.checkingBotConnection = true;
@@ -74,6 +78,7 @@ export default class TelegramSyncPlugin extends Plugin {
 				this.checkingBotConnection = false;
 			}
 		}
+
 		// restart telegram bot or user if needed
 		if (!this.restartingIntervalId) this.setRestartTelegramInterval(this.restartingIntervalTime);
 	}
@@ -230,7 +235,7 @@ export default class TelegramSyncPlugin extends Plugin {
 			});
 		}
 
-		needToSaveSettings && this.saveSettings();
+		needToSaveSettings && (await this.saveSettings());
 	}
 
 	async getBotUser(): Promise<TelegramBot.User> {

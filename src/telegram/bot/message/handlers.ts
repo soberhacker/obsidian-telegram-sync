@@ -3,7 +3,7 @@ import TelegramSyncPlugin from "../../../main";
 import TelegramBot from "node-telegram-bot-api";
 import { appendContentToNote, createFolderIfNotExist, defaultDelimiter, getUniqueFilePath } from "src/utils/fsUtils";
 import * as release from "../../../../release-notes.mjs";
-import { donationInlineKeyboard } from "../../../settings/buttons";
+import { donationInlineKeyboard } from "./donation";
 import { SendMessageOptions } from "node-telegram-bot-api";
 import path from "path";
 import * as Client from "../../user/client";
@@ -20,8 +20,9 @@ import { TFile } from "obsidian";
 import { enqueue } from "src/utils/queues";
 import { _15sec, _1sec, displayAndLog, displayAndLogError } from "src/utils/logUtils";
 import { getMessageDistributionRule } from "./filterEvaluations";
-import { MessageDistributionRule, getMessageDistributionRuleDisplayedName } from "src/settings/messageDistribution";
-import { unixTime2Date } from "src/utils/dateUtils";
+import { MessageDistributionRule, getMessageDistributionRuleInfo } from "src/settings/messageDistribution";
+import { getOffsetDate, unixTime2Date } from "src/utils/dateUtils";
+import { addOriginalUserMsg, canUpdateProcessingDate } from "src/telegram/user/sync";
 
 interface MediaGroup {
 	id: string;
@@ -75,18 +76,24 @@ export async function handleMessage(plugin: TelegramSyncPlugin, msg: TelegramBot
 		return;
 	}
 
-	const distributionRule = await getMessageDistributionRule(plugin, msg);
+	addOriginalUserMsg(msg);
+
 	let msgText = (msg.text || msg.caption || fileInfo).replace("\n", "..");
+
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	if ((msg as any).userMsg) {
+		displayAndLog(plugin, `Message "${msgText}" skipped\nAlready processed before!`, 0);
+		return;
+	}
+
+	const distributionRule = await getMessageDistributionRule(plugin, msg);
 	if (msgText.length > 30) msgText = msgText.slice(1, 30) + "...";
 	if (!distributionRule) {
-		displayAndLog(plugin, `Message "${msgText}" skipped \nNo matched distribution rule!`, 0);
+		displayAndLog(plugin, `Message "${msgText}" skipped\nNo matched distribution rule!`, 0);
 		return;
 	} else {
-		displayAndLog(
-			plugin,
-			`Message: ${msgText}\nDistribution rule: ${getMessageDistributionRuleDisplayedName(distributionRule)}`,
-			0,
-		);
+		const ruleInfo = getMessageDistributionRuleInfo(distributionRule);
+		displayAndLog(plugin, `Message: ${msgText}\nDistribution rule: ${JSON.stringify(ruleInfo)}`, 0);
 	}
 
 	// Check if message has been sended by allowed users or chats
@@ -132,6 +139,10 @@ export async function handleMessage(plugin: TelegramSyncPlugin, msg: TelegramBot
 		await displayAndLogError(plugin, error, "", "", msg, _15sec);
 	} finally {
 		--plugin.messagesLeftCnt;
+		if (plugin.messagesLeftCnt == 0 && canUpdateProcessingDate) {
+			plugin.settings.processOldMessagesSettings.lastProcessingDate = getOffsetDate();
+			await plugin.saveSettings();
+		}
 	}
 }
 
@@ -199,13 +210,9 @@ export async function handleFiles(
 		let fileByteArray: Uint8Array;
 		try {
 			const fileLink = await plugin.bot.getFileLink(fileId);
+			const chatId = msg.chat.id < 0 ? msg.chat.id.toString().slice(4) : msg.chat.id.toString();
 			telegramFileName =
-				telegramFileName ||
-				fileLink
-					?.split("/")
-					.pop()
-					?.replace(/file/, `${fileType}_${msg.chat.id.toString().slice(4)}`) ||
-				"";
+				telegramFileName || fileLink?.split("/").pop()?.replace(/file/, `${fileType}_${chatId}`) || "";
 			const fileStream = plugin.bot.getFileStream(fileId);
 			const fileChunks: Uint8Array[] = [];
 
@@ -253,7 +260,8 @@ export async function handleFiles(
 				plugin.botUser,
 			);
 			fileByteArray = media instanceof Buffer ? media : Buffer.alloc(0);
-			telegramFileName = telegramFileName || `${fileType}_${msg.chat.id.toString().slice(4)}_${msg.message_id}`;
+			const chatId = msg.chat.id < 0 ? msg.chat.id.toString().slice(4) : msg.chat.id.toString();
+			telegramFileName = telegramFileName || `${fileType}_${chatId}_${msg.message_id}`;
 			error = undefined;
 		}
 		telegramFileName = (msg.document && msg.document.file_name) || telegramFileName;
@@ -356,9 +364,9 @@ async function appendFileToNote(
 
 // show changes about new release
 export async function ifNewReleaseThenShowChanges(plugin: TelegramSyncPlugin, msg: TelegramBot.Message) {
-	if (plugin.settings.pluginVersion == release.version) return;
+	if (plugin.settings.pluginVersion == release.releaseVersion) return;
 
-	plugin.settings.pluginVersion = release.version;
+	plugin.settings.pluginVersion = release.releaseVersion;
 	await plugin.saveSettings();
 
 	if (plugin.userConnected && (await Client.subscribedOnInsiderChannel())) return;

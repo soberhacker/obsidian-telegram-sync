@@ -49,7 +49,7 @@ export async function connect(plugin: TelegramSyncPlugin, sessionType: client.Se
 		if (!error.message.includes("API_ID_PUBLISHED_FLOOD")) {
 			if (sessionType == "user") {
 				plugin.settings.telegramSessionType = initialSessionType;
-				plugin.saveSettings();
+				await plugin.saveSettings();
 			}
 			await displayAndLogError(plugin, error, "", "", undefined, 0);
 		}

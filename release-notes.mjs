@@ -4,20 +4,22 @@
 import { compareVersions } from "compare-versions";
 export const releaseVersion = "2.2.0";
 export const showNewFeatures = true;
-export let showBreakingChanges = true;
+// TODO !!! enable before release
+export let showBreakingChanges = false;
 
 const newFeatures =
-	"Main feature of this release is possibility to choose between keeping message appending order and parallel message processing";
-export const privacyPolicyLink = "https://github.com/soberhacker/obsidian-telegram-sync/blob/main/PRIVACY-POLICY.md";
-export const breakingChanges = `⚠️ <b><i><a href='${privacyPolicyLink}'>Privacy Policy</a> now implemented. Review before continued use advised.</i></b> ⚠️`;
+	"Main feature of this release is possibility to process messages older than 24 hours if Obsidian wasn't running. This feature available only for the plugin's channel subscribers";
+export const breakingChanges = `⚠️ <b><i>In this release, approximately 30 files have been changed. Although this version has gone through beta testing, please pay close attention during the initial runs of the plugin with the old message processing feature enabled.</i></b> ⚠️`;
 export const telegramChannelLink = "https://t.me/+J23BEZyLgoYzOTBk";
 const telegramChannelAHref = `<a href='${telegramChannelLink}'>channel</a>`;
-const telegramChannelIntroduction = `Subscribe to the plugin's ${telegramChannelAHref} to not only silence these informational messages in your bot, but also to be the first to get all the latest updates and a complete list of new features.`;
+const telegramChannelIntroduction = `Subscribe to the plugin's ${telegramChannelAHref} to not only silence these informational messages in your bot, but also to be the first to get all the latest updates.`;
 const telegramChatLink = "<a href='https://t.me/ObsidianTelegramSync'>chat</a>";
 const telegramChatIntroduction = `For discussions, please feel free to join the plugin's ${telegramChatLink}.`;
 const donation =
 	"If you appreciate this plugin and would like to support its continued development, please consider donating through the buttons below!";
 const bestRegards = "Best regards,\nYour soberhacker🍃🧘💻\n⌞";
+
+export const privacyPolicyLink = "https://github.com/soberhacker/obsidian-telegram-sync/blob/main/PRIVACY-POLICY.md";
 
 export const notes = `
 <u><b>Telegram Sync ${releaseVersion}</b></u>\n

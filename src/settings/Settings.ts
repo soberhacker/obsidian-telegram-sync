@@ -1,29 +1,32 @@
 import TelegramSyncPlugin from "src/main";
 import { App, ButtonComponent, Notice, PluginSettingTab, Setting, TextComponent } from "obsidian";
-import { nowPaymentsButton, paypalButton, buyMeACoffeeButton, kofiButton } from "./buttons";
 import TelegramBot from "node-telegram-bot-api";
 import { createProgressBar, updateProgressBar, deleteProgressBar, ProgressBarType } from "src/telegram/bot/progressBar";
 import * as Client from "src/telegram/user/client";
-import { BotSettingsModal } from "./BotSettingsModal";
-import { UserLogInModal } from "./UserLogInModal";
-import { version, versionALessThanVersionB, telegramChannelLink, privacyPolicyLink } from "release-notes.mjs";
+import { BotSettingsModal } from "./modals/BotSettings";
+import { UserLogInModal } from "./modals/UserLogin";
+import { releaseVersion, versionALessThanVersionB, telegramChannelLink, privacyPolicyLink } from "release-notes.mjs";
 import { _15sec, _1sec, _5sec, displayAndLog, doNotHide } from "src/utils/logUtils";
 import { getTopicId } from "src/telegram/bot/message/getters";
 import * as User from "../telegram/user/user";
 import { replaceMainJs } from "src/utils/fsUtils";
-import {
-	ConnectionStatusIndicatorType,
-	KeysOfConnectionStatusIndicatorType,
-	connectionStatusIndicatorSettingName,
-} from "src/ConnectionStatusIndicator";
+import { KeysOfConnectionStatusIndicatorType } from "src/ConnectionStatusIndicator";
 import { enqueue } from "src/utils/queues";
 import {
 	MessageDistributionRule,
 	createDefaultMessageDistributionRule,
-	getMessageDistributionRuleDisplayedName,
+	getMessageDistributionRuleInfo,
 } from "./messageDistribution";
-import { MessageDistributionRulesModal } from "./MessageDistributionRulesModal";
+import { MessageDistributionRulesModal } from "./modals/MessageDistributionRules";
 import { arrayMove } from "src/utils/arrayUtils";
+import {
+	ProcessOldMessagesSettings,
+	clearCachedUnprocessedMessages,
+	getDefaultProcessOldMessagesSettings,
+} from "src/telegram/user/sync";
+import { AdvancedSettingsModal } from "./modals/AdvancedSettings";
+import { ProcessOldMessagesSettingsModal } from "./modals/ProcessOldMessagesSettings";
+import { getOffsetDate } from "src/utils/dateUtils";
 
 export interface Topic {
 	name: string;
@@ -51,6 +54,10 @@ export interface TelegramSyncSettings {
 	messageDistributionRules: MessageDistributionRule[];
 	defaultMessageDelimiter: boolean;
 	parallelMessageProcessing: boolean;
+	processOldMessages: boolean;
+	processOldMessagesSettings: ProcessOldMessagesSettings;
+	processOtherBotsMessages: boolean;
+	retryFailedMessagesProcessing: boolean;
 	// add new settings above this line
 	topicNames: Topic[];
 }
@@ -75,6 +82,10 @@ export const DEFAULT_SETTINGS: TelegramSyncSettings = {
 	messageDistributionRules: [createDefaultMessageDistributionRule()],
 	defaultMessageDelimiter: true,
 	parallelMessageProcessing: false,
+	processOldMessages: false,
+	processOldMessagesSettings: getDefaultProcessOldMessagesSettings(),
+	processOtherBotsMessages: false,
+	retryFailedMessagesProcessing: false,
 	// add new settings above this line
 	topicNames: [],
 };
@@ -99,20 +110,15 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 
 		this.addBot();
 		this.addUser();
-		this.addTelegramChannel();
+		this.addAdvancedSettings();
 
-		this.containerEl.createEl("br");
-		this.containerEl.createEl("h2", { text: "Behavior settings" });
-		this.addDeleteMessagesFromTelegram();
-		this.addMessageDelimiterSetting();
-		this.addParallelMessageProcessing();
+		new Setting(this.containerEl).setName("Message distribution rules").setHeading();
 		this.addMessageDistributionRules();
-		this.containerEl.createEl("br");
-		this.containerEl.createEl("h2", { text: "System settings" });
-		await this.addBetaRelease();
-		this.addConnectionStatusIndicator();
 
-		this.addDonation();
+		new Setting(this.containerEl).setName("Insider features for subscribers").setHeading();
+		this.addTelegramChannel();
+		this.addProcessOldMessages();
+		await this.addBetaRelease();
 	}
 
 	hide() {
@@ -129,20 +135,24 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 			text: `Telegram Sync ${
 				versionALessThanVersionB(this.plugin.manifest.version, this.plugin.settings.betaVersion)
 					? this.plugin.settings.betaVersion
-					: version
+					: releaseVersion
 			}`,
 		});
 
-		versionContainer.createSpan().createEl("a", {
+		const privacyPolicyButton = versionContainer.createSpan().createEl("a", {
 			text: "Privacy Policy",
 			href: privacyPolicyLink,
-		}).style.fontSize = "0.75em";
+		});
+		privacyPolicyButton.style.fontSize = "0.75em";
+		privacyPolicyButton.style.color = "LightCoral";
+		privacyPolicyButton.style.textDecoration = "None";
 
 		this.containerEl.createEl("div", { text: "Created by " }).createEl("a", {
 			text: "soberhacker🍃🧘💻",
 			href: "https://github.com/soberhacker",
 		});
 
+		this.containerEl.createEl("br");
 		this.containerEl.createEl("br");
 	}
 
@@ -250,7 +260,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 					userLogInModal.onClose = async () => {
 						if (initialSessionType == "bot" && !this.plugin.userConnected) {
 							this.plugin.settings.telegramSessionType = initialSessionType;
-							this.plugin.saveSettings();
+							await this.plugin.saveSettings();
 						}
 						userStatusConstructor.call(this, userStatusComponent);
 						userLogInConstructor.call(this, userLogInButton);
@@ -265,7 +275,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 			.setDesc("Connect your telegram user. It's required only for ")
 			.addText(userStatusConstructor.bind(this))
 			.addButton(userLogInConstructor.bind(this));
-		// TODO removing Refresh button if this.plugin.settings.telegramSessionType changed to "bot" (when Log out, etc)
+		// TODO in 2024: removing Refresh button if this.plugin.settings.telegramSessionType changed to "bot" (when Log out, etc)
 		if (this.plugin.settings.telegramSessionType == "user" && !this.plugin.userConnected) {
 			userSettings.addExtraButton((refreshButton) => {
 				refreshButton.setTooltip("Refresh");
@@ -284,52 +294,13 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 			text: "a few secondary features",
 		});
 	}
-	addMessageDelimiterSetting() {
-		new Setting(this.containerEl)
-			.setName(`Default delimiter "***" between messages`)
-			.setDesc("Turn off for using a custom delimiter, which you can set in the template file")
-			.addToggle((toggle) => {
-				toggle.setValue(this.plugin.settings.defaultMessageDelimiter);
-				toggle.onChange(async (value) => {
-					this.plugin.settings.defaultMessageDelimiter = value;
-					await this.plugin.saveSettings();
-				});
-			});
-	}
-	addParallelMessageProcessing() {
-		new Setting(this.containerEl)
-			.setName(`Parallel Message Processing`)
-			.setDesc("Turn on for faster message and file processing. Caution: may disrupt message order")
-			.addToggle((toggle) => {
-				toggle.setValue(this.plugin.settings.parallelMessageProcessing);
-				toggle.onChange(async (value) => {
-					this.plugin.settings.parallelMessageProcessing = value;
-					await this.plugin.saveSettings();
-				});
-			});
-	}
+
 	addMessageDistributionRules() {
-		const messageDistributionSetting = new Setting(this.containerEl);
-		messageDistributionSetting
-			.setName("Message distribution rules")
-			.setDesc("Configure message filters, content template, and storage paths for new notes and files")
-			.addButton((btn: ButtonComponent) => {
-				btn.setButtonText("+");
-				btn.setClass("mod-cta");
-				btn.onClick(async () => {
-					const messageDistributionRulesModal = new MessageDistributionRulesModal(this.plugin);
-					messageDistributionRulesModal.onClose = async () => {
-						if (messageDistributionRulesModal.saved) await this.display();
-					};
-					messageDistributionRulesModal.open();
-				});
-			});
 		this.plugin.settings.messageDistributionRules.forEach((rule, index) => {
+			const ruleInfo = getMessageDistributionRuleInfo(rule);
 			const setting = new Setting(this.containerEl);
-			const preElement = document.createElement("pre");
-			preElement.textContent = "  • " + getMessageDistributionRuleDisplayedName(rule);
-			setting.infoEl.replaceWith(preElement);
-			setting.settingEl.classList.add("my-custom-list-item");
+			setting.setName(ruleInfo.name);
+			setting.setDesc(ruleInfo.description);
 			setting.addExtraButton((btn) => {
 				btn.setIcon("up-chevron-glyph")
 					.setTooltip("Move up")
@@ -363,7 +334,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 					});
 			});
 			setting.addExtraButton((btn) => {
-				btn.setIcon("cross")
+				btn.setIcon("trash-2")
 					.setTooltip("Delete")
 					.onClick(async () => {
 						this.plugin.settings.messageDistributionRules.remove(
@@ -382,32 +353,38 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 					});
 			});
 		});
-	}
 
-	addDeleteMessagesFromTelegram() {
-		new Setting(this.containerEl)
-			.setName("Delete messages from Telegram")
-			.setDesc(
-				"The Telegram messages will be deleted after processing them. If disabled, the Telegram messages will be marked as processed",
-			)
-			.addToggle((toggle) => {
-				toggle.setValue(this.plugin.settings.deleteMessagesFromTelegram);
-				toggle.onChange(async (value) => {
-					this.plugin.settings.deleteMessagesFromTelegram = value;
-					await this.plugin.saveSettings();
-				});
+		new Setting(this.containerEl).addButton((btn: ButtonComponent) => {
+			btn.setButtonText("Add rule");
+			btn.setClass("mod-cta");
+			btn.onClick(async () => {
+				const messageDistributionRulesModal = new MessageDistributionRulesModal(this.plugin);
+				messageDistributionRulesModal.onClose = async () => {
+					if (messageDistributionRulesModal.saved) await this.display();
+				};
+				messageDistributionRulesModal.open();
 			});
+		});
 	}
 
 	addTelegramChannel() {
 		if (this.subscribedOnInsiderChannel) return;
 
 		const telegramChannelSetting = new Setting(this.containerEl)
-			.setName("Telegram channel")
-			.setDesc("Get plugin updates, insider tips, beta versions, secrets 🤫 and ")
+			.setName("Telegram plugin's channel")
+			.setDesc(
+				"If you like this open source plugin and are considering donating to support its continued development, subscribe to the private Telegram channel. In exchange, you will be the first to get all the latest updates and secrets🤫, as well as gain access to beta versions and ",
+			)
 			.addButton((btn) => {
 				btn.setButtonText("Subscribe");
-				btn.onClick(() => window.open(telegramChannelLink, "_blank"));
+				btn.setClass("mod-cta");
+				btn.onClick(() => {
+					displayAndLog(
+						this.plugin,
+						"After channel subscription, connect your Telegram user (if not done) and refresh the plugin settings for insider features",
+					);
+					window.open(telegramChannelLink, "_blank");
+				});
 			});
 		telegramChannelSetting.descEl.createEl("a", {
 			href: "https://github.com/soberhacker/obsidian-telegram-sync/blob/main/docs/Telegram%20Sync%20Insider%20Features.md",
@@ -422,7 +399,9 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 
 		new Setting(this.containerEl)
 			.setName("Beta release")
-			.setDesc("The release installation will be completed during the next loading of the plugin")
+			.setDesc(
+				"Install the latest beta release to be among the first to try out new features. It will launch during the plugin's next load",
+			)
 			.addButton((btn) => {
 				btn.setTooltip("Install Beta Release");
 				btn.setWarning();
@@ -433,7 +412,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 						const betaRelease = await Client.getLastBetaRelease(this.plugin.manifest.version);
 						notice.setMessage(`Installing...`);
 						await replaceMainJs(this.app.vault, betaRelease.mainJs);
-						this.plugin.settings.betaVersion = betaRelease.version;
+						this.plugin.settings.betaVersion = betaRelease.betaVersion;
 						await this.plugin.saveSettings();
 						notice.setMessage(installed);
 					} catch (e) {
@@ -462,41 +441,43 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 			});
 	}
 
-	addConnectionStatusIndicator() {
+	addProcessOldMessages() {
+		if (!this.plugin.userConnected || !this.subscribedOnInsiderChannel) return;
+
 		new Setting(this.containerEl)
-			.setName(connectionStatusIndicatorSettingName)
-			.setDesc("Choose when you want to see the connection status indicator")
-			.addDropdown((dropDown) => {
-				dropDown.addOptions(ConnectionStatusIndicatorType);
-				dropDown.setValue(this.plugin.settings.connectionStatusIndicatorType);
-				dropDown.onChange(async (value) => {
-					this.plugin.settings.connectionStatusIndicatorType = value as KeysOfConnectionStatusIndicatorType;
-					this.plugin.connectionStatusIndicator?.update();
+			.setName("Process old messages")
+			.setDesc(
+				"During the plugin loading, unprocessed messages that are older than 24 hours and are not accessible to the bot will be forwarded to the same chat using the connected user's account. This action will enable the bot to detect and process these messages",
+			)
+			.addButton((btn) => {
+				btn.setIcon("settings")
+					.setTooltip("Settings")
+					.onClick(async () => {
+						const processOldMessagesSettingsModal = new ProcessOldMessagesSettingsModal(this.plugin);
+						processOldMessagesSettingsModal.open();
+					});
+			})
+			.addToggle((toggle) => {
+				toggle.setValue(this.plugin.settings.processOldMessages);
+				toggle.onChange(async (value) => {
+					if (!value) clearCachedUnprocessedMessages();
+					else this.plugin.settings.processOldMessagesSettings.lastProcessingDate = getOffsetDate();
+					this.plugin.settings.processOldMessages = value;
+
 					await this.plugin.saveSettings();
 				});
 			});
 	}
 
-	addDonation() {
-		this.containerEl.createEl("hr");
-
-		const donationDiv = this.containerEl.createEl("div");
-		donationDiv.addClass("settings-donation-container");
-
-		const donationText = createEl("p");
-		donationText.appendText(
-			"If you like this Plugin and are considering donating to support continued development, use the buttons below!",
-		);
-		donationDiv.appendChild(donationText);
-
-		nowPaymentsButton.style.marginRight = "20px";
-		donationDiv.appendChild(nowPaymentsButton);
-		buyMeACoffeeButton.style.marginRight = "20px";
-		donationDiv.appendChild(buyMeACoffeeButton);
-		donationDiv.appendChild(createEl("p"));
-		kofiButton.style.marginRight = "20px";
-		donationDiv.appendChild(kofiButton);
-		donationDiv.appendChild(paypalButton);
+	addAdvancedSettings() {
+		new Setting(this.containerEl).addButton((btn: ButtonComponent) => {
+			btn.setButtonText("Advanced settings");
+			btn.setClass("mod-cta");
+			btn.onClick(async () => {
+				const advancedSettingsModal = new AdvancedSettingsModal(this.plugin);
+				advancedSettingsModal.open();
+			});
+		});
 	}
 
 	async storeTopicName(msg: TelegramBot.Message) {

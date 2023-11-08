@@ -23,6 +23,7 @@ import { enqueue } from "src/utils/queues";
 import { sanitizeFileName, sanitizeFilePath } from "src/utils/fsUtils";
 import path from "path";
 import { defaultFileNameTemplate, defaultNoteNameTemplate } from "src/settings/messageDistribution";
+import { Api } from "telegram";
 
 // Delete a message or send a confirmation reply based on settings and message age
 export async function finalizeMessageProcessing(plugin: TelegramSyncPlugin, msg: TelegramBot.Message, error?: Error) {
@@ -30,14 +31,21 @@ export async function finalizeMessageProcessing(plugin: TelegramSyncPlugin, msg:
 	if (error || !plugin.bot) {
 		return;
 	}
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	const originalMsg: Api.Message | undefined = (msg as any).originalUserMsg;
+
+	if (originalMsg) {
+		await plugin.bot.deleteMessage(msg.chat.id, msg.message_id);
+	}
 
 	const messageTime = unixTime2Date(msg.date);
 	const timeDifference = new Date().getTime() - messageTime.getTime();
 	const hoursDifference = timeDifference / _1h;
 
-	if (plugin.settings.deleteMessagesFromTelegram && hoursDifference <= 48) {
-		// Send the initial progress bar
-		await plugin.bot?.deleteMessage(msg.chat.id, msg.message_id);
+	if (plugin.settings.deleteMessagesFromTelegram && originalMsg) {
+		await originalMsg.delete();
+	} else if (plugin.settings.deleteMessagesFromTelegram && hoursDifference <= 24) {
+		await plugin.bot.deleteMessage(msg.chat.id, msg.message_id);
 	} else {
 		let needReply = true;
 		let errorMessage = "";
@@ -49,7 +57,12 @@ export async function finalizeMessageProcessing(plugin: TelegramSyncPlugin, msg:
 		} catch (e) {
 			errorMessage = `\n\nCan't "like" the message, ${e}`;
 		}
-		if (needReply) {
+		if (needReply && originalMsg) {
+			await originalMsg.reply({
+				message: "...✅..." + errorMessage,
+				silent: true,
+			});
+		} else if (needReply) {
 			await plugin.bot?.sendMessage(msg.chat.id, "...✅..." + errorMessage, {
 				reply_to_message_id: msg.message_id,
 				disable_notification: true,

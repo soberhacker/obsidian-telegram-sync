@@ -1,14 +1,14 @@
 import { Modal, normalizePath, Setting } from "obsidian";
-import TelegramSyncPlugin from "../main";
+import TelegramSyncPlugin from "../../main";
 import {
 	defaultFileNameTemplate,
 	defaultNoteNameTemplate,
 	extractConditionsFromFilterQuery,
 	createBlankMessageDistributionRule,
 	MessageDistributionRule,
-} from "./messageDistribution";
-import { FileSuggest } from "./suggesters/FileSuggester";
-import { _15sec, displayAndLog } from "../utils/logUtils";
+} from "../messageDistribution";
+import { FileSuggest } from "../suggesters/FileSuggester";
+import { _15sec, displayAndLog } from "../../utils/logUtils";
 
 export class MessageDistributionRulesModal extends Modal {
 	messageDistributionRule: MessageDistributionRule;
