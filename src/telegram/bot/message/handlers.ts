@@ -153,8 +153,11 @@ export async function handleMessageText(
 ) {
 	const formattedContent = await applyNoteContentTemplate(plugin, distributionRule.templateFilePath, msg);
 	const notePath = await applyNotePathTemplate(plugin, distributionRule.notePathTemplate, msg);
-	const noteFolderPath = path.dirname(notePath);
-	createFolderIfNotExist(plugin.app.vault, noteFolderPath);
+
+	let noteFolderPath = path.dirname(notePath);
+	if (noteFolderPath != ".") createFolderIfNotExist(plugin.app.vault, noteFolderPath);
+	else noteFolderPath = "";
+
 	await enqueue(
 		appendContentToNote,
 		plugin.app.vault,
@@ -342,8 +345,10 @@ async function appendFileToNote(
 	}
 
 	const notePath = await applyNotePathTemplate(plugin, distributionRule.notePathTemplate, msg);
-	const noteFolderPath = path.dirname(notePath);
-	createFolderIfNotExist(plugin.app.vault, noteFolderPath);
+
+	let noteFolderPath = path.dirname(notePath);
+	if (noteFolderPath != ".") createFolderIfNotExist(plugin.app.vault, noteFolderPath);
+	else noteFolderPath = "";
 
 	if (msg.media_group_id) {
 		mediaGroup = {
