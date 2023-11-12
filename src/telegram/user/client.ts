@@ -20,7 +20,7 @@ let client: TelegramClient | undefined;
 let _botToken: string | undefined;
 let _sessionType: SessionType;
 let _sessionId: number;
-let _clientUser: Api.User | undefined;
+export let clientUser: Api.User | undefined;
 let _voiceTranscripts: Map<string, string> | undefined;
 let lastReconnectTime = new Date();
 
@@ -84,8 +84,8 @@ export async function init(sessionId: number, sessionType: SessionType, deviceId
 			const authorized = await client.checkAuthorization();
 			if (sessionType == "user" && authorized && (await client.isBot()))
 				throw new Error("Stored session conflict. Try to log in again.");
-			if (!authorized) _clientUser = undefined;
-			else if (!_clientUser && authorized) _clientUser = (await client.getMe()) as Api.User;
+			if (!authorized) clientUser = undefined;
+			else if (!clientUser && authorized) clientUser = (await client.getMe()) as Api.User;
 		} catch (e) {
 			if (
 				sessionType == "user" &&
@@ -130,12 +130,12 @@ export async function signInAsBot(botToken: string) {
 		)
 		.then(async (botUser) => {
 			_botToken = botToken;
-			_clientUser = botUser as Api.User;
+			clientUser = botUser as Api.User;
 			return botUser;
 		})
 		.catch((e) => {
 			_botToken = undefined;
-			_clientUser = undefined;
+			clientUser = undefined;
 			throw new Error(e);
 		});
 }
@@ -171,12 +171,13 @@ export async function signInAsUserWithQrCode(container: HTMLDivElement, password
 				},
 			},
 		)
-		.then((clientUser) => {
-			clientUser = clientUser as Api.User;
+		.then((user) => {
+			clientUser = user as Api.User;
 			return clientUser;
 		})
-		.catch(() => {
-			_clientUser = undefined;
+		.catch((e) => {
+			clientUser = undefined;
+			console.log(e);
 		});
 }
 
@@ -188,8 +189,8 @@ async function checkBotService(): Promise<TelegramClient> {
 
 export async function checkUserService(): Promise<{ checkedClient: TelegramClient; checkedUser: Api.User }> {
 	const checkedClient = await checkBotService();
-	if ((await checkedClient.isBot()) || !_clientUser) throw NotAuthorizedAsUser;
-	return { checkedClient, checkedUser: _clientUser };
+	if ((await checkedClient.isBot()) || !clientUser) throw NotAuthorizedAsUser;
+	return { checkedClient, checkedUser: clientUser };
 }
 
 // download files > 20MB
@@ -205,8 +206,8 @@ export async function downloadMedia(
 	// user clients needs different file id
 	let stage = 0;
 	let message: Api.Message | undefined = undefined;
-	if (_clientUser && botUser && (await isAuthorizedAsUser())) {
-		const inputPeer = await getInputPeer(checkedClient, _clientUser, botUser, botMsg);
+	if (clientUser && botUser && (await isAuthorizedAsUser())) {
+		const inputPeer = await getInputPeer(checkedClient, clientUser, botUser, botMsg);
 		message = await getMessage(checkedClient, inputPeer, botMsg);
 	}
 

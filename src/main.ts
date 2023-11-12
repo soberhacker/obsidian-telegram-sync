@@ -61,23 +61,10 @@ export default class TelegramSyncPlugin extends Plugin {
 		// Uncomment timeout to debug if test during plugin loading
 		// await new Promise((resolve) => setTimeout(resolve, 3000));
 
-		if (!initType || initType == "user") {
-			try {
-				this.checkingUserConnection = true;
-				await User.connect(this, this.settings.telegramSessionType, this.settings.telegramSessionId);
-			} finally {
-				this.checkingUserConnection = false;
-			}
-		}
+		if (!initType || initType == "user")
+			await User.connect(this, this.settings.telegramSessionType, this.settings.telegramSessionId);
 
-		if (!initType || initType == "bot") {
-			try {
-				this.checkingBotConnection = true;
-				await Bot.connect(this);
-			} finally {
-				this.checkingBotConnection = false;
-			}
-		}
+		if (!initType || initType == "bot") await Bot.connect(this);
 
 		// restart telegram bot or user if needed
 		if (!this.restartingIntervalId) this.setRestartTelegramInterval(this.restartingIntervalTime);

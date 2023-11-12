@@ -1,58 +1,54 @@
 import TelegramSyncPlugin from "src/main";
-import * as client from "./client";
+import * as Client from "./client";
 import { StatusMessages, displayAndLogError } from "src/utils/logUtils";
-import * as release from "release-notes.mjs";
 
-export async function connect(plugin: TelegramSyncPlugin, sessionType: client.SessionType, sessionId?: number) {
-	// TODO in 2024: remove this condition
-	// Api keys were changed so needed some adaptation
-	if (
-		sessionType == "user" &&
-		!release.showBreakingChanges &&
-		release.versionALessThanVersionB(plugin.settings.pluginVersion, "1.9.0")
-	) {
-		sessionType = "bot";
-		plugin.settings.telegramSessionType = "bot";
-		await plugin.saveSettings();
-		release.showBreakingChangesInReleaseNotes();
-	}
-
+export async function connect(
+	plugin: TelegramSyncPlugin,
+	sessionType: Client.SessionType,
+	sessionId?: number,
+	qrCodeContainer?: HTMLDivElement,
+	password?: string,
+): Promise<string | undefined> {
+	if (plugin.checkingUserConnection) return;
 	if (!(sessionType == "user" || plugin.settings.botToken !== "")) return;
+	if (sessionType == "user" && !sessionId && !qrCodeContainer) return;
 
-	const initialSessionType = plugin.settings.telegramSessionType;
+	plugin.checkingUserConnection = true;
 	try {
-		if (!sessionId) {
-			plugin.settings.telegramSessionId = client.getNewSessionId();
-			await plugin.saveSettings();
-		}
-
-		if (sessionType != plugin.settings.telegramSessionType) {
+		const newSessionId = sessionId || Client.getNewSessionId();
+		if (sessionType == "bot" && !sessionId) {
+			plugin.settings.telegramSessionId = newSessionId;
 			plugin.settings.telegramSessionType = sessionType;
 			await plugin.saveSettings();
 		}
 
-		await client.init(
-			plugin.settings.telegramSessionId,
-			plugin.settings.telegramSessionType,
-			plugin.currentDeviceId,
-		);
+		await Client.init(newSessionId, sessionType, plugin.currentDeviceId);
 
-		plugin.userConnected = await client.isAuthorizedAsUser();
+		if (sessionType == "user" && qrCodeContainer) {
+			await Client.signInAsUserWithQrCode(qrCodeContainer, password);
+		}
 
-		if (
-			plugin.settings.telegramSessionType == "bot" ||
-			(plugin.settings.telegramSessionType == "user" && !plugin.userConnected && sessionId)
-		) {
-			await client.signInAsBot(plugin.settings.botToken);
+		plugin.userConnected = await Client.isAuthorizedAsUser();
+
+		if (sessionType == "bot" || !plugin.userConnected) {
+			await Client.signInAsBot(plugin.settings.botToken);
+		}
+
+		if (sessionType == "user" && !plugin.userConnected) return "Connection failed. See logs";
+
+		if (plugin.userConnected && !sessionId) {
+			plugin.settings.telegramSessionId = newSessionId;
+			plugin.settings.telegramSessionType = sessionType;
+			await plugin.saveSettings();
 		}
 	} catch (error) {
 		if (!error.message.includes("API_ID_PUBLISHED_FLOOD")) {
-			if (sessionType == "user") {
-				plugin.settings.telegramSessionType = initialSessionType;
-				await plugin.saveSettings();
-			}
+			plugin.userConnected = false;
 			await displayAndLogError(plugin, error, "", "", undefined, 0);
+			return "Connection failed: " + error.message;
 		}
+	} finally {
+		plugin.checkingUserConnection = false;
 	}
 }
 
@@ -60,8 +56,8 @@ export async function reconnect(plugin: TelegramSyncPlugin, displayError = false
 	if (plugin.checkingUserConnection) return;
 	plugin.checkingUserConnection = true;
 	try {
-		await client.reconnect(false);
-		plugin.userConnected = await client.isAuthorizedAsUser();
+		await Client.reconnect(false);
+		plugin.userConnected = await Client.isAuthorizedAsUser();
 	} catch (error) {
 		plugin.userConnected = false;
 		if (displayError && plugin.isBotConnected() && plugin.settings.telegramSessionType == "user") {
@@ -80,7 +76,7 @@ export async function reconnect(plugin: TelegramSyncPlugin, displayError = false
 // Stop connection as user
 export async function disconnect(plugin: TelegramSyncPlugin) {
 	try {
-		await client.stop();
+		await Client.stop();
 	} finally {
 		plugin.userConnected = false;
 	}
