@@ -1,6 +1,5 @@
 import { Modal, Setting } from "obsidian";
 import TelegramSyncPlugin from "src/main";
-import * as Client from "src/telegram/user/client";
 import * as User from "src/telegram/user/user";
 
 export class UserLogInModal extends Modal {
