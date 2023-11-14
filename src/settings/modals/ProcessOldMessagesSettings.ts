@@ -21,22 +21,7 @@ export class ProcessOldMessagesSettingsModal extends Modal {
 	}
 
 	async addChatsForSearch() {
-		new Setting(this.processOldMessagesSettingsDiv)
-			.setName("Chats for message search")
-			.setHeading()
-			.addButton(async (btn: ButtonComponent) => {
-				btn.setIcon("refresh-cw");
-				btn.setTooltip("Update chats");
-				btn.setClass("mod-cta");
-				btn.onClick(async () => {
-					this.plugin.settings.processOldMessagesSettings.chatsForSearch = await getChatsForSearch(
-						this.plugin,
-						30,
-					);
-					await this.plugin.saveSettings();
-					this.display();
-				});
-			});
+		new Setting(this.processOldMessagesSettingsDiv).setName("Chats for message search").setHeading();
 		this.plugin.settings.processOldMessagesSettings.chatsForSearch.forEach((chat) => {
 			const setting = new Setting(this.processOldMessagesSettingsDiv);
 			setting.setName(`"${chat.name}"`);
@@ -50,6 +35,22 @@ export class ProcessOldMessagesSettingsModal extends Modal {
 					});
 			});
 		});
+		new Setting(this.processOldMessagesSettingsDiv)
+			.setDesc(
+				"Choose chats with your connected bot in which to search for old messages. Only chats with activity in the last 30 days will be available. If no chat is chosen, old message processing will not occur",
+			)
+			.addButton(async (btn: ButtonComponent) => {
+				btn.setButtonText("Add chats");
+				btn.setClass("mod-cta");
+				btn.onClick(async () => {
+					this.plugin.settings.processOldMessagesSettings.chatsForSearch = await getChatsForSearch(
+						this.plugin,
+						30,
+					);
+					await this.plugin.saveSettings();
+					this.display();
+				});
+			});
 	}
 
 	onOpen() {

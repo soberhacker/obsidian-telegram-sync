@@ -44,7 +44,7 @@ export class AdvancedSettingsModal extends Modal {
 
 	addParallelMessageProcessing() {
 		new Setting(this.advancedSettingsDiv)
-			.setName(`Parallel Message Processing`)
+			.setName(`Parallel message processing`)
 			.setDesc("Turn on for faster message and file processing. Caution: may disrupt message order")
 			.addToggle((toggle) => {
 				toggle.setValue(this.plugin.settings.parallelMessageProcessing);
