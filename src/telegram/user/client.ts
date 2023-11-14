@@ -32,10 +32,7 @@ export function getNewSessionId(): number {
 	return Number(formatDateTime(new Date(), "YYYYMMDDHHmmssSSS"));
 }
 
-export const insiderChannel = new Api.InputPeerChannel({
-	channelId: bigInt("1913400014"),
-	accessHash: bigInt("-3471904725986943479"),
-});
+export const insiderChannel = new Api.PeerChannel({ channelId: bigInt("1913400014") });
 
 // Stop the bot polling
 export async function stop() {
@@ -304,20 +301,13 @@ export async function subscribedOnInsiderChannel(): Promise<boolean> {
 	if (!client || !client.connected || _sessionType == "bot") return false;
 	try {
 		const { checkedClient } = await checkUserService();
-		const inputDialogPeer = new Api.InputDialogPeer({
-			peer: insiderChannel,
-		});
-		const dialogs = await checkedClient.invoke(
-			new Api.messages.GetPeerDialogs({
-				peers: [inputDialogPeer],
-			}),
-		);
-		return dialogs.dialogs.length > 0;
+		const messages = await checkedClient.getMessages(insiderChannel, { limit: 1 });
+		return messages.length > 0;
 	} catch (e) {
-		console.log(e);
 		return false;
 	}
 }
+
 export async function getLastBetaRelease(currentVersion: string): Promise<{ betaVersion: string; mainJs: Buffer }> {
 	const { checkedClient } = await checkUserService();
 	const messages = await checkedClient.getMessages(insiderChannel, {

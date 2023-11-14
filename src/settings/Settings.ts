@@ -110,33 +110,37 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 		this.subscribedOnInsiderChannel = false;
 	}
 
-	async prepareRefresh() {
+	async refresh() {
+		const botConnected = this.plugin.isBotConnected();
+		const userConnected = this.plugin.userConnected;
+		const checkingBotConnection = this.plugin.checkingBotConnection;
+		const checkingUserConnection = this.plugin.checkingUserConnection;
+		const telegramSessionType = this.plugin.settings.telegramSessionType;
+		if (
+			!this.refreshValues ||
+			botConnected != this.refreshValues.botConnected ||
+			userConnected != this.refreshValues.userConnected ||
+			checkingBotConnection != this.refreshValues.checkingBotConnection ||
+			checkingUserConnection != this.refreshValues.checkingUserConnection ||
+			telegramSessionType != this.plugin.settings.telegramSessionType
+		) {
+			try {
+				if (!this.refreshValues) this.refreshValues = {};
+				else await this.display();
+			} finally {
+				this.refreshValues.botConnected = botConnected;
+				this.refreshValues.userConnected = userConnected;
+				this.refreshValues.checkingBotConnection = checkingBotConnection;
+				this.refreshValues.checkingUserConnection = checkingUserConnection;
+				this.refreshValues.telegramSessionType = this.plugin.settings.telegramSessionType;
+			}
+		}
+	}
+
+	async setRefreshInterval() {
 		clearInterval(this.refreshIntervalId);
 		this.refreshIntervalId = setInterval(async () => {
-			const botConnected = this.plugin.isBotConnected();
-			const userConnected = this.plugin.userConnected;
-			const checkingBotConnection = this.plugin.checkingBotConnection;
-			const checkingUserConnection = this.plugin.checkingUserConnection;
-			const telegramSessionType = this.plugin.settings.telegramSessionType;
-			if (
-				!this.refreshValues ||
-				botConnected != this.refreshValues.botConnected ||
-				userConnected != this.refreshValues.userConnected ||
-				checkingBotConnection != this.refreshValues.checkingBotConnection ||
-				checkingUserConnection != this.refreshValues.checkingUserConnection ||
-				telegramSessionType != this.plugin.settings.telegramSessionType
-			) {
-				try {
-					if (!this.refreshValues) this.refreshValues = {};
-					else await this.display();
-				} finally {
-					this.refreshValues.botConnected = botConnected;
-					this.refreshValues.userConnected = userConnected;
-					this.refreshValues.checkingBotConnection = checkingBotConnection;
-					this.refreshValues.checkingUserConnection = checkingUserConnection;
-					this.refreshValues.telegramSessionType = this.plugin.settings.telegramSessionType;
-				}
-			}
+			await enqueue(this, this.refresh);
 		}, _1sec);
 	}
 
@@ -156,8 +160,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 		this.addTelegramChannel();
 		await this.addProcessOldMessages();
 		await this.addBetaRelease();
-
-		await enqueue(this, this.prepareRefresh);
+		await this.setRefreshInterval();
 	}
 
 	hide() {
