@@ -133,12 +133,22 @@ export class MessageDistributionRulesModal extends Modal {
 			b.setTooltip("Submit")
 				.setIcon("checkmark")
 				.onClick(async () => {
-					if (
-						!this.messageDistributionRule.templateFilePath &&
-						!this.messageDistributionRule.notePathTemplate &&
-						!this.messageDistributionRule.filePathTemplate
-					) {
+					const template = this.messageDistributionRule.templateFilePath;
+					const notePath = this.messageDistributionRule.notePathTemplate;
+					const filePath = this.messageDistributionRule.filePathTemplate;
+					if (!template && !notePath && !filePath) {
 						displayAndLog(this.plugin, "Please, fill at least one field", _15sec);
+						return;
+					}
+					if (
+						(template && (template == notePath || template == filePath)) ||
+						(filePath && filePath == notePath)
+					) {
+						displayAndLog(
+							this.plugin,
+							`"Template file path", "Note path template" and "File path template" must not be equal to one another`,
+							_15sec,
+						);
 						return;
 					}
 					if (!this.editing) this.plugin.settings.messageDistributionRules.push(this.messageDistributionRule);

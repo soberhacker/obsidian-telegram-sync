@@ -62,7 +62,7 @@ export default class ConnectionStatusIndicator {
 		if (!this.icon) return;
 		this.icon.setAttrs({
 			"data-tooltip-position": "top",
-			"aria-label": `${error}\n${checkConnectionMessage}`.trimStart(),
+			"aria-label": `${error || ""}\n${checkConnectionMessage}`.trimStart(),
 		});
 		this.label?.setAttr("style", "position: relative; left: -3px; bottom: -3px; font-weight: bold; color:red;");
 		this.label?.setText("x");

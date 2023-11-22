@@ -69,7 +69,7 @@ export async function getChatsForSearch(plugin: TelegramSyncPlugin, offsetDays: 
 			(!dialog.isUser || dialog.id?.toJSNumber() == plugin.botUser?.id) &&
 			dialog.date > getOffsetDate(offsetDays),
 	);
-	notification = `${notification}\n\n2 of 3\nFilter chats by bot "${botUserName}"`;
+	notification = `${notification}\n\n2 of 3\nFiltering chats by bot "${botUserName}"`;
 	const chatsForSearch: ChatForSearch[] = [];
 	for (const dialog of allDialogs) {
 		notice.setMessage(notification + progress);

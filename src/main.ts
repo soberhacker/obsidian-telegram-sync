@@ -20,6 +20,7 @@ import {
 	defaultNoteNameTemplate,
 	defaultTelegramFolder,
 } from "./settings/messageDistribution";
+import os from "os";
 
 // TODO in 2024: add "connecting"
 export type ConnectionStatus = "connected" | "disconnected";
@@ -103,6 +104,13 @@ export default class TelegramSyncPlugin extends Plugin {
 			}
 
 			if (needRestartInterval) this.setRestartTelegramInterval(_15sec);
+			else if (this.bot && !sessionType && os.type() == "Darwin" && this.isBotConnected()) {
+				try {
+					this.botUser = await this.bot.getMe();
+				} catch {
+					this.setBotStatus("disconnected");
+				}
+			}
 		} catch {
 			this.setRestartTelegramInterval(
 				this.restartingIntervalTime < _2min ? this.restartingIntervalTime * 2 : this.restartingIntervalTime,
