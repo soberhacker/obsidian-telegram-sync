@@ -109,6 +109,7 @@ export default class TelegramSyncPlugin extends Plugin {
 					this.botUser = await this.bot.getMe();
 				} catch {
 					this.setBotStatus("disconnected");
+					this.userConnected = false;
 				}
 			}
 		} catch {
