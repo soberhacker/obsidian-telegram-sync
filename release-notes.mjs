@@ -1,7 +1,6 @@
 // TODO translating messages
 // TODO notify in setting that new beta version is ready for installing
 // TODO add messagesLeftCnt displaying in status bar
-// TODO bug with settings reloading, caching, no beta versions
 import { compareVersions } from "compare-versions";
 export const releaseVersion = "2.2.0";
 export const showNewFeatures = true;
