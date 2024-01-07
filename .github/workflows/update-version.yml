@@ -49,7 +49,9 @@ jobs:
                   labels: automerge
 
             - name: Print release outputs
-              run: echo "${{ steps.release.outputs }}"
+              env:
+                  RELEASE_OUTPUTS: ${{ toJSON(steps.release.outputs) }}
+              run: echo $RELEASE_OUTPUTS
 
             - name: Get number of release PR
               if: ${{steps.release.outputs.pr}}
