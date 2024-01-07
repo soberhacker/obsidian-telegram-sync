@@ -22,6 +22,11 @@ export interface MessageFilterCondition {
 	value: string;
 }
 
+export interface MessageDistributionRuleInfo {
+	name: string;
+	description: string;
+}
+
 export const defaultMessageFilterQuery = `{{${ConditionType.ALL}}}`;
 
 export function createDefaultMessageFilterCondition(): MessageFilterCondition {
@@ -109,13 +114,30 @@ export function extractConditionsFromFilterQuery(messageFilterQuery: string): Me
 	});
 }
 
-export function getMessageDistributionRuleDisplayedName(distributionRule: MessageDistributionRule): string {
-	if (!distributionRule.messageFilterConditions || distributionRule.messageFilterConditions.length == 0)
-		return "error: wrong filter query!";
-	let displayedName = "";
-	for (const condition of distributionRule.messageFilterConditions) {
-		if (condition.conditionType == ConditionType.ALL) return "all messages";
-		displayedName = displayedName + `${condition.conditionType} ${condition.operation} ${condition.value}; `;
+export function getMessageDistributionRuleInfo(distributionRule: MessageDistributionRule): MessageDistributionRuleInfo {
+	const messageDistributionRuleInfo: MessageDistributionRuleInfo = { name: "", description: "" };
+	if (distributionRule.notePathTemplate)
+		messageDistributionRuleInfo.description = `Note path: ${distributionRule.notePathTemplate}`;
+	else if (distributionRule.templateFilePath)
+		messageDistributionRuleInfo.description = `Template file: ${distributionRule.templateFilePath}`;
+	else if (distributionRule.filePathTemplate)
+		messageDistributionRuleInfo.description = `File path: ${distributionRule.filePathTemplate}`;
+	if (!distributionRule.messageFilterConditions || distributionRule.messageFilterConditions.length == 0) {
+		messageDistributionRuleInfo.name = "error: wrong filter query!";
+		return messageDistributionRuleInfo;
 	}
-	return displayedName.length > 50 ? displayedName.slice(0, 50) + "..." : displayedName;
+
+	for (const condition of distributionRule.messageFilterConditions) {
+		if (condition.conditionType == ConditionType.ALL) {
+			messageDistributionRuleInfo.name = `filter = "all messages"`;
+			return messageDistributionRuleInfo;
+		}
+		messageDistributionRuleInfo.name =
+			messageDistributionRuleInfo.name +
+			`${condition.conditionType} ${condition.operation} "${condition.value}" & `;
+	}
+	if (messageDistributionRuleInfo.name.length > 50)
+		messageDistributionRuleInfo.name = messageDistributionRuleInfo.name.slice(0, 50) + "...";
+	else messageDistributionRuleInfo.name = messageDistributionRuleInfo.name.replace(/ & $/, "");
+	return messageDistributionRuleInfo;
 }

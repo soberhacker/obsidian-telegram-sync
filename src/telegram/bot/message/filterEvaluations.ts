@@ -9,15 +9,16 @@ function isUserFiltered(msg: TelegramBot.Message, userNameOrId: string): boolean
 
 	const user = msg.from;
 	const fullName = `${user.first_name} ${user.last_name || ""}`.trim();
+	const userId = user.id < 0 ? user.id.toString().slice(4) : user.id.toString();
 
-	return [user.username, user.id.toString().slice(4), fullName].includes(userNameOrId);
+	return [user.username, userId, fullName].includes(userNameOrId);
 }
 
 function isChatFiltered(msg: TelegramBot.Message, chatNameOrId: string): boolean {
 	if (!msg?.chat || !chatNameOrId) return false;
 
 	const chat = msg.chat;
-	const chatId = chat.id.toString().slice(4);
+	const chatId = chat.id < 0 ? chat.id.toString().slice(4) : chat.id.toString();
 
 	let chatName = "";
 	if (chat.type == "private") {

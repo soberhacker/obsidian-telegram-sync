@@ -1,6 +1,7 @@
 import TelegramBot from "node-telegram-bot-api";
 import { Notice } from "obsidian";
 import TelegramSyncPlugin from "src/main";
+import { stopUpdatingProcessingDate } from "src/telegram/user/sync";
 
 export const _1sec = 1000;
 export const _2sec = 2 * _1sec;
@@ -14,12 +15,14 @@ export const _1h = 60 * _1min;
 export const _2h = 2 * _1h;
 export const doNotHide = 24 * _1h;
 
-// TODO: connect with ConnectionStatus
+// TODO in 2024: connect with ConnectionStatus
 export enum StatusMessages {
 	BOT_CONNECTED = "Telegram bot is connected!",
 	BOT_DISCONNECTED = "Telegram bot is disconnected!",
 	USER_DISCONNECTED = "Telegram user is disconnected!",
 }
+
+export let errorCache = "";
 
 interface PersistentNotice {
 	notice: Notice;
@@ -56,8 +59,9 @@ export async function displayAndLogError(
 	action?: string,
 	msg?: TelegramBot.Message,
 	timeout?: number, // 0 - do not show in obsidian | undefined - never hide
+	addToCache?: boolean,
 ) {
-	let beautyError = `${error.name}: ${error.message.replace(/Error: /g, "")}\n\n${status || ""}\n\n${action || ""}`;
+	let beautyError = `${error.name}: ${error.message.replace(/Error: /g, "")}\n${status || ""}\n${action || ""}`;
 	beautyError = beautyError.trim();
 	displayAndLog(plugin, beautyError, timeout);
 	if (error.stack) console.log(error.stack);
@@ -66,6 +70,13 @@ export async function displayAndLogError(
 			reply_to_message_id: msg.message_id,
 		});
 	}
+	if (addToCache)
+		errorCache = `${errorCache || ""}\n\n${status || ""}\n${error.name}: ${error.message.replace(/Error: /g, "")}`;
+	if (msg && plugin.settings.retryFailedMessagesProcessing) stopUpdatingProcessingDate();
+}
+
+export function cleanErrorCache() {
+	errorCache = "";
 }
 
 // changing GramJs version can cause cache issues and wrong alerts, so it's cure for it

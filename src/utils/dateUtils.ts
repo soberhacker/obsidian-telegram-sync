@@ -15,3 +15,12 @@ export function date2TimeString(date: Date): string {
 export function unixTime2Date(unixTime: number, offset = 0): Date {
 	return new Date(unixTime * 1000 + new Date().getMilliseconds() + (offset % 1000));
 }
+
+export function date2UnixTime(date: Date): number {
+	return Math.floor(date.getTime() / 1000);
+}
+
+export function getOffsetDate(offsetDays = 0, startDate = new Date()): number {
+	startDate.setDate(startDate.getDate() - offsetDays);
+	return date2UnixTime(startDate);
+}

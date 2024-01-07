@@ -45,8 +45,9 @@ export async function getUniqueFilePath(
 	date: Date,
 	fileExtension: string,
 ): Promise<string> {
-	const fileFolderPath = path.dirname(initialFilePath);
-	await createFolderIfNotExist(vault, fileFolderPath);
+	let fileFolderPath = path.dirname(initialFilePath);
+	if (fileFolderPath != ".") await createFolderIfNotExist(vault, fileFolderPath);
+	else fileFolderPath = "";
 
 	let filePath = initialFilePath;
 	if (!(vault.getAbstractFileByPath(filePath) instanceof TFile)) return filePath;

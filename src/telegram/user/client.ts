@@ -1,12 +1,12 @@
 import { Api, TelegramClient } from "telegram";
 import { StoreSession } from "telegram/sessions";
-import { version, versionALessThanVersionB } from "release-notes.mjs";
+import { releaseVersion, versionALessThanVersionB } from "release-notes.mjs";
 import TelegramBot from "node-telegram-bot-api";
 import QRCode from "qrcode";
 import os from "os";
-import { convertBotFileToMessageMedia } from "./convertBotFileToMessageMedia";
+import { convertBotFileToMessageMedia } from "../convertors/botFileToMessageMedia";
 import { ProgressBarType, _3MB, createProgressBar, deleteProgressBar, updateProgressBar } from "../bot/progressBar";
-import { getInputPeer, getMessage } from "./convertors";
+import { getInputPeer, getMessage } from "../convertors/botMessageToClientMessage";
 import { formatDateTime } from "src/utils/dateUtils";
 import { LogLevel, Logger } from "telegram/extensions/Logger";
 import { _1min, _5sec } from "src/utils/logUtils";
@@ -20,7 +20,7 @@ let client: TelegramClient | undefined;
 let _botToken: string | undefined;
 let _sessionType: SessionType;
 let _sessionId: number;
-let _clientUser: Api.User | undefined;
+export let clientUser: Api.User | undefined;
 let _voiceTranscripts: Map<string, string> | undefined;
 let lastReconnectTime = new Date();
 
@@ -32,10 +32,7 @@ export function getNewSessionId(): number {
 	return Number(formatDateTime(new Date(), "YYYYMMDDHHmmssSSS"));
 }
 
-export const insiderChannel = new Api.InputPeerChannel({
-	channelId: bigInt("1913400014"),
-	accessHash: bigInt("-3471904725986943479"),
-});
+export const insiderChannel = new Api.PeerChannel({ channelId: bigInt("1913400014") });
 
 // Stop the bot polling
 export async function stop() {
@@ -60,8 +57,8 @@ export async function init(sessionId: number, sessionType: SessionType, deviceId
 		const logger = new Logger(LogLevel.ERROR);
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		logger.log = (level, message, color) => {
-			console.log(`Telegram Sync: Error with user connection -> ${message}`);
-			// TODO: add user connection status checking and setting by controlling error and info logs
+			console.log(`Telegram Sync => User connection error: ${message}`);
+			// TODO in 2024: add user connection status checking and setting by controlling error and info logs
 			//if (message == "Automatic reconnection failed 2 time(s)")
 		};
 		const session = new StoreSession(`${sessionType}_${sessionId}_${deviceId}`);
@@ -70,7 +67,7 @@ export async function init(sessionId: number, sessionType: SessionType, deviceId
 		client = new TelegramClient(session, config.dIipa, config.hsaHipa, {
 			connectionRetries: 2,
 			deviceModel: os.hostname() || os.type(),
-			appVersion: version,
+			appVersion: releaseVersion,
 			useWSS: true,
 			networkSocket: PromisedWebSockets,
 			baseLogger: logger,
@@ -84,8 +81,8 @@ export async function init(sessionId: number, sessionType: SessionType, deviceId
 			const authorized = await client.checkAuthorization();
 			if (sessionType == "user" && authorized && (await client.isBot()))
 				throw new Error("Stored session conflict. Try to log in again.");
-			if (!authorized) _clientUser = undefined;
-			else if (!_clientUser && authorized) _clientUser = (await client.getMe()) as Api.User;
+			if (!authorized) clientUser = undefined;
+			else if (!clientUser && authorized) clientUser = (await client.getMe()) as Api.User;
 		} catch (e) {
 			if (
 				sessionType == "user" &&
@@ -130,12 +127,12 @@ export async function signInAsBot(botToken: string) {
 		)
 		.then(async (botUser) => {
 			_botToken = botToken;
-			_clientUser = botUser as Api.User;
+			clientUser = botUser as Api.User;
 			return botUser;
 		})
 		.catch((e) => {
 			_botToken = undefined;
-			_clientUser = undefined;
+			clientUser = undefined;
 			throw new Error(e);
 		});
 }
@@ -171,12 +168,13 @@ export async function signInAsUserWithQrCode(container: HTMLDivElement, password
 				},
 			},
 		)
-		.then((clientUser) => {
-			_clientUser = clientUser as Api.User;
+		.then((user) => {
+			clientUser = user as Api.User;
 			return clientUser;
 		})
-		.catch(() => {
-			_clientUser = undefined;
+		.catch((e) => {
+			clientUser = undefined;
+			console.log(e);
 		});
 }
 
@@ -186,10 +184,10 @@ async function checkBotService(): Promise<TelegramClient> {
 	return client;
 }
 
-async function checkUserService(): Promise<{ checkedClient: TelegramClient; checkedUser: Api.User }> {
+export async function checkUserService(): Promise<{ checkedClient: TelegramClient; checkedUser: Api.User }> {
 	const checkedClient = await checkBotService();
-	if ((await checkedClient.isBot()) || !_clientUser) throw NotAuthorizedAsUser;
-	return { checkedClient, checkedUser: _clientUser };
+	if ((await checkedClient.isBot()) || !clientUser) throw NotAuthorizedAsUser;
+	return { checkedClient, checkedUser: clientUser };
 }
 
 // download files > 20MB
@@ -205,8 +203,8 @@ export async function downloadMedia(
 	// user clients needs different file id
 	let stage = 0;
 	let message: Api.Message | undefined = undefined;
-	if (_clientUser && botUser && (await isAuthorizedAsUser())) {
-		const inputPeer = await getInputPeer(checkedClient, _clientUser, botUser, botMsg);
+	if (clientUser && botUser && (await isAuthorizedAsUser())) {
+		const inputPeer = await getInputPeer(checkedClient, clientUser, botUser, botMsg);
 		message = await getMessage(checkedClient, inputPeer, botMsg);
 	}
 
@@ -303,21 +301,14 @@ export async function subscribedOnInsiderChannel(): Promise<boolean> {
 	if (!client || !client.connected || _sessionType == "bot") return false;
 	try {
 		const { checkedClient } = await checkUserService();
-		const inputDialogPeer = new Api.InputDialogPeer({
-			peer: insiderChannel,
-		});
-		const dialogs = await checkedClient.invoke(
-			new Api.messages.GetPeerDialogs({
-				peers: [inputDialogPeer],
-			}),
-		);
-		return dialogs.dialogs.length > 0;
+		const messages = await checkedClient.getMessages(insiderChannel, { limit: 1 });
+		return messages.length > 0;
 	} catch (e) {
-		console.log(e);
 		return false;
 	}
 }
-export async function getLastBetaRelease(currentVersion: string): Promise<{ version: string; mainJs: Buffer }> {
+
+export async function getLastBetaRelease(currentVersion: string): Promise<{ betaVersion: string; mainJs: Buffer }> {
 	const { checkedClient } = await checkUserService();
 	const messages = await checkedClient.getMessages(insiderChannel, {
 		limit: 10,
@@ -327,13 +318,13 @@ export async function getLastBetaRelease(currentVersion: string): Promise<{ vers
 	if (messages.length == 0) throw new Error("No beta versions in Insider channel!");
 	const message = messages[0];
 	const match = message.message.match(/Obsidian Telegram Sync (\S+)/);
-	const version = match ? match[1] : "";
-	if (!version) throw new Error("Can't find the version label in the message: " + message.message);
-	if (versionALessThanVersionB(version, currentVersion))
+	const betaVersion = match ? match[1] : "";
+	if (!betaVersion) throw new Error("Can't find the version label in the message: " + message.message);
+	if (versionALessThanVersionB(betaVersion, currentVersion))
 		throw new Error(
-			`The last beta version ${version} can't be installed because it less than current version ${currentVersion}!`,
+			`The last beta version ${betaVersion} can't be installed because it less than current version ${currentVersion}!`,
 		);
 	const mainJs = (await messages[0].downloadMedia()) as Buffer;
 	if (!mainJs) throw new Error("Can't find main.js in the last 10 messages of Insider channel");
-	return { version, mainJs };
+	return { betaVersion: betaVersion, mainJs };
 }

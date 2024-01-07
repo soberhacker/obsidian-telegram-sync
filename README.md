@@ -4,7 +4,7 @@
 <img src="https://img.shields.io/github/v/release/soberhacker/obsidian-telegram-sync?label=plugin&display_name=tag&logo=obsidian&color=purple&logoColor=violet">
 </a>&nbsp;<a href="https://github.com/soberhacker/obsidian-telegram-sync">
 <img src="https://img.shields.io/github/downloads/soberhacker/obsidian-telegram-sync/total?logo=github">
-</a>&nbsp;<a href="https://t.me/obsidian_telegram_sync_insider">
+</a>&nbsp;<a href="https://t.me/+J23BEZyLgoYzOTBk">
 <img src="https://img.shields.io/badge/Telegram-Channel-blue.svg?logo=telegram">
 </a>&nbsp;<a href="https://t.me/ObsidianTelegramSync">
 <img src="https://img.shields.io/badge/Telegram-Support-red.svg?logo=telegram&logoColor=f5f5f5&color=red">
@@ -12,7 +12,7 @@
 
 Transfer messages and files from [Telegram](https://telegram.org/) to your [Obsidian](https://obsidian.md/plugins?id=telegram-sync) vault. You can easily save text, voice transcripts, images, and other files from your Telegram chats to Obsidian for further processing and organization. This plugin is only available for desktops and would never be available on mobile platforms.
 
-![PreviewSmall](https://github.com/soberhacker/obsidian-telegram-sync/assets/128756825/1abc4929-1ea4-4295-a5d5-a64018935ad5)
+<img width="469" alt="image" src="https://github.com/soberhacker/obsidian-telegram-sync/assets/128756825/65f84775-8cb4-4a45-811b-296b87e2b52d"> <img width="438" alt="image" src="https://github.com/soberhacker/obsidian-telegram-sync/assets/128756825/e50c6e5a-b9d6-4995-8538-d4095d6966f2">
 
 ---
 

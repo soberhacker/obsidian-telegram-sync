@@ -25,11 +25,15 @@ export class BotSettingsModal extends Modal {
 		this.titleEl.setText("Bot settings");
 		const limitations = new Setting(this.botSettingsDiv).setDesc("⚠ Limitations of Telegram bot:");
 		const lim24Hours = document.createElement("div");
-		lim24Hours.setText("- It can get and delete only messages sent within the last 24 hours");
+		lim24Hours.setText("- It can get only messages sent within the last 24 hours");
 		lim24Hours.style.marginLeft = "10px";
 		const limBlocks = document.createElement("div");
 		limBlocks.style.marginLeft = "10px";
-		limBlocks.setText("- Use VPN or proxy to bypass blocks in China, Iran, and some corporate networks");
+		limBlocks.setText("- Use VPN to bypass blocks in China, Iran, and limited corporate networks ");
+		limBlocks.createEl("a", {
+			href: "https://github.com/soberhacker/obsidian-telegram-sync/issues/225#issuecomment-1780539957",
+			text: "(ex. config of Clash)",
+		});
 		limitations.descEl.appendChild(lim24Hours);
 		limitations.descEl.appendChild(limBlocks);
 	}

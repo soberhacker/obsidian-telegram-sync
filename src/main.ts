@@ -8,10 +8,10 @@ import * as Bot from "./telegram/bot/bot";
 import * as User from "./telegram/user/user";
 import { enqueue } from "./utils/queues";
 import { clearTooManyRequestsInterval } from "./telegram/bot/tooManyRequests";
-import { clearCachedMessagesInterval } from "./telegram/user/convertors";
+import { clearCachedMessagesInterval } from "./telegram/convertors/botMessageToClientMessage";
 import { clearHandleMediaGroupInterval } from "./telegram/bot/message/handlers";
 import ConnectionStatusIndicator, { checkConnectionMessage } from "./ConnectionStatusIndicator";
-import { mainDeviceIdSettingName } from "./settings/BotSettingsModal";
+import { mainDeviceIdSettingName } from "./settings/modals/BotSettings";
 import {
 	createDefaultMessageDistributionRule,
 	createDefaultMessageFilterCondition,
@@ -20,8 +20,9 @@ import {
 	defaultNoteNameTemplate,
 	defaultTelegramFolder,
 } from "./settings/messageDistribution";
+import os from "os";
 
-// TODO: add "connecting"
+// TODO in 2024: add "connecting"
 export type ConnectionStatus = "connected" | "disconnected";
 export type PluginStatus = "unloading" | "unloaded" | "loading" | "loaded";
 
@@ -30,11 +31,11 @@ export default class TelegramSyncPlugin extends Plugin {
 	settings: TelegramSyncSettings;
 	settingsTab?: TelegramSyncSettingTab;
 	private botStatus: ConnectionStatus = "disconnected";
-	// TODO: change to userStatus and display in status bar
+	// TODO in 2024: change to userStatus and display in status bar
 	userConnected = false;
 	checkingBotConnection = false;
 	checkingUserConnection = false;
-	// TODO: TelegramSyncBot extends TelegramBot
+	// TODO in 2024: TelegramSyncBot extends TelegramBot
 	bot?: TelegramBot;
 	botUser?: TelegramBot.User;
 	createdFilePaths: string[] = [];
@@ -58,22 +59,14 @@ export default class TelegramSyncPlugin extends Plugin {
 			);
 			return;
 		}
-		if (!initType || initType == "user") {
-			try {
-				this.checkingUserConnection = true;
-				await User.connect(this, this.settings.telegramSessionType, this.settings.telegramSessionId);
-			} finally {
-				this.checkingUserConnection = false;
-			}
-		}
-		if (!initType || initType == "bot") {
-			try {
-				this.checkingBotConnection = true;
-				await Bot.connect(this);
-			} finally {
-				this.checkingBotConnection = false;
-			}
-		}
+		// Uncomment timeout to debug if test during plugin loading
+		// await new Promise((resolve) => setTimeout(resolve, 3000));
+
+		if (!initType || initType == "user")
+			await User.connect(this, this.settings.telegramSessionType, this.settings.telegramSessionId);
+
+		if (!initType || initType == "bot") await Bot.connect(this);
+
 		// restart telegram bot or user if needed
 		if (!this.restartingIntervalId) this.setRestartTelegramInterval(this.restartingIntervalTime);
 	}
@@ -111,6 +104,14 @@ export default class TelegramSyncPlugin extends Plugin {
 			}
 
 			if (needRestartInterval) this.setRestartTelegramInterval(_15sec);
+			else if (this.bot && !sessionType && os.type() == "Darwin" && this.isBotConnected()) {
+				try {
+					this.botUser = await this.bot.getMe();
+				} catch {
+					this.setBotStatus("disconnected");
+					this.userConnected = false;
+				}
+			}
 		} catch {
 			this.setRestartTelegramInterval(
 				this.restartingIntervalTime < _2min ? this.restartingIntervalTime * 2 : this.restartingIntervalTime,
@@ -183,33 +184,6 @@ export default class TelegramSyncPlugin extends Plugin {
 			this.settings.cacheCleanupAtStartup = false;
 			needToSaveSettings = true;
 		}
-		// TODO in 2024: Remove allowedChatFromUsernames, because it is deprecated
-		if (this.settings.allowedChatFromUsernames.length != 0) {
-			this.settings.allowedChats = [...this.settings.allowedChatFromUsernames];
-			this.settings.allowedChatFromUsernames = [];
-			needToSaveSettings = true;
-		}
-
-		// TODO in 2024: Remove this block, because messageDistributionRules should be established by that time
-		if (this.settings.newNotesLocation || this.settings.newFilesLocation || this.settings.templateFileLocation) {
-			this.settings.messageDistributionRules = [];
-			this.settings.messageDistributionRules.push({
-				messageFilterQuery: defaultMessageFilterQuery,
-				messageFilterConditions: [createDefaultMessageFilterCondition()],
-				templateFilePath: this.settings.templateFileLocation,
-				notePathTemplate: `${this.settings.newNotesLocation || defaultTelegramFolder}/${
-					this.settings.appendAllToTelegramMd ? "Telegram.md" : defaultNoteNameTemplate
-				}`,
-				filePathTemplate: this.settings.needToSaveFiles
-					? `${this.settings.newFilesLocation || defaultTelegramFolder}/${defaultFileNameTemplate}`
-					: "",
-				reversedOrder: false,
-			});
-			this.settings.newNotesLocation = "";
-			this.settings.newFilesLocation = "";
-			this.settings.templateFileLocation = "";
-			needToSaveSettings = true;
-		}
 
 		if (this.settings.messageDistributionRules.length == 0) {
 			this.settings.messageDistributionRules.push(createDefaultMessageDistributionRule());
@@ -230,7 +204,7 @@ export default class TelegramSyncPlugin extends Plugin {
 			});
 		}
 
-		needToSaveSettings && this.saveSettings();
+		needToSaveSettings && (await this.saveSettings());
 	}
 
 	async getBotUser(): Promise<TelegramBot.User> {

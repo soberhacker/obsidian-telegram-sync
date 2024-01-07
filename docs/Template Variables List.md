@@ -4,7 +4,7 @@
 {{all}} - all messages
 {{user=VALUE}} - messages from user with username, full name or id equal VALUE
 {{chat=VALUE}} - messages in bot | group | channel with name or id equal VALUE
-{{topic=VALUE}} - messages in topic with name VALUE (if filter fails, try to update topic name manually by bot command "/topicName NAME")
+{{topic=VALUE}} - messages in topic with name VALUE
 {{forwardFrom=VALUE}} - messages forwarded from chat or user with name VALUE
 {{content~VALUE}} - messages contain text VALUE
 {{voiceTranscript~VALUE}} - voice transcripts contain text VALUE
@@ -20,7 +20,9 @@
 ```
 
 -   AND is default operator between conditions
+-   OR is default operator between rules
 -   If **Message Filter** is unspecified, filter by default will be equal {{all}}
+-   If filter by topic fails, try to update topic name manually by bot command [/topicName NAME]()
     <br><br>
 
 ### Generic Template Variables
@@ -31,7 +33,7 @@
 {{chat}} - link to the chat (bot | group | channel)
 {{chatId}} - id of the chat (bot | group | channel)
 {{chat:name}} - name of the chat (bot | group | channel)
-{{topic}} - link to the topic (if the topic name displays incorrect, set the name manually using bot command "/topicName NAME")
+{{topic}} - link to the topic
 {{topic:name}} - name of the topic
 {{topicId}} - head message id representing the topic
 {{messageId}} - message id
@@ -51,6 +53,7 @@
 
 -   All available formats for dates and time you can find in [Moment JS Docs](https://momentjs.com/docs/#/parsing/string-format/)
 -   **Generic variables** can be used in the following content and path templates
+-   If the topic name displays incorrect, set the name manually using bot command [/topicName NAME]()
     <br><br>
 
 ### Note Content Variables

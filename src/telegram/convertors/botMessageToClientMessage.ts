@@ -1,7 +1,7 @@
 import TelegramBot from "node-telegram-bot-api";
 import { Api, TelegramClient } from "telegram";
 import { getFileObject } from "../bot/message/getters";
-import { extractMediaId } from "./convertBotFileToMessageMedia";
+import { extractMediaId } from "./botFileToMessageMedia";
 import { TotalList } from "telegram/Helpers";
 import { _1h, _1sec, _2h } from "src/utils/logUtils";
 import { unixTime2Date } from "src/utils/dateUtils";
@@ -131,10 +131,7 @@ export async function getMessage(
 	const messages = messagesRequests.map((rq) => rq.messages).reduce((accumulator, msgs) => accumulator.concat(msgs));
 	const unprocessedMessages = messages.filter((msg) => !skipMsgIds.contains(msg.id));
 	// add dateOffset, because different date rounding between bot api and user api for unknown reason
-	const userMsg =
-		findUserMsg(unprocessedMessages, botMsg, 0, mediaId) ||
-		findUserMsg(unprocessedMessages, botMsg, 1, mediaId) ||
-		findUserMsg(unprocessedMessages, botMsg, -1, mediaId);
+	const userMsg = findUserMsg(unprocessedMessages, botMsg, mediaId);
 
 	if (!userMsg && limit < 200 && messages.length > 0 && botMsg.date + 1 >= (messages.last()?.date || botMsg.date + 1))
 		return await getMessage(client, inputPeer, botMsg, mediaId, limit + 150);
@@ -157,9 +154,10 @@ export async function getMessage(
 	return userMsg;
 }
 
-function findUserMsg(
+function findUserMsgByOffset(
 	messages: Api.Message[],
 	botMsg: TelegramBot.Message,
+	// add dateOffset, because different date rounding between bot api and user api for unknown reason
 	dateOffset = 0,
 	mediaId?: string,
 ): Api.Message | undefined {
@@ -175,4 +173,12 @@ function findUserMsg(
 		const equalMedia = !(mediaId && m.media) || mediaId == getMediaId(m.media)?.toString();
 		return equalMedia;
 	});
+}
+
+export function findUserMsg(messages: Api.Message[], botMsg: TelegramBot.Message, mediaId?: string) {
+	return (
+		findUserMsgByOffset(messages, botMsg, 0, mediaId) ||
+		findUserMsgByOffset(messages, botMsg, 1, mediaId) ||
+		findUserMsgByOffset(messages, botMsg, -1, mediaId)
+	);
 }
