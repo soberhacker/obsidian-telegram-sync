@@ -6,10 +6,10 @@ function getChatType(entity: Entity | undefined): TelegramBot.ChatType {
 	return entity instanceof Api.User
 		? "private"
 		: entity instanceof Api.Chat
-		? "supergroup"
-		: entity instanceof Api.Channel
-		? "channel"
-		: "group";
+		  ? "supergroup"
+		  : entity instanceof Api.Channel
+		    ? "channel"
+		    : "group";
 }
 
 export function getUser(entity: Entity): TelegramBot.User | undefined {
@@ -90,16 +90,16 @@ export function convertClientMsgToBotMsg(clientMsg: Api.Message): Message {
 				entity instanceof Api.MessageEntityBold
 					? "bold"
 					: entity instanceof Api.MessageEntityItalic
-					? "italic"
-					: entity instanceof Api.MessageEntityCode
-					? "code"
-					: entity instanceof Api.MessageEntityPre
-					? "pre"
-					: entity instanceof Api.MessageEntityTextUrl
-					? "text_link"
-					: entity instanceof Api.MessageEntityUnderline
-					? "underline"
-					: "bold";
+					  ? "italic"
+					  : entity instanceof Api.MessageEntityCode
+					    ? "code"
+					    : entity instanceof Api.MessageEntityPre
+					      ? "pre"
+					      : entity instanceof Api.MessageEntityTextUrl
+					        ? "text_link"
+					        : entity instanceof Api.MessageEntityUnderline
+					          ? "underline"
+					          : "bold";
 			const messageEntity: MessageEntity = {
 				type: entityType,
 				offset: entity.offset,
