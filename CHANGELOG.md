@@ -1,5 +1,6 @@
 # Changelog
 
+
 ## [2.2.0](https://github.com/soberhacker/obsidian-telegram-sync/compare/2.1.0...2.2.0) (2023-10-18)
 
 ### Features
