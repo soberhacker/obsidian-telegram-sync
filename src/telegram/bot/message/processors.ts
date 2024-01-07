@@ -169,7 +169,7 @@ export async function applyFilesPathTemplate(
 	if (!filePathTemplate) return "";
 
 	let processedPath = filePathTemplate.endsWith("/") ? filePathTemplate + defaultFileNameTemplate : filePathTemplate;
-	processedPath = await processBasicVariables(plugin, msg, processedPath);
+	processedPath = await processBasicVariables(plugin, msg, processedPath, msg.caption);
 	processedPath = processedPath
 		.replace(/{{file:type}}/g, fileType)
 		.replace(/{{file:name}}/g, fileName)
