@@ -4,45 +4,56 @@ import { _1sec, displayAndLog } from "src/utils/logUtils";
 import { handleMessage } from "./message/handlers";
 import { reconnect } from "../user/user";
 import { enqueueByCondition } from "src/utils/queues";
+import { clearCachedUnprocessedMessages, forwardUnprocessedMessages } from "../user/sync";
 
 // Initialize the Telegram bot and set up message handling
 export async function connect(plugin: TelegramSyncPlugin) {
-	await disconnect(plugin);
-
-	if (!plugin.settings.botToken) {
-		displayAndLog(plugin, "Telegram bot token is empty.\n\nSyncing is disabled.");
-		return;
-	}
-
-	// Create a new bot instance and start polling
-	plugin.bot = new TelegramBot(plugin.settings.botToken);
-	const bot = plugin.bot;
-	// Set connected flag to false and log errors when a polling error occurs
-	bot.on("polling_error", async (error: unknown) => {
-		handlePollingError(plugin, error);
-	});
-
-	bot.on("channel_post", async (msg) => {
-		await enqueueByCondition(!plugin.settings.parallelMessageProcessing, handleMessage, plugin, msg, true);
-	});
-
-	bot.on("message", async (msg) => {
-		await enqueueByCondition(!plugin.settings.parallelMessageProcessing, handleMessage, plugin, msg);
-	});
-
+	if (plugin.checkingUserConnection) return;
+	plugin.checkingBotConnection = true;
 	try {
+		await disconnect(plugin);
+
+		if (!plugin.settings.botToken) {
+			displayAndLog(plugin, "Telegram bot token is empty.\n\nSyncing is disabled.");
+			plugin.checkingBotConnection = false;
+			return;
+		}
+		// Create a new bot instance and start polling
+		plugin.bot = new TelegramBot(plugin.settings.botToken);
+		const bot = plugin.bot;
+		// Set connected flag to false and log errors when a polling error occurs
+		bot.on("polling_error", async (error: unknown) => {
+			handlePollingError(plugin, error);
+		});
+
+		bot.on("channel_post", async (msg) => {
+			await enqueueByCondition(!plugin.settings.parallelMessageProcessing, handleMessage, plugin, msg, true);
+		});
+
+		bot.on("message", async (msg) => {
+			await enqueueByCondition(!plugin.settings.parallelMessageProcessing, handleMessage, plugin, msg);
+		});
+
 		// Check if the bot is connected and set the connected flag accordingly
 		try {
 			plugin.botUser = await bot.getMe();
 			plugin.lastPollingErrors = [];
+
+			if (plugin.settings.processOldMessages && plugin.userConnected && plugin.botUser) {
+				await forwardUnprocessedMessages(plugin);
+			} else if (!plugin.settings.processOldMessages) {
+				clearCachedUnprocessedMessages();
+			}
 		} finally {
 			await bot.startPolling();
 		}
 		plugin.setBotStatus("connected");
 	} catch (error) {
-		if (!bot || !bot.isPolling()) {
+		if (!plugin.bot || !plugin.bot.isPolling()) {
 			plugin.setBotStatus("disconnected", error);
 		}
+	} finally {
+		plugin.checkingBotConnection = false;
 	}
 }
 

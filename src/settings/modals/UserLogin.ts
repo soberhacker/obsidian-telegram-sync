@@ -1,6 +1,5 @@
 import { Modal, Setting } from "obsidian";
 import TelegramSyncPlugin from "src/main";
-import * as Client from "src/telegram/user/client";
 import * as User from "src/telegram/user/user";
 
 export class UserLogInModal extends Modal {
@@ -15,7 +14,7 @@ export class UserLogInModal extends Modal {
 		this.addHeader();
 		this.addPassword();
 		this.addScanner();
-		this.addQrCode();
+		await this.addQrCode();
 		this.addCheck();
 		this.addFooterButtons();
 	}
@@ -47,7 +46,7 @@ export class UserLogInModal extends Modal {
 			.setDesc("Open Telegram on your phone. Go to Settings > Devices > Link Desktop Device");
 	}
 
-	addQrCode() {
+	async addQrCode() {
 		new Setting(this.userLoginDiv)
 			.setName("3. Generate & scan QR code")
 			.setDesc(`Generate QR code and point your phone at it to confirm login`)
@@ -55,16 +54,15 @@ export class UserLogInModal extends Modal {
 				b.setButtonText("Generate QR code");
 				b.onClick(async () => {
 					await this.showQrCodeGeneratingState("🔵 QR code generating...\n", "#007BFF");
-					try {
-						await User.connect(this.plugin, "user");
-						await Client.signInAsUserWithQrCode(this.qrCodeContainer, this.password);
-						if (await Client.isAuthorizedAsUser()) {
-							this.plugin.userConnected = true;
-							await this.showQrCodeGeneratingState("🟢 Successfully logged in!\n", "#008000");
-						}
-					} catch (e) {
-						await this.showQrCodeGeneratingState(`🔴 ${e}\n`, "#FF0000");
-					}
+					const error = await User.connect(
+						this.plugin,
+						"user",
+						undefined,
+						this.qrCodeContainer,
+						this.password,
+					);
+					if (error) await this.showQrCodeGeneratingState(`🔴 ${error}\n`, "#FF0000");
+					else await this.showQrCodeGeneratingState("🟢 Successfully logged in!\n", "#008000");
 				});
 			});
 		this.qrCodeContainer = this.userLoginDiv.createDiv({
@@ -89,8 +87,8 @@ export class UserLogInModal extends Modal {
 		});
 	}
 
-	onOpen() {
-		this.display();
+	async onOpen() {
+		await this.display();
 	}
 
 	cleanQrContainer() {
