@@ -4,13 +4,14 @@
 	"description": "Transfer messages and files from Telegram bot to Obsidian.",
 	"main": "main.js",
 	"scripts": {
-		"dev": "node esbuild.config.mjs",
+		"dev": "node esbuild.config.mjs && npm run post-build",
 		"lint": "eslint src/**/*.ts",
 		"lint-fix": "eslint --fix src/**/*.ts",
 		"version": "node version-bump.mjs && git add manifest.json versions.json",
-		"test": "node esbuild.config.mjs test && node install-plugin.mjs",
+		"test": "node esbuild.config.mjs test && npm run post-build && node install-plugin.mjs",
 		"release-notes-check": "node release-notes.mjs check",
-		"build": "tsc -noEmit -skipLibCheck && npm run lint && node esbuild.config.mjs production"
+		"build": "tsc -noEmit -skipLibCheck && npm run lint && node esbuild.config.mjs production && npm run post-build",
+		"post-build": "node post-build.mjs"
 	},
 	"keywords": [
 		"Telegram",
