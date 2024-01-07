@@ -89,8 +89,8 @@ export async function appendContentToNote(
 		const content = startLine
 			? currentContent.replace(startLine, startLine + delimiter + newContent)
 			: reversedOrder
-			? newContent + delimiter + currentContent
-			: currentContent + delimiter + newContent;
+			  ? newContent + delimiter + currentContent
+			  : currentContent + delimiter + newContent;
 		if (currentContent != content) await vault.modify(noteFile, content);
 	}
 }

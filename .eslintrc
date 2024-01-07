@@ -28,6 +28,7 @@
 		"no-prototype-builtins": "off",
 		"@typescript-eslint/no-empty-function": "off",
 		"prettier/prettier": ["error"],
-		"linebreak-style": ["error", "unix"]
+		"linebreak-style": ["error", "unix"],
+		"no-mixed-spaces-and-tabs": ["error", "smart-tabs"]
 	}
 }
