@@ -1,6 +1,28 @@
 # Changelog
 
 
+## [3.0.0](https://github.com/soberhacker/obsidian-telegram-sync/compare/2.2.0...3.0.0) (2024-01-07)
+
+
+### ⚠ BREAKING CHANGES
+
+* breaking changes
+
+### Features
+
+* add processing old messages ([4651b4c](https://github.com/soberhacker/obsidian-telegram-sync/commit/4651b4c664969cf837d064de17b24220f6cef37d))
+* breaking changes ([d47842d](https://github.com/soberhacker/obsidian-telegram-sync/commit/d47842d959823bfbdbe64ef76c7c8aef7c6008e3))
+
+
+### Bug Fixes
+
+* doesn't reconnect on macos ([8852632](https://github.com/soberhacker/obsidian-telegram-sync/commit/885263282087fec2197c96d6991211d0508a35b8))
+* error saving files to the root of vault ([bb66791](https://github.com/soberhacker/obsidian-telegram-sync/commit/bb66791452a2c79a024fdf9c924841d0fefca4cb))
+* looped notification about release notes ([19bbd4a](https://github.com/soberhacker/obsidian-telegram-sync/commit/19bbd4ae284af70be566bfa2062c4c8184fa523d))
+* missing beta release feature ([7b55dbd](https://github.com/soberhacker/obsidian-telegram-sync/commit/7b55dbd2eccef47215d117bf66243c1bde6b5427))
+* processing content variables in file path ([3cf7344](https://github.com/soberhacker/obsidian-telegram-sync/commit/3cf7344aae1d680294e92a445a5a6c0e2ed249cd))
+* unnecessary hash in hashtag variable ([075b5e8](https://github.com/soberhacker/obsidian-telegram-sync/commit/075b5e83b373cb2bfe1001c9dfc4615f95378ccd))
+
 ## [2.2.0](https://github.com/soberhacker/obsidian-telegram-sync/compare/2.1.0...2.2.0) (2023-10-18)
 
 
