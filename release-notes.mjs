@@ -4,8 +4,7 @@
 import { compareVersions } from "compare-versions";
 export const releaseVersion = "2.2.0";
 export const showNewFeatures = true;
-// TODO !!! enable before release
-export let showBreakingChanges = false;
+export let showBreakingChanges = true;
 
 const newFeatures =
 	"Main feature of this release is possibility to process messages older than 24 hours if Obsidian wasn't running. This feature available only for the plugin's channel subscribers";

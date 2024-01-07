@@ -44,13 +44,7 @@ export interface RefreshValues {
 
 export interface TelegramSyncSettings {
 	botToken: string;
-	newNotesLocation: string; //TODO in 2024: deprecated, use messageDistributionRules[].path2Note
-	appendAllToTelegramMd: boolean; //TODO in 2024: deprecated, use messageDistributionRules[].path2Note
-	templateFileLocation: string; //TODO in 2024: deprecated, use messageDistributionRules[].path2Template
 	deleteMessagesFromTelegram: boolean;
-	needToSaveFiles: boolean; //TODO in 2024: deprecated, now if messageDistributionRules[].path2Files is empty then files will not be stored
-	newFilesLocation: string; //TODO in 2024: deprecated, use messageDistributionRules[].path2Files
-	allowedChatFromUsernames: string[]; //TODO in 2024: deprecated, use allowedChats
 	allowedChats: string[];
 	mainDeviceId: string;
 	pluginVersion: string;
@@ -72,13 +66,7 @@ export interface TelegramSyncSettings {
 
 export const DEFAULT_SETTINGS: TelegramSyncSettings = {
 	botToken: "",
-	newNotesLocation: "",
-	appendAllToTelegramMd: false,
-	templateFileLocation: "",
 	deleteMessagesFromTelegram: false,
-	needToSaveFiles: true,
-	newFilesLocation: "",
-	allowedChatFromUsernames: [""], //TODO in 2024: deprecated, use allowedChats
 	allowedChats: [""],
 	mainDeviceId: "",
 	pluginVersion: "",

@@ -184,33 +184,6 @@ export default class TelegramSyncPlugin extends Plugin {
 			this.settings.cacheCleanupAtStartup = false;
 			needToSaveSettings = true;
 		}
-		// TODO in 2024: Remove allowedChatFromUsernames, because it is deprecated
-		if (this.settings.allowedChatFromUsernames.length != 0) {
-			this.settings.allowedChats = [...this.settings.allowedChatFromUsernames];
-			this.settings.allowedChatFromUsernames = [];
-			needToSaveSettings = true;
-		}
-
-		// TODO in 2024: Remove this block, because messageDistributionRules should be established by that time
-		if (this.settings.newNotesLocation || this.settings.newFilesLocation || this.settings.templateFileLocation) {
-			this.settings.messageDistributionRules = [];
-			this.settings.messageDistributionRules.push({
-				messageFilterQuery: defaultMessageFilterQuery,
-				messageFilterConditions: [createDefaultMessageFilterCondition()],
-				templateFilePath: this.settings.templateFileLocation,
-				notePathTemplate: `${this.settings.newNotesLocation || defaultTelegramFolder}/${
-					this.settings.appendAllToTelegramMd ? "Telegram.md" : defaultNoteNameTemplate
-				}`,
-				filePathTemplate: this.settings.needToSaveFiles
-					? `${this.settings.newFilesLocation || defaultTelegramFolder}/${defaultFileNameTemplate}`
-					: "",
-				reversedOrder: false,
-			});
-			this.settings.newNotesLocation = "";
-			this.settings.newFilesLocation = "";
-			this.settings.templateFileLocation = "";
-			needToSaveSettings = true;
-		}
 
 		if (this.settings.messageDistributionRules.length == 0) {
 			this.settings.messageDistributionRules.push(createDefaultMessageDistributionRule());

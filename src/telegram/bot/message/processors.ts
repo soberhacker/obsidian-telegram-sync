@@ -109,9 +109,6 @@ export async function applyNoteContentTemplate(
 	let processedContent = (
 		await processBasicVariables(plugin, msg, templateContent, textContentMd, fullContent, false)
 	)
-		.replace(/{{file}}/g, allEmbeddedFilesLinks) // TODO in 2024: deprecated, remove
-		.replace(/{{file:link}}/g, allFilesLinks) // TODO in 2024: deprecated, remove
-
 		.replace(/{{files}}/g, allEmbeddedFilesLinks)
 		.replace(/{{files:links}}/g, allFilesLinks)
 		.replace(/{{url1}}/g, getUrl(msg)) // first url from the message
@@ -269,11 +266,6 @@ function processText(text: string, leadingChars?: string, property?: string): st
 	const lowerCaseProperty = (property && property.toLowerCase()) || "text";
 
 	if (lowerCaseProperty == "text") finalText = text;
-	// TODO in 2024: remove deprecated code
-	// deprecated
-	else if (lowerCaseProperty == "firstline") finalText = text.split("\n")[0];
-	// deprecated
-	else if (lowerCaseProperty == "nofirstline") finalText = text.split("\n").slice(1).join("\n");
 	// if property is length
 	else if (Number.isInteger(parseFloat(lowerCaseProperty))) finalText = text.substring(0, Number(property));
 
