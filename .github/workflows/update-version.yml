@@ -1,85 +1,83 @@
 name: Update version of plugin
 
 on:
-  pull_request_target:
-    types:
-      - opened
-    branches:
-      - main
-
+    pull_request_target:
+        types:
+            - opened
+        branches:
+            - main
 
 permissions:
-  contents: write
-  pull-requests: write
+    contents: write
+    pull-requests: write
 
 jobs:
-  update-version:
-    if: ${{ github.head_ref == 'develop' && github.event.pull_request.author_association == 'OWNER' }}
-    runs-on: ubuntu-latest    
-    steps:
+    update-version:
+        if: ${{ github.head_ref == 'develop' && github.event.pull_request.author_association == 'OWNER' }}
+        runs-on: ubuntu-latest
+        steps:
+            - name: Print github
+              run: echo '${{ toJson(github) }}'
 
-      - name: Print github
-        run: echo '${{ toJson(github) }}'
+            - name: Checkout repository
+              uses: actions/checkout@v3
+              with:
+                  fetch-depth: 0
 
-      - name: Checkout repository
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-  
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: "18.x"
+            - name: Set up Node.js
+              uses: actions/setup-node@v3
+              with:
+                  node-version: "18.x"
 
-      - name: Fetch all tags
-        run: |
-          git tag
-          git fetch --tags
+            - name: Fetch all tags
+              run: |
+                  git tag
+                  git fetch --tags
 
-      - name: Update version in CHANGELOG.md and package.json
-        id: release
-        uses: google-github-actions/release-please-action@v3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          release-type: node
-          command: release-pr
-          package-name: obsidian-telegram-sync
-          include-v-in-tag: false
-          pull-request-title-pattern: "chore: update version of package to ${version}"
-          pull-request-header: "Update version in CHANGELOG.md and package.json"
-          default-branch: develop
-          labels: automerge    
+            - name: Update version in CHANGELOG.md and package.json
+              id: release
+              uses: google-github-actions/release-please-action@v3
+              with:
+                  token: ${{ secrets.GITHUB_TOKEN }}
+                  release-type: node
+                  command: release-pr
+                  package-name: obsidian-telegram-sync
+                  include-v-in-tag: false
+                  pull-request-title-pattern: "chore: update version of package to ${version}"
+                  pull-request-header: "Update version in CHANGELOG.md and package.json"
+                  default-branch: develop
+                  labels: automerge
 
-      - name: Print release outputs
-        run: echo '${{ toJson(steps.release.outputs) }}'
+            - name: Print release outputs
+              run: echo '${{ toJson(steps.release.outputs) }}'
 
-      - name: Get number of release PR
-        if: ${{steps.release.outputs.pr}}
-        run: echo "RELEASE_PR=$((${{ github.event.number }} + 1))" >> $GITHUB_ENV
+            - name: Get number of release PR
+              if: ${{steps.release.outputs.pr}}
+              run: echo "RELEASE_PR=$((${{ github.event.number }} + 1))" >> $GITHUB_ENV
 
-      - name: Merge release PR
-        if: ${{steps.release.outputs.pr}}
-        uses: pascalgn/automerge-action@v0.15.6
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          MERGE_REMOVE_LABELS: automerge
-          MERGE_METHOD: squash
-          MERGE_COMMIT_MESSAGE: pull-request-title
-          MERGE_FORKS: false
-          PULL_REQUEST: ${{ env.RELEASE_PR }}
+            - name: Merge release PR
+              if: ${{steps.release.outputs.pr}}
+              uses: pascalgn/automerge-action@v0.15.6
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  MERGE_REMOVE_LABELS: automerge
+                  MERGE_METHOD: squash
+                  MERGE_COMMIT_MESSAGE: pull-request-title
+                  MERGE_FORKS: false
+                  PULL_REQUEST: ${{ env.RELEASE_PR }}
 
-      - name: Update manifest.json and versions.json
-        if: ${{steps.release.outputs.pr}}
-        run: |
-          git config core.autocrlf false
-          git config core.eol lf
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git fetch origin
-          git checkout develop
-          npm ci
-          npm run release-notes-check
-          npm run version
-          TAG_NAME=$(node -p "require('./package.json').version")
-          git commit -m "chore: update version of plugin to $TAG_NAME"
-          git push origin develop
+            - name: Update manifest.json and versions.json
+              if: ${{steps.release.outputs.pr}}
+              run: |
+                  git config core.autocrlf false
+                  git config core.eol lf
+                  git config user.name github-actions[bot]
+                  git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+                  git fetch origin
+                  git checkout develop
+                  npm ci
+                  npm run release-notes-check
+                  npm run version
+                  TAG_NAME=$(node -p "require('./package.json').version")
+                  git commit -m "chore: update version of plugin to $TAG_NAME"
+                  git push origin develop
