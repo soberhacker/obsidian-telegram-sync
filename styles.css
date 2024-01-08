@@ -1,0 +1,7 @@
+.settings-donation-container {
+	width: 80%;
+	height: 50vh;
+	margin: 0 auto;
+	text-align: center;
+	color: var(--text-normal);
+}
