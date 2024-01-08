@@ -1,5 +1,17 @@
 # Changelog
 
+## [3.0.0](https://github.com/soberhacker/obsidian-telegram-sync/compare/3.0.0...3.0.0) (2024-01-08)
+
+
+### Bug Fixes
+
+* empty css ([2cb867f](https://github.com/soberhacker/obsidian-telegram-sync/commit/2cb867fbacefca3cd759d7849b95df5ccb0efd5e))
+
+
+### Miscellaneous Chores
+
+* release 3.0.0 ([bcdc23b](https://github.com/soberhacker/obsidian-telegram-sync/commit/bcdc23b29bc38c3eb36745c96ff73a2d02963a91))
+
 ## [2.2.0](https://github.com/soberhacker/obsidian-telegram-sync/compare/2.1.0...2.2.0) (2023-10-18)
 
 ### Features
