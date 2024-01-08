@@ -2,7 +2,7 @@
 // TODO notify in setting that new beta version is ready for installing
 // TODO add messagesLeftCnt displaying in status bar
 import { compareVersions } from "compare-versions";
-export const releaseVersion = "3.0.1";
+export const releaseVersion = "3.0.0";
 export const showNewFeatures = true;
 export let showBreakingChanges = true;
 
