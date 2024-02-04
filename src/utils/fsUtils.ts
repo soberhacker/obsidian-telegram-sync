@@ -89,7 +89,7 @@ export async function appendContentToNote(
 
 	const currentContent = await vault.read(noteFile);
 	let index = reversedOrder ? 0 : currentContent.length;
-	if (currentContent.length == 0) delimiter = "";
+	if (currentContent.length == 0 && !startLine) delimiter = "";
 	newContent = reversedOrder ? newContent + delimiter : delimiter + newContent;
 
 	if (startLine) {
