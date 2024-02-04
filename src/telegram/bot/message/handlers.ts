@@ -163,7 +163,7 @@ export async function handleMessageText(
 		plugin.app.vault,
 		notePath,
 		formattedContent,
-		"",
+		distributionRule.heading,
 		plugin.settings.defaultMessageDelimiter ? defaultDelimiter : "",
 		distributionRule.reversedOrder,
 	);
