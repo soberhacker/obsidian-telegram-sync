@@ -51,19 +51,21 @@ export async function finalizeMessageProcessing(plugin: TelegramSyncPlugin, msg:
 		let errorMessage = "";
 		try {
 			if (plugin.settings.telegramSessionType == "user" && plugin.botUser) {
-				await enqueue(Client.sendReaction, plugin.botUser, msg, "👍");
+				const emoticon = msg.edit_date ? "👌" : "👍";
+				await enqueue(Client.sendReaction, plugin.botUser, msg, emoticon);
 				needReply = false;
 			}
 		} catch (e) {
 			errorMessage = `\n\nCan't "like" the message, ${e}`;
 		}
+		const ok_msg = msg.edit_date ? "...🆗..." : "...✅...";
 		if (needReply && originalMsg) {
 			await originalMsg.reply({
-				message: "...✅..." + errorMessage,
+				message: ok_msg + errorMessage,
 				silent: true,
 			});
 		} else if (needReply) {
-			await plugin.bot?.sendMessage(msg.chat.id, "...✅..." + errorMessage, {
+			await plugin.bot?.sendMessage(msg.chat.id, ok_msg + errorMessage, {
 				reply_to_message_id: msg.message_id,
 				disable_notification: true,
 			});
