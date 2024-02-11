@@ -33,6 +33,8 @@ export async function finalizeMessageProcessing(plugin: TelegramSyncPlugin, msg:
 	}
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const originalMsg: Api.Message | undefined = (msg as any).originalUserMsg;
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	const mediaMessages: TelegramBot.Message[] = (msg as any).mediaMessages || [];
 
 	if (originalMsg) {
 		await plugin.bot.deleteMessage(msg.chat.id, msg.message_id);
@@ -45,6 +47,9 @@ export async function finalizeMessageProcessing(plugin: TelegramSyncPlugin, msg:
 	if (plugin.settings.deleteMessagesFromTelegram && originalMsg) {
 		await originalMsg.delete();
 	} else if (plugin.settings.deleteMessagesFromTelegram && hoursDifference <= 24) {
+		for (const mediaMsg of mediaMessages) {
+			await plugin.bot.deleteMessage(mediaMsg.chat.id, mediaMsg.message_id);
+		}
 		await plugin.bot.deleteMessage(msg.chat.id, msg.message_id);
 	} else {
 		let needReply = true;

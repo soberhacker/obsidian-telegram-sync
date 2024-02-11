@@ -28,6 +28,7 @@ interface MediaGroup {
 	id: string;
 	notePath: string;
 	initialMsg: TelegramBot.Message;
+	mediaMessages: TelegramBot.Message[];
 	error?: Error;
 	filesPaths: string[];
 }
@@ -310,6 +311,8 @@ async function handleMediaGroup(plugin: TelegramSyncPlugin, distributionRule: Me
 	if (mediaGroups.length > 0 && plugin.messagesLeftCnt == 0) {
 		for (const mg of mediaGroups) {
 			try {
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
+				(mg.initialMsg as any).mediaMessages = mg.mediaMessages;
 				const noteContent = await createNoteContent(
 					plugin,
 					mg.notePath,
@@ -340,6 +343,7 @@ async function appendFileToNote(
 	if (mediaGroup) {
 		mediaGroup.filesPaths.push(filePath);
 		if (msg.caption || !mediaGroup.initialMsg) mediaGroup.initialMsg = msg;
+		mediaGroup.mediaMessages.push(msg);
 		if (error) mediaGroup.error = error;
 		return;
 	}
@@ -355,6 +359,7 @@ async function appendFileToNote(
 			id: msg.media_group_id,
 			notePath,
 			initialMsg: msg,
+			mediaMessages: [],
 			error: error,
 			filesPaths: [filePath],
 		};
