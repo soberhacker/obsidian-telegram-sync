@@ -151,7 +151,9 @@ export async function getUnprocessedMessages(plugin: TelegramSyncPlugin): Promis
 			if (
 				reactions &&
 				reactions.find(
-					(reaction) => reaction.reaction instanceof Api.ReactionEmoji && reaction.reaction.emoticon == "👍",
+					(reaction) =>
+						reaction.reaction instanceof Api.ReactionEmoji &&
+						["👍", "👌"].includes(reaction.reaction.emoticon),
 				)
 			)
 				return false;

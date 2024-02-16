@@ -27,11 +27,14 @@ export class MessageDistributionRulesModal extends Modal {
 	}
 
 	async display() {
+		this.modalEl.style.height = "90vh";
+		this.modalEl.style.width = "60vw";
 		this.addHeader();
 		this.addMessageFilter();
 		this.addTemplateFilePath();
 		this.addNotePathTemplate();
 		this.addFilePathTemplate();
+		this.addHeading();
 		this.addMessageSortingMode();
 		this.addFooterButtons();
 	}
@@ -112,18 +115,34 @@ export class MessageDistributionRulesModal extends Modal {
 		setSettingStyles(setting);
 	}
 
+	addHeading() {
+		const setting = new Setting(this.messageDistributionRulesDiv);
+		setting
+			.setName("Heading")
+			.setDesc("Specify the heading under which new messages will be inserted")
+			.addText((text) => {
+				text.setPlaceholder(`example: ### Log`)
+					.setValue(this.messageDistributionRule.heading)
+					.onChange(async (value: string) => {
+						this.messageDistributionRule.heading = value;
+					});
+			});
+		setSettingStyles(setting);
+	}
+
 	addMessageSortingMode() {
 		const setting = new Setting(this.messageDistributionRulesDiv);
 		setting
-			.setName("New messages first")
-			.setDesc("Turn on to have new messages appear at the beginning of the note")
+			.setName("Reversed order")
+			.setDesc(
+				"Turn on to have new messages appear at the beginning of the note, or, if a heading is specified, above it",
+			)
 			.addToggle((toggle) => {
 				toggle.setValue(this.messageDistributionRule.reversedOrder);
 				toggle.onChange(async (value) => {
 					this.messageDistributionRule.reversedOrder = value;
 				});
 			});
-		setSettingStyles(setting);
 	}
 
 	addFooterButtons() {
@@ -176,9 +195,17 @@ export class MessageDistributionRulesModal extends Modal {
 function setSettingStyles(setting: Setting) {
 	setting.infoEl.style.width = "55%";
 	setting.controlEl.style.width = "45%";
-	const textareaElement = setting.controlEl.querySelector("textarea");
-	if (textareaElement) {
-		textareaElement.style.height = "4.5em";
-		textareaElement.style.width = "100%";
+	const el = setting.controlEl.firstElementChild;
+	if (!el) return;
+	if (el instanceof HTMLTextAreaElement) {
+		el.style.height = "4.5em";
+		el.style.width = "100%";
+	}
+	if (el instanceof HTMLInputElement) {
+		el.style.width = "100%";
+	}
+
+	if (el instanceof HTMLDivElement && el.className == "search-input-container") {
+		el.style.width = "100%";
 	}
 }

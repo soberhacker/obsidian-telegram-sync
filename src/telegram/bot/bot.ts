@@ -30,6 +30,10 @@ export async function connect(plugin: TelegramSyncPlugin) {
 			await enqueueByCondition(!plugin.settings.parallelMessageProcessing, handleMessage, plugin, msg, true);
 		});
 
+		bot.on("edited_message", async (msg) => {
+			await enqueueByCondition(!plugin.settings.parallelMessageProcessing, handleMessage, plugin, msg);
+		});
+
 		bot.on("message", async (msg) => {
 			await enqueueByCondition(!plugin.settings.parallelMessageProcessing, handleMessage, plugin, msg);
 		});
