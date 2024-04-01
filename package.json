@@ -26,7 +26,7 @@
 		"@types/linkify-it": "^3.0.2",
 		"@types/mime-types": "^2.1.1",
 		"@types/node": "^16.11.6",
-		"@types/node-telegram-bot-api": "^0.63.3",
+		"@types/node-telegram-bot-api": "^0.64.6",
 		"@typescript-eslint/eslint-plugin": "5.29.0",
 		"@typescript-eslint/parser": "5.29.0",
 		"builtin-modules": "3.3.0",
@@ -47,8 +47,8 @@
 		"linkify-it": "^4.0.1",
 		"mime-types": "^2.1.35",
 		"node-machine-id": "^1.1.12",
-		"node-telegram-bot-api": "^0.64.0",
+		"node-telegram-bot-api": "^0.65.1",
 		"qrcode": "^1.5.3",
-		"telegram": "2.16.4"
+		"telegram": "2.20.2"
 	}
 }
