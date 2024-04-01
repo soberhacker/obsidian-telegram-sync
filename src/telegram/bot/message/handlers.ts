@@ -321,7 +321,15 @@ async function handleMediaGroup(plugin: TelegramSyncPlugin, distributionRule: Me
 					mg.filesPaths,
 					mg.error,
 				);
-				await enqueue(appendContentToNote, plugin.app.vault, mg.notePath, noteContent);
+				await enqueue(
+					appendContentToNote,
+					plugin.app.vault,
+					mg.notePath,
+					noteContent,
+					distributionRule.heading,
+					plugin.settings.defaultMessageDelimiter ? defaultDelimiter : "",
+					distributionRule.reversedOrder,
+				);
 				await finalizeMessageProcessing(plugin, mg.initialMsg, mg.error);
 			} catch (e) {
 				displayAndLogError(plugin, e, "", "", mg.initialMsg, 0);
@@ -369,7 +377,15 @@ async function appendFileToNote(
 
 	const noteContent = await createNoteContent(plugin, notePath, msg, distributionRule, [filePath], error);
 
-	await enqueue(appendContentToNote, plugin.app.vault, notePath, noteContent);
+	await enqueue(
+		appendContentToNote,
+		plugin.app.vault,
+		notePath,
+		noteContent,
+		distributionRule.heading,
+		plugin.settings.defaultMessageDelimiter ? defaultDelimiter : "",
+		distributionRule.reversedOrder,
+	);
 }
 
 // show changes about new release
