@@ -8,6 +8,7 @@
 
 ##### All Telegram User
 
+✅ available to download files more than 50MB (telegram bot limit) <br/>
 ✅ reacting with "👍" instead of replying for marking messages as processed<br/>
 ✅ easy installing the latest published beta versions<br/>
 ✅ processing messages older than 24 hours if Obsidian wasn't running<br/>

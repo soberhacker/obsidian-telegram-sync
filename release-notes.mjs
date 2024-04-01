@@ -1,9 +1,10 @@
 // TODO translating messages
 // TODO notify in setting that new beta version is ready for installing
 // TODO add messagesLeftCnt displaying in status bar
-// TODO NEXT sending notes from Obsidian to Telegram (only for insiders)
-// TODO NEXT ignore formatting (bold, italic, underline) in the notes names
-// NOT NOW  "delete messages from Telegram" settings for each distribution rules
+// TODO NEXT: sending notes from Obsidian to Telegram (only for insiders)
+// TODO NEXT: ignore formatting (bold, italic, underline) in the notes names
+// TODO MED:  "delete messages from Telegram" settings for each distribution rules
+// TODO NEXT: save files if no template file
 import { compareVersions } from "compare-versions";
 export const releaseVersion = "3.1.0";
 export const showNewFeatures = true;

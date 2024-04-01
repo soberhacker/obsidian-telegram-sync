@@ -15,7 +15,7 @@ export const _1h = 60 * _1min;
 export const _2h = 2 * _1h;
 export const doNotHide = 24 * _1h;
 
-// TODO in 2024: connect with ConnectionStatus
+// TODO LOW: connect with ConnectionStatus
 export enum StatusMessages {
 	BOT_CONNECTED = "Telegram bot is connected!",
 	BOT_DISCONNECTED = "Telegram bot is disconnected!",
