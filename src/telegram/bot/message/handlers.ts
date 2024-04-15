@@ -88,7 +88,7 @@ export async function handleMessage(plugin: TelegramSyncPlugin, msg: TelegramBot
 	}
 
 	const distributionRule = await getMessageDistributionRule(plugin, msg);
-	if (msgText.length > 30) msgText = msgText.slice(1, 30) + "...";
+	if (msgText.length > 200) msgText = msgText.slice(0, 200) + "... (trimmed)";
 	if (!distributionRule) {
 		displayAndLog(plugin, `Message "${msgText}" skipped\nNo matched distribution rule!`, 0);
 		return;
