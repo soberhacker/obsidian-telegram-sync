@@ -5,6 +5,10 @@
 // TODO NEXT: ignore formatting (bold, italic, underline) in the notes names
 // TODO MED:  "delete messages from Telegram" settings for each distribution rules
 // TODO NEXT: save files if no template file
+// TODO NEXT: no subscription, no enabled process old messages
+// TODO NEXT: check reconnecting
+// TODO NEXT: bug in connecting to Telegram Client https://t.me/alast0rm
+// TODO NEXT: bur in reconnecting on MacBook https://t.me/sm1rnov_id
 import { compareVersions } from "compare-versions";
 export const releaseVersion = "3.1.0";
 export const showNewFeatures = true;

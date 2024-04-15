@@ -43,7 +43,7 @@ export async function updateProgressBar(
 		);
 	} catch (e) {
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		if (!checkIfTooManyRequests(e)) console.log(e);
+		if (!checkIfTooManyRequests(e)) console.log(`Telegram Sync => ${e}`);
 	}
 	return stage;
 }

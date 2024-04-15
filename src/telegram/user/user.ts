@@ -34,7 +34,11 @@ export async function connect(
 			await Client.signInAsBot(plugin.settings.botToken);
 		}
 
-		if (sessionType == "user" && !plugin.userConnected) return "Connection failed. See logs";
+		if (sessionType == "user" && !plugin.userConnected) {
+			let qrError = qrCodeContainer?.getText();
+			qrError = qrError?.contains("Error") ? qrError : "See errors in console (CTRL + SHIFT + I)";
+			return `Connection failed.\n${qrError}`;
+		}
 
 		if (plugin.userConnected && !sessionId) {
 			plugin.settings.telegramSessionId = newSessionId;
@@ -45,7 +49,7 @@ export async function connect(
 		if (!error.message.includes("API_ID_PUBLISHED_FLOOD")) {
 			plugin.userConnected = false;
 			await displayAndLogError(plugin, error, "", "", undefined, 0);
-			return "Connection failed: " + error.message;
+			return `Connection failed.\n${error.message}`;
 		}
 	} finally {
 		plugin.checkingUserConnection = false;
