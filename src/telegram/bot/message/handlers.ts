@@ -83,18 +83,24 @@ export async function handleMessage(plugin: TelegramSyncPlugin, msg: TelegramBot
 
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	if ((msg as any).userMsg) {
-		displayAndLog(plugin, `Message "${msgText}" skipped\nAlready processed before!`, 0);
+		displayAndLog(plugin, `Message skipped: already processed before!\n--- Message ---\n${msgText}\n<===`, 0);
 		return;
 	}
 
 	const distributionRule = await getMessageDistributionRule(plugin, msg);
 	if (msgText.length > 200) msgText = msgText.slice(0, 200) + "... (trimmed)";
 	if (!distributionRule) {
-		displayAndLog(plugin, `Message "${msgText}" skipped\nNo matched distribution rule!`, 0);
+		displayAndLog(plugin, `Message skipped: no matched distribution rule!\n--- Message ---\n${msgText}\n<===`, 0);
 		return;
 	} else {
 		const ruleInfo = getMessageDistributionRuleInfo(distributionRule);
-		displayAndLog(plugin, `Message: ${msgText}\nDistribution rule: ${JSON.stringify(ruleInfo)}`, 0);
+		displayAndLog(
+			plugin,
+			`Message received\n--- Message ---\n${msgText}\n--- Distribution rule ---\n${JSON.stringify(
+				ruleInfo,
+			)}\n<===`,
+			0,
+		);
 	}
 
 	// Check if message has been sended by allowed users or chats
