@@ -98,6 +98,8 @@ export async function handleMessage(plugin: TelegramSyncPlugin, msg: TelegramBot
 			plugin,
 			`Message received\n--- Message ---\n${msgText}\n--- Distribution rule ---\n${JSON.stringify(
 				ruleInfo,
+				undefined,
+				4,
 			)}\n<===`,
 			0,
 		);
