@@ -4,7 +4,8 @@ import { getInlineUrls } from "./getters";
 export async function convertMessageTextToMarkdown(msg: TelegramBot.Message): Promise<string> {
 	let text = msg.text || msg.caption || "";
 	const entities = msg.entities || msg.caption_entities || [];
-	entities.forEach((entity, index, updatedEntities) => {
+	const copiedEntities: TelegramBot.MessageEntity[] = structuredClone(entities);
+	copiedEntities.forEach((entity, index, updatedEntities) => {
 		const entityStart = entity.offset;
 		let entityEnd = entityStart + entity.length;
 		let entityText = text.slice(entityStart, entityEnd);
