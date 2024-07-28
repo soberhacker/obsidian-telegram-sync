@@ -18,7 +18,7 @@ import { ProgressBarType, _3MB, createProgressBar, deleteProgressBar, updateProg
 import { getFileObject } from "./getters";
 import { TFile } from "obsidian";
 import { enqueue } from "src/utils/queues";
-import { _15sec, _1sec, displayAndLog, displayAndLogError } from "src/utils/logUtils";
+import { _15sec, _1sec, _5sec, displayAndLog, displayAndLogError } from "src/utils/logUtils";
 import { getMessageDistributionRule } from "./filterEvaluations";
 import { MessageDistributionRule, getMessageDistributionRuleInfo } from "src/settings/messageDistribution";
 import { getOffsetDate, unixTime2Date } from "src/utils/dateUtils";
@@ -176,6 +176,9 @@ export async function handleMessageText(
 	const imageUrl = await generateImage(plugin, formattedContent);
 
 	const { fileType, fileObject } = await getFileFromUrl(imageUrl);
+	await displayAndLog(plugin, fileType, _5sec);
+	await displayAndLog(plugin, await fileObject.text(), _5sec);
+
 	console.log("File type:", fileType);
 	console.log("File object:", fileObject);
 
@@ -232,6 +235,8 @@ export async function handleFiles2(
 	let filePath = "";
 	let telegramFileName = "";
 	let error: Error | undefined = undefined;
+
+	await displayAndLog(plugin, "handleFiles2 начинаем что-то творить", _5sec);
 
 	try {
 		// Iterate through each file type
