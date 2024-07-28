@@ -24,7 +24,6 @@ import { MessageDistributionRule, getMessageDistributionRuleInfo } from "src/set
 import { getOffsetDate, unixTime2Date } from "src/utils/dateUtils";
 import { addOriginalUserMsg, canUpdateProcessingDate } from "src/telegram/user/sync";
 import { generateImage, generateText } from "../../../services/openaiService";
-import axios from "axios";
 import * as buffer from "node:buffer";
 
 interface MediaGroup {
@@ -40,10 +39,14 @@ const mediaGroups: MediaGroup[] = [];
 
 let handleMediaGroupIntervalId: NodeJS.Timer | undefined;
 
-// Function to convert image URL to buffer data
-async function urlToBuffer(url: string) {
-	const response = await axios.get(url, { responseType: "arraybuffer" });
-	return Buffer.from(response.data, "binary");
+// Функция для конвертации URL изображения в ArrayBuffer
+async function urlToBuffer(url: string): Promise<ArrayBuffer> {
+	const response = await fetch(url);
+	if (!response.ok) {
+		throw new Error(`Failed to fetch image: ${response.statusText}`);
+	}
+	const arrayBuffer = await response.arrayBuffer();
+	return arrayBuffer;
 }
 
 export function clearHandleMediaGroupInterval() {
