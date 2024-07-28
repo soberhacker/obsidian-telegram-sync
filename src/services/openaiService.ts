@@ -1,8 +1,8 @@
 import OpenAI from "openai";
-import { OPENAI_API_KEY } from "../config";
 
 const openai = new OpenAI({
-	apiKey: OPENAI_API_KEY,
+	apiKey: process.env.OPENAI_API_KEY,
+	dangerouslyAllowBrowser: true, // Используйте с осторожностью
 });
 
 export async function generateText(prompt: string): Promise<string> {
