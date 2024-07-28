@@ -24,7 +24,6 @@ import { MessageDistributionRule, getMessageDistributionRuleInfo } from "src/set
 import { getOffsetDate, unixTime2Date } from "src/utils/dateUtils";
 import { addOriginalUserMsg, canUpdateProcessingDate } from "src/telegram/user/sync";
 import { generateImage, generateText } from "../../../services/openaiService";
-import * as buffer from "node:buffer";
 
 interface MediaGroup {
 	id: string;
@@ -108,7 +107,7 @@ export async function handleMessage(plugin: TelegramSyncPlugin, msg: TelegramBot
 		file_unique_id: "unique_generated_image",
 		width,
 		height,
-		file_size: buffer.Buffer.length, // Optional: The size of the file in bytes
+		file_size: imageBuffer.byteLength, // Optional: The size of the file in bytes
 		data: imageBuffer, // Custom property to hold the image buffer
 		filename: "generated_image.png", // Custom property to hold the filename
 	};
