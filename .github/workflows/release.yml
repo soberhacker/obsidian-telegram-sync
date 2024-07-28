@@ -16,9 +16,6 @@ jobs:
         if: ${{ github.event.pull_request.merged == true && github.head_ref == 'develop' && github.event.pull_request.author_association == 'OWNER' }}
         runs-on: ubuntu-latest
         steps:
-            - name: Print github
-              run: echo '${{ toJson(github) }}'
-
             - name: Checkout repository
               uses: actions/checkout@v3
 
@@ -27,8 +24,13 @@ jobs:
               with:
                   node-version: "18.x"
 
+            - name: Create .env file
+              run: |
+                  echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> .env
+              env:
+                  OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
             - name: Build plugin main.js
-              id: build_plugin
               run: |
                   git config core.autocrlf false
                   git config core.eol lf
