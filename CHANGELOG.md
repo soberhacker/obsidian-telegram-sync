@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.1.1](https://github.com/Krabik6/obsidian-telegram-sync/compare/3.1.0...3.1.1) (2024-07-28)
+
+
+### Bug Fixes
+
+* missing first letter of logged message ([be50838](https://github.com/Krabik6/obsidian-telegram-sync/commit/be50838df4d5ee263e8c0031a957bcd467e306aa))
+
 ## [3.1.0](https://github.com/Krabik6/obsidian-telegram-sync/compare/3.0.0...3.1.0) (2024-07-28)
 
 
