@@ -34,8 +34,8 @@ export async function generateText(plugin: TelegramSyncPlugin, prompt: string): 
 
 export async function generateImage(plugin: TelegramSyncPlugin, prompt: string): Promise<string> {
 	try {
-		const apiKey = plugin.settings.openAIKey; // Достаем API ключ из настроек
-		const model = plugin.settings.openAIImageModel; // Достаем модель для генерации изображений
+		const apiKey = plugin.settings.openAIKey;
+		const model = plugin.settings.openAIImageModel;
 
 		if (!apiKey) {
 			throw new Error("OpenAI API key is not set. Please provide your API key in the settings.");
@@ -47,20 +47,20 @@ export async function generateImage(plugin: TelegramSyncPlugin, prompt: string):
 
 		const openai = new OpenAI({
 			apiKey: apiKey,
-			dangerouslyAllowBrowser: true, // Используйте с осторожностью
+			dangerouslyAllowBrowser: true,
 		});
 
 		const response = await openai.images.generate({
 			prompt: prompt,
 			model: model,
 			quality: "standard",
-			n: 1, // Количество изображений для генерации
-			size: "512x512", // Размер изображения
-			response_format: `url`,
+			n: 1,
+			size: "512x512",
+			response_format: "b64_json", // Получаем изображение в формате Base64 JSON
 		});
 
 		// @ts-ignore
-		return response.data[0].url; // Возвращаем URL сгенерированного изображения
+		return response.data[0].b64_json; // Возвращаем Base64-строку
 	} catch (error) {
 		console.error("Error generating image with OpenAI API:", error);
 		return "An error occurred while generating the image.";
