@@ -21,6 +21,7 @@ import {
 	defaultTelegramFolder,
 } from "./settings/messageDistribution";
 import os from "os";
+import OpenAI from "openai";  // Импортируем библиотеку OpenAI
 
 // TODO LOW: add "connecting"
 export type ConnectionStatus = "connected" | "disconnected";
@@ -46,6 +47,9 @@ export default class TelegramSyncPlugin extends Plugin {
 	messagesLeftCnt = 0;
 	connectionStatusIndicator? = new ConnectionStatusIndicator(this);
 	status: PluginStatus = "loading";
+
+	// Переменная для хранения экземпляра OpenAI
+	openai?: OpenAI;
 
 	async initTelegram(initType?: Client.SessionType) {
 		this.lastPollingErrors = [];
@@ -134,6 +138,14 @@ export default class TelegramSyncPlugin extends Plugin {
 
 		await this.loadSettings();
 		await this.upgradeSettings();
+
+		// Добавление инициализации OpenAI клиента
+		if (this.settings.openAIKey) {
+			this.openai = new OpenAI({
+				apiKey: this.settings.openAIKey,
+				dangerouslyAllowBrowser: true, // Используйте с осторожностью
+			});
+		}
 
 		// Add a settings tab for this plugin
 		this.settingsTab = new TelegramSyncSettingTab(this.app, this);

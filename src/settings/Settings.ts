@@ -27,6 +27,7 @@ import {
 import { AdvancedSettingsModal } from "./modals/AdvancedSettings";
 import { ProcessOldMessagesSettingsModal } from "./modals/ProcessOldMessagesSettings";
 import { getOffsetDate } from "src/utils/dateUtils";
+import OpenAI from "openai";
 
 export interface Topic {
 	name: string;
@@ -61,6 +62,7 @@ export interface TelegramSyncSettings {
 	processOtherBotsMessages: boolean;
 	retryFailedMessagesProcessing: boolean;
 	// add new settings above this line
+	openAIKey: string; // Новое поле для OpenAI API ключа
 	topicNames: Topic[];
 }
 
@@ -84,6 +86,7 @@ export const DEFAULT_SETTINGS: TelegramSyncSettings = {
 	retryFailedMessagesProcessing: false,
 	// add new settings above this line
 	topicNames: [],
+	openAIKey: "", // Значение по умолчанию
 };
 
 export class TelegramSyncSettingTab extends PluginSettingTab {
@@ -138,6 +141,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 
 		await this.addBot();
 		await this.addUser();
+		await this.addOpenAIKey();
 		this.addAdvancedSettings();
 
 		new Setting(this.containerEl).setName("Message distribution rules").setHeading();
@@ -285,7 +289,40 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 			text: "a few secondary features",
 		});
 	}
-
+	async addOpenAIKey() {
+		// Создание нового блока настроек для OpenAI API Key
+		new Setting(this.containerEl)
+			.setName("OpenAI API Key")
+			.setDesc("Provide your OpenAI API key for text generation features.")
+			.addText((apiKeyInput: TextComponent) => {
+				apiKeyInput.setValue(this.plugin.settings.openAIKey || "").onChange(async (value) => {
+					this.plugin.settings.openAIKey = value;
+					await this.plugin.saveSettings(); // Сохранение настроек
+				});
+			})
+			.addButton((apiKeyCheckButton: ButtonComponent) => {
+				apiKeyCheckButton
+					.setButtonText("Validate")
+					.setCta()
+					.onClick(async () => {
+						const apiKey = this.plugin.settings.openAIKey;
+						if (apiKey) {
+							try {
+								// Создаем экземпляр OpenAI с текущим ключом
+								const openai = new OpenAI({ apiKey });
+								// Проверка API ключа путем запроса списка моделей
+								await openai.models.list();
+								displayAndLog(this.plugin, "API Key is valid!", _5sec);
+							} catch (error) {
+								console.error("Error validating API Key:", error);
+								displayAndLog(this.plugin, "Invalid API Key. Please check and try again.", _5sec);
+							}
+						} else {
+							displayAndLog(this.plugin, "API Key cannot be empty.", _5sec);
+						}
+					});
+			});
+	}
 	addAdvancedSettings() {
 		new Setting(this.containerEl).addButton((btn: ButtonComponent) => {
 			btn.setButtonText("Advanced settings");

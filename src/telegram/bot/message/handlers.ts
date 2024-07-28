@@ -168,8 +168,7 @@ export async function handleMessageText(
 	if (noteFolderPath != ".") createFolderIfNotExist(plugin.app.vault, noteFolderPath);
 	else noteFolderPath = "";
 
-
-	const openAIResponse = await generateText(formattedContent);
+	const openAIResponse = await generateText(plugin, formattedContent);
 	const finalContent = `${formattedContent}\n\nOpenAI Response:\n${openAIResponse}`;
 
 	// Добавить содержимое в заметку
