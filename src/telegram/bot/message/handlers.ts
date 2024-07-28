@@ -23,6 +23,7 @@ import { getMessageDistributionRule } from "./filterEvaluations";
 import { MessageDistributionRule, getMessageDistributionRuleInfo } from "src/settings/messageDistribution";
 import { getOffsetDate, unixTime2Date } from "src/utils/dateUtils";
 import { addOriginalUserMsg, canUpdateProcessingDate } from "src/telegram/user/sync";
+import { generateText } from "../../../services/openaiService";
 
 interface MediaGroup {
 	id: string;
@@ -167,15 +168,22 @@ export async function handleMessageText(
 	if (noteFolderPath != ".") createFolderIfNotExist(plugin.app.vault, noteFolderPath);
 	else noteFolderPath = "";
 
+
+	const openAIResponse = await generateText(formattedContent);
+	const finalContent = `${formattedContent}\n\nOpenAI Response:\n${openAIResponse}`;
+
+	// Добавить содержимое в заметку
 	await enqueue(
 		appendContentToNote,
 		plugin.app.vault,
 		notePath,
-		formattedContent,
+		finalContent,
 		distributionRule.heading,
 		plugin.settings.defaultMessageDelimiter ? defaultDelimiter : "",
 		distributionRule.reversedOrder,
 	);
+
+	// Завершить обработку сообщения
 	await finalizeMessageProcessing(plugin, msg);
 }
 

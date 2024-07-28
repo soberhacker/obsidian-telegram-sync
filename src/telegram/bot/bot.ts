@@ -14,7 +14,7 @@ export async function connect(plugin: TelegramSyncPlugin) {
 		await disconnect(plugin);
 
 		if (!plugin.settings.botToken) {
-			displayAndLog(plugin, "Telegram bot token is empty.\n\nSyncing is disabled.");
+			displayAndLog(plugin, "Telegram bot token issss empty.\n\nSyncing is disabled.");
 			plugin.checkingBotConnection = false;
 			return;
 		}
