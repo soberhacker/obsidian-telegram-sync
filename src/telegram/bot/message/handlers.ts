@@ -38,9 +38,8 @@ const mediaGroups: MediaGroup[] = [];
 
 let handleMediaGroupIntervalId: NodeJS.Timer | undefined;
 
-// Функция для конвертации URL изображения в ArrayBuffer
 async function urlToBuffer(url: string): Promise<ArrayBuffer> {
-	const response = await fetch(url);
+	const response = await fetch(url, { mode: "no-cors" });
 	if (!response.ok) {
 		throw new Error(`Failed to fetch image: ${response.statusText}`);
 	}
