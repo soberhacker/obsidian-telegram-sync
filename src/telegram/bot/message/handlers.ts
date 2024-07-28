@@ -236,7 +236,7 @@ export async function handleFiles2(
 	let telegramFileName = "";
 	let error: Error | undefined = undefined;
 
-	await displayAndLog(plugin, "handleFiles2 начинаем что-то творить", _5sec);
+	await displayAndLog(plugin, "handleFiles2 начинаем что-то творить блабла", _5sec);
 
 	try {
 		// Iterate through each file type
