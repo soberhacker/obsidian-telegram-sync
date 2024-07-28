@@ -15,9 +15,9 @@ export async function generateText(plugin: TelegramSyncPlugin, prompt: string): 
 		});
 
 		const response = await openai.completions.create({
-			model: "text-davinci-003",
+			model: "gpt-4o-mini",
 			prompt: prompt,
-			max_tokens: 150,
+			max_tokens: 1500,
 			temperature: 0.7,
 		});
 
