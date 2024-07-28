@@ -1,5 +1,19 @@
 # Changelog
 
+## [3.1.0](https://github.com/Krabik6/obsidian-telegram-sync/compare/3.0.0...3.1.0) (2024-07-28)
+
+
+### Features
+
+* appending new messages under a note heading ([0b08384](https://github.com/Krabik6/obsidian-telegram-sync/commit/0b0838481bde3b68e4d92f8e7fc923bf96d69e82))
+
+
+### Bug Fixes
+
+* missing first letter of logged message ([be50838](https://github.com/Krabik6/obsidian-telegram-sync/commit/be50838df4d5ee263e8c0031a957bcd467e306aa))
+* not processing edited messages ([71a63bb](https://github.com/Krabik6/obsidian-telegram-sync/commit/71a63bb84f09891ac8619d7513ac1586d27bf748))
+* partially deleting of media groups ([9b52c40](https://github.com/Krabik6/obsidian-telegram-sync/commit/9b52c4054c036f282c8e5dfe82e7de31ca30b165))
+
 ## [3.0.0](https://github.com/soberhacker/obsidian-telegram-sync/compare/3.0.0...3.0.0) (2024-01-08)
 
 

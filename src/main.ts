@@ -22,7 +22,7 @@ import {
 } from "./settings/messageDistribution";
 import os from "os";
 
-// TODO in 2024: add "connecting"
+// TODO LOW: add "connecting"
 export type ConnectionStatus = "connected" | "disconnected";
 export type PluginStatus = "unloading" | "unloaded" | "loading" | "loaded";
 
@@ -31,11 +31,11 @@ export default class TelegramSyncPlugin extends Plugin {
 	settings: TelegramSyncSettings;
 	settingsTab?: TelegramSyncSettingTab;
 	private botStatus: ConnectionStatus = "disconnected";
-	// TODO in 2024: change to userStatus and display in status bar
+	// TODO LOW: change to userStatus and display in status bar
 	userConnected = false;
 	checkingBotConnection = false;
 	checkingUserConnection = false;
-	// TODO in 2024: TelegramSyncBot extends TelegramBot
+	// TODO LOW: TelegramSyncBot extends TelegramBot
 	bot?: TelegramBot;
 	botUser?: TelegramBot.User;
 	createdFilePaths: string[] = [];

@@ -145,9 +145,9 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 
 		new Setting(this.containerEl).setName("Insider features").setHeading();
 		this.subscribedOnInsiderChannel = await Client.subscribedOnInsiderChannel();
-		this.addTelegramChannel();
 		await this.addProcessOldMessages();
 		await this.addBetaRelease();
+		this.addTelegramChannel();
 		await this.setRefreshInterval();
 	}
 
@@ -286,6 +286,17 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 		});
 	}
 
+	addAdvancedSettings() {
+		new Setting(this.containerEl).addButton((btn: ButtonComponent) => {
+			btn.setButtonText("Advanced settings");
+			btn.setClass("mod-cta");
+			btn.onClick(async () => {
+				const advancedSettingsModal = new AdvancedSettingsModal(this.plugin);
+				advancedSettingsModal.open();
+			});
+		});
+	}
+
 	async addMessageDistributionRules() {
 		this.plugin.settings.messageDistributionRules.forEach((rule, index) => {
 			const ruleInfo = getMessageDistributionRuleInfo(rule);
@@ -358,33 +369,8 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 		});
 	}
 
-	addTelegramChannel() {
-		if (this.subscribedOnInsiderChannel) return;
-
-		const telegramChannelSetting = new Setting(this.containerEl)
-			.setName("Telegram plugin's channel")
-			.setDesc(
-				"If you like this open source plugin and are considering donating to support its continued development, subscribe to the private Telegram channel. In exchange, you will be the first to get all the latest updates and secrets🤫, as well as gain access to beta versions and ",
-			)
-			.addButton((btn) => {
-				btn.setButtonText("Subscribe");
-				btn.setClass("mod-cta");
-				btn.onClick(() => {
-					displayAndLog(
-						this.plugin,
-						"After channel subscription, connect your Telegram user (if not done) and refresh the plugin settings for insider features",
-					);
-					window.open(telegramChannelLink, "_blank");
-				});
-			});
-		telegramChannelSetting.descEl.createEl("a", {
-			href: "https://github.com/soberhacker/obsidian-telegram-sync/blob/main/docs/Telegram%20Sync%20Insider%20Features.md",
-			text: "exclusive features",
-		});
-	}
-
 	async addBetaRelease() {
-		if (!this.plugin.userConnected || !this.subscribedOnInsiderChannel) return;
+		const disabled = !this.plugin.userConnected || !this.subscribedOnInsiderChannel;
 
 		const installed = "Installed\n\nRestart the plugin or Obsidian to apply the changes";
 
@@ -394,6 +380,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 				"Install the latest beta release to be among the first to try out new features. It will launch during the plugin's next load",
 			)
 			.addButton(async (btn) => {
+				btn.setDisabled(disabled);
 				btn.setTooltip("Install Beta Release");
 				btn.setWarning();
 				btn.setIcon("install");
@@ -414,6 +401,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 			.addButton(async (btn) => {
 				btn.setTooltip("Return to production release");
 				btn.setIcon("undo-glyph");
+				btn.setDisabled(disabled);
 				btn.onClick(async () => {
 					if (!this.plugin.settings.betaVersion) {
 						new Notice(`You already have the production version of the plugin installed`, _5sec);
@@ -433,7 +421,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 	}
 
 	async addProcessOldMessages() {
-		if (!this.plugin.userConnected || !this.subscribedOnInsiderChannel) return;
+		const disabled = !this.plugin.userConnected || !this.subscribedOnInsiderChannel;
 
 		new Setting(this.containerEl)
 			.setName("Process old messages")
@@ -441,15 +429,17 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 				"During the plugin loading, unprocessed messages that are older than 24 hours and are not accessible to the bot will be forwarded to the same chat using the connected user's account. This action will enable the bot to detect and process these messages",
 			)
 			.addButton((btn) => {
-				btn.setIcon("settings")
-					.setTooltip("Settings")
-					.onClick(async () => {
-						const processOldMessagesSettingsModal = new ProcessOldMessagesSettingsModal(this.plugin);
-						processOldMessagesSettingsModal.open();
-					});
+				btn.setIcon("settings");
+				btn.setTooltip("Settings");
+				btn.setDisabled(disabled);
+				btn.onClick(async () => {
+					const processOldMessagesSettingsModal = new ProcessOldMessagesSettingsModal(this.plugin);
+					processOldMessagesSettingsModal.open();
+				});
 			})
 			.addToggle((toggle) => {
 				toggle.setValue(this.plugin.settings.processOldMessages);
+				toggle.setDisabled(disabled);
 				toggle.onChange(async (value) => {
 					if (!value) clearCachedUnprocessedMessages();
 					else this.plugin.settings.processOldMessagesSettings.lastProcessingDate = getOffsetDate();
@@ -460,13 +450,27 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 			});
 	}
 
-	addAdvancedSettings() {
+	addTelegramChannel() {
+		if (this.subscribedOnInsiderChannel) return;
+
+		const telegramChannelSetting = new Setting(this.containerEl)
+			.setName("Telegram plugin's channel")
+			.setDesc(
+				"If you like this open source plugin and are considering donating to support its continued development, subscribe to the private Telegram channel. In exchange, you will be the first to get all the latest updates and secrets🤫, as well as gain access to beta versions and ",
+			);
+		telegramChannelSetting.descEl.createEl("a", {
+			href: "https://github.com/soberhacker/obsidian-telegram-sync/blob/main/docs/Telegram%20Sync%20Insider%20Features.md",
+			text: "insider features",
+		});
 		new Setting(this.containerEl).addButton((btn: ButtonComponent) => {
-			btn.setButtonText("Advanced settings");
+			btn.setButtonText("Subscribe & Unlock features");
 			btn.setClass("mod-cta");
 			btn.onClick(async () => {
-				const advancedSettingsModal = new AdvancedSettingsModal(this.plugin);
-				advancedSettingsModal.open();
+				displayAndLog(
+					this.plugin,
+					"After channel subscription, connect your Telegram user (if not done) and refresh the plugin settings for insider features",
+				);
+				window.open(telegramChannelLink, "_blank");
 			});
 		});
 	}

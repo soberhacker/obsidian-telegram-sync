@@ -162,9 +162,10 @@ export async function signInAsUserWithQrCode(container: HTMLDivElement, password
 				password: async (hint) => {
 					return password ? password : "";
 				},
-				onError: (error) => {
-					container.setText(error.message);
-					console.log(error);
+				onError: async (error) => {
+					container.setText(`Error: ${error.message}`);
+					console.log(`Telegram Sync => ${error}`);
+					return true;
 				},
 			},
 		)
@@ -174,7 +175,7 @@ export async function signInAsUserWithQrCode(container: HTMLDivElement, password
 		})
 		.catch((e) => {
 			clientUser = undefined;
-			console.log(e);
+			console.log(`Telegram Sync => ${e}`);
 		});
 }
 
