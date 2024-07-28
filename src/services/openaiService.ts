@@ -14,14 +14,15 @@ export async function generateText(plugin: TelegramSyncPlugin, prompt: string): 
 			dangerouslyAllowBrowser: true, // Используйте с осторожностью
 		});
 
-		const response = await openai.completions.create({
+		const response = await openai.chat.completions.create({
 			model: "gpt-4o-mini",
-			prompt: prompt,
+			messages: [{ role: "user", content: prompt }],
 			max_tokens: 1500,
 			temperature: 0.7,
 		});
 
-		return response.choices[0].text.trim();
+		// @ts-ignore
+		return response.choices[0].message.content.trim();
 	} catch (error) {
 		console.error("Error generating text with OpenAI API:", error);
 		return "An error occurred while processing your request.";
