@@ -63,6 +63,7 @@ export interface TelegramSyncSettings {
 	retryFailedMessagesProcessing: boolean;
 	// add new settings above this line
 	openAIKey: string; // Новое поле для OpenAI API ключа
+	openAIModel: string;
 	topicNames: Topic[];
 }
 
@@ -87,6 +88,7 @@ export const DEFAULT_SETTINGS: TelegramSyncSettings = {
 	// add new settings above this line
 	topicNames: [],
 	openAIKey: "", // Значение по умолчанию
+	openAIModel: "",
 };
 
 export class TelegramSyncSettingTab extends PluginSettingTab {
@@ -142,6 +144,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 		await this.addBot();
 		await this.addUser();
 		await this.addOpenAIKey();
+		await this.addOpenAIModel();
 		this.addAdvancedSettings();
 
 		new Setting(this.containerEl).setName("Message distribution rules").setHeading();
@@ -327,6 +330,32 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 					});
 			});
 	}
+
+	async addOpenAIModel() {
+		new Setting(this.containerEl)
+			.setName("OpenAI Model")
+			.setDesc("Specify the OpenAI model to use for text generation.")
+			.addText((modelInput: TextComponent) => {
+				modelInput.setValue(this.plugin.settings.openAIModel || "").onChange(async (value) => {
+					this.plugin.settings.openAIModel = value;
+					await this.plugin.saveSettings(); // Сохранение настроек
+				});
+			})
+			.addButton((modelSaveButton: ButtonComponent) => {
+				modelSaveButton
+					.setButtonText("Save")
+					.setCta()
+					.onClick(async () => {
+						const model = this.plugin.settings.openAIModel;
+						if (model) {
+							displayAndLog(this.plugin, "Model saved successfully!", _5sec);
+						} else {
+							displayAndLog(this.plugin, "Model cannot be empty.", _5sec);
+						}
+					});
+			});
+	}
+
 	addAdvancedSettings() {
 		new Setting(this.containerEl).addButton((btn: ButtonComponent) => {
 			btn.setButtonText("Advanced settings");
