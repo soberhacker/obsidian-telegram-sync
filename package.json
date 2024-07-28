@@ -51,6 +51,7 @@
 		"node-telegram-bot-api": "^0.65.1",
 		"openai": "^4.53.2",
 		"qrcode": "^1.5.3",
+		"sharp": "^0.33.4",
 		"telegram": "2.20.2"
 	}
 }
