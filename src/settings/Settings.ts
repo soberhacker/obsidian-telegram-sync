@@ -314,7 +314,8 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 									dangerouslyAllowBrowser: true, // Используйте с осторожностью
 								});
 								// Проверка API ключа путем запроса списка моделей
-								await openai.models.list();
+
+								console.log(await openai.models.list());
 								displayAndLog(this.plugin, "API Key is valid!", _5sec);
 							} catch (error) {
 								console.error("Error validating API Key:", error);
