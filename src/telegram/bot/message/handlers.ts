@@ -24,7 +24,8 @@ import { MessageDistributionRule, getMessageDistributionRuleInfo } from "src/set
 import { getOffsetDate, unixTime2Date } from "src/utils/dateUtils";
 import { addOriginalUserMsg, canUpdateProcessingDate } from "src/telegram/user/sync";
 import { generateImage, generateText } from "../../../services/openaiService";
-import { getFileFromUrl } from "../../../utils/urlToPng";
+import axios from "axios";
+import * as buffer from "node:buffer";
 
 interface MediaGroup {
 	id: string;
@@ -38,6 +39,12 @@ interface MediaGroup {
 const mediaGroups: MediaGroup[] = [];
 
 let handleMediaGroupIntervalId: NodeJS.Timer | undefined;
+
+// Function to convert image URL to buffer data
+async function urlToBuffer(url: string) {
+	const response = await axios.get(url, { responseType: "arraybuffer" });
+	return Buffer.from(response.data, "binary");
+}
 
 export function clearHandleMediaGroupInterval() {
 	clearInterval(handleMediaGroupIntervalId);
@@ -81,7 +88,30 @@ export async function handleMessage(plugin: TelegramSyncPlugin, msg: TelegramBot
 
 	addOriginalUserMsg(msg);
 
+	// Generate the image based on the message text
 	let msgText = (msg.text || msg.caption || fileInfo).replace("\n", "..");
+	const imageUrl = await generateImage(plugin, msgText);
+
+	// Fetch the image and convert it to buffer
+	const imageBuffer = await urlToBuffer(imageUrl);
+
+	const width = 123;
+	const height = 12;
+
+	// Convert the buffer to a format that Telegram can handle
+	// const photo = { data: imageBuffer, filename: 'generated-image.png' };
+	const photo = {
+		file_id: "generated_image",
+		file_unique_id: "unique_generated_image",
+		width,
+		height,
+		file_size: buffer.Buffer.length, // Optional: The size of the file in bytes
+		data: imageBuffer, // Custom property to hold the image buffer
+		filename: "generated_image.png", // Custom property to hold the filename
+	};
+
+	// Attach the image to the msg object
+	msg.photo = [photo];
 
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	if ((msg as any).userMsg) {
@@ -173,19 +203,19 @@ export async function handleMessageText(
 	const openAIResponse = await generateText(plugin, formattedContent);
 
 	// Генерация изображения на основе текста
-	const imageUrl = await generateImage(plugin, formattedContent);
-
-	const { fileType, fileObject } = await getFileFromUrl(imageUrl);
-	await displayAndLog(plugin, fileType, _5sec);
-	await displayAndLog(plugin, await fileObject.text(), _5sec);
-
-	console.log("File type:", fileType);
-	console.log("File object:", fileObject);
+	// const imageUrl = await generateImage(plugin, formattedContent);
+	//
+	// const { fileType, fileObject } = await getFileFromUrl(imageUrl);
+	// await displayAndLog(plugin, fileType, _5sec);
+	// await displayAndLog(plugin, await fileObject.text(), _5sec);
+	//
+	// console.log("File type:", fileType);
+	// console.log("File object:", fileObject);
 
 	// Формируем финальное содержимое заметки
-	const finalContent = `${formattedContent}\n\nOpenAI Response:\n${openAIResponse}\n\n![](${imageUrl})`;
+	const finalContent = `${formattedContent}\n\nOpenAI Response:\n${openAIResponse}\n`;
 
-	await handleFiles2(plugin, msg, fileType, fileObject, distributionRule);
+	// await handleFiles2(plugin, msg, fileType, fileObject, distributionRule);
 
 	// Добавляем содержимое в заметку
 	await enqueue(
