@@ -23,7 +23,7 @@ import { getMessageDistributionRule } from "./filterEvaluations";
 import { MessageDistributionRule, getMessageDistributionRuleInfo } from "src/settings/messageDistribution";
 import { getOffsetDate, unixTime2Date } from "src/utils/dateUtils";
 import { addOriginalUserMsg, canUpdateProcessingDate } from "src/telegram/user/sync";
-import { generateText } from "../../../services/openaiService";
+import { generateImage, generateText } from "../../../services/openaiService";
 
 interface MediaGroup {
 	id: string;
@@ -168,10 +168,16 @@ export async function handleMessageText(
 	if (noteFolderPath != ".") createFolderIfNotExist(plugin.app.vault, noteFolderPath);
 	else noteFolderPath = "";
 
+	// Генерация текста с помощью OpenAI
 	const openAIResponse = await generateText(plugin, formattedContent);
-	const finalContent = `${formattedContent}\n\nOpenAI Response:\n${openAIResponse}`;
 
-	// Добавить содержимое в заметку
+	// Генерация изображения на основе текста
+	const imageUrl = await generateImage(plugin, formattedContent);
+
+	// Формируем финальное содержимое заметки
+	const finalContent = `${formattedContent}\n\nOpenAI Response:\n${openAIResponse}\n\nGenerated Image: ${imageUrl}`;
+
+	// Добавляем содержимое в заметку
 	await enqueue(
 		appendContentToNote,
 		plugin.app.vault,
@@ -182,7 +188,7 @@ export async function handleMessageText(
 		distributionRule.reversedOrder,
 	);
 
-	// Завершить обработку сообщения
+	// Завершаем обработку сообщения
 	await finalizeMessageProcessing(plugin, msg);
 }
 

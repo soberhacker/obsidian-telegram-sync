@@ -64,6 +64,8 @@ export interface TelegramSyncSettings {
 	// add new settings above this line
 	openAIKey: string; // Новое поле для OpenAI API ключа
 	openAIModel: string;
+	openAIAudioModel: string;
+	openAIImageModel: string;
 	topicNames: Topic[];
 }
 
@@ -89,6 +91,8 @@ export const DEFAULT_SETTINGS: TelegramSyncSettings = {
 	topicNames: [],
 	openAIKey: "", // Значение по умолчанию
 	openAIModel: "",
+	openAIAudioModel: "",
+	openAIImageModel: "",
 };
 
 export class TelegramSyncSettingTab extends PluginSettingTab {
@@ -145,6 +149,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 		await this.addUser();
 		await this.addOpenAIKey();
 		await this.addOpenAIModel();
+		await this.addOpenAIAudioModel();
 		this.addAdvancedSettings();
 
 		new Setting(this.containerEl).setName("Message distribution rules").setHeading();
@@ -351,6 +356,56 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 							displayAndLog(this.plugin, "Model saved successfully!", _5sec);
 						} else {
 							displayAndLog(this.plugin, "Model cannot be empty.", _5sec);
+						}
+					});
+			});
+	}
+
+	async addOpenAIImageModel() {
+		new Setting(this.containerEl)
+			.setName("OpenAI Image Model")
+			.setDesc("Specify the OpenAI model to use for image generation.")
+			.addText((modelInput: TextComponent) => {
+				modelInput.setValue(this.plugin.settings.openAIImageModel || "").onChange(async (value) => {
+					this.plugin.settings.openAIImageModel = value;
+					await this.plugin.saveSettings(); // Сохранение настроек
+				});
+			})
+			.addButton((modelSaveButton: ButtonComponent) => {
+				modelSaveButton
+					.setButtonText("Save")
+					.setCta()
+					.onClick(async () => {
+						const model = this.plugin.settings.openAIImageModel;
+						if (model) {
+							displayAndLog(this.plugin, "Image model saved successfully!", _5sec);
+						} else {
+							displayAndLog(this.plugin, "Image model cannot be empty.", _5sec);
+						}
+					});
+			});
+	}
+
+	async addOpenAIAudioModel() {
+		new Setting(this.containerEl)
+			.setName("OpenAI Audio Model")
+			.setDesc("Specify the OpenAI model to use for audio generation.")
+			.addText((modelInput: TextComponent) => {
+				modelInput.setValue(this.plugin.settings.openAIAudioModel || "").onChange(async (value) => {
+					this.plugin.settings.openAIAudioModel = value;
+					await this.plugin.saveSettings(); // Сохранение настроек
+				});
+			})
+			.addButton((modelSaveButton: ButtonComponent) => {
+				modelSaveButton
+					.setButtonText("Save")
+					.setCta()
+					.onClick(async () => {
+						const model = this.plugin.settings.openAIAudioModel;
+						if (model) {
+							displayAndLog(this.plugin, "Audio model saved successfully!", _5sec);
+						} else {
+							displayAndLog(this.plugin, "Audio model cannot be empty.", _5sec);
 						}
 					});
 			});
