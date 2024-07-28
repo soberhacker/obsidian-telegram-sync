@@ -16,7 +16,7 @@ export async function generateText(plugin: TelegramSyncPlugin, prompt: string): 
 
 		const response = await openai.chat.completions.create({
 			messages: [{ role: "user", content: prompt }],
-			model: "gpt-4o-mini",
+			model: plugin.settings.openAIModel,
 		});
 
 		// @ts-ignore
