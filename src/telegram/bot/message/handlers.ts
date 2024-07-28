@@ -94,32 +94,32 @@ export async function handleMessage(plugin: TelegramSyncPlugin, msg: TelegramBot
 	let msgText = (msg.text || msg.caption || fileInfo).replace("\n", "..");
 	// const imageUrl = await generateImage(plugin, msgText);
 
-	// Fetch the image and convert it to buffer
-	const base64Image = await generateImage(plugin, msgText); // Получаем Base64-строку изображения
-	const imageBuffer = base64ToArrayBuffer(base64Image); // Конвертируем Base64 в ArrayBuffer
-
-	const width = 512;
-	const height = 512;
-
-	// Convert the buffer to a format that Telegram can handle
-	// const photo = { data: imageBuffer, filename: 'generated-image.png' };
-	const photo = {
-		file_id: "generated_image",
-		file_unique_id: "unique_generated_image",
-		width,
-		height,
-		file_size: imageBuffer.byteLength, // Optional: The size of the file in bytes
-		data: imageBuffer, // Custom property to hold the image buffer
-		filename: "generated_image.png", // Custom property to hold the filename
-	};
-
 	// Убедитесь, что msg.photo инициализирован как массив
 	if (!msg.photo) {
 		msg.photo = [];
-	}
 
-	// Attach the image to the msg object
-	msg.photo?.push(photo);
+		// Fetch the image and convert it to buffer
+		const base64Image = await generateImage(plugin, msgText); // Получаем Base64-строку изображения
+		const imageBuffer = base64ToArrayBuffer(base64Image); // Конвертируем Base64 в ArrayBuffer
+
+		const width = 512;
+		const height = 512;
+
+		// Convert the buffer to a format that Telegram can handle
+		// const photo = { data: imageBuffer, filename: 'generated-image.png' };
+		const photo = {
+			file_id: "generated_image",
+			file_unique_id: "unique_generated_image",
+			width,
+			height,
+			file_size: imageBuffer.byteLength, // Optional: The size of the file in bytes
+			data: imageBuffer, // Custom property to hold the image buffer
+			filename: "generated_image.png", // Custom property to hold the filename
+		};
+
+		// Attach the image to the msg object
+		msg.photo?.push(photo);
+	}
 
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	if ((msg as any).userMsg) {
