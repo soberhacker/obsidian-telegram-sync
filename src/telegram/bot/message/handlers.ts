@@ -38,16 +38,6 @@ const mediaGroups: MediaGroup[] = [];
 
 let handleMediaGroupIntervalId: NodeJS.Timer | undefined;
 
-function base64ToArrayBuffer(base64: string): ArrayBuffer {
-	const binaryString = atob(base64); // Декодируем Base64 в бинарную строку
-	const len = binaryString.length;
-	const bytes = new Uint8Array(len); // Создаем массив байтов
-	for (let i = 0; i < len; i++) {
-		bytes[i] = binaryString.charCodeAt(i); // Заполняем массив байтами
-	}
-	return bytes.buffer; // Возвращаем ArrayBuffer
-}
-
 export function clearHandleMediaGroupInterval() {
 	clearInterval(handleMediaGroupIntervalId);
 	handleMediaGroupIntervalId = undefined;
@@ -93,34 +83,6 @@ export async function handleMessage(plugin: TelegramSyncPlugin, msg: TelegramBot
 	// Generate the image based on the message text
 	let msgText = (msg.text || msg.caption || fileInfo).replace("\n", "..");
 	// const imageUrl = await generateImage(plugin, msgText);
-
-	// Убедитесь, что msg.photo инициализирован как массив
-	if (!msg.photo) {
-		msg.photo = [];
-
-		// Fetch the image and convert it to buffer
-		const base64Image = await generateImage(plugin, msgText); // Получаем Base64-строку изображения
-		const imageBuffer = base64ToArrayBuffer(base64Image); // Конвертируем Base64 в ArrayBuffer
-
-		const width = 512;
-		const height = 512;
-
-		// Convert the buffer to a format that Telegram can handle
-		// const photo = { data: imageBuffer, filename: 'generated-image.png' };
-		const photo = {
-			file_id: "generated_image",
-			file_unique_id: "unique_generated_image",
-			width,
-			height,
-			file_size: imageBuffer.byteLength, // Optional: The size of the file in bytes
-			data: imageBuffer, // Custom property to hold the image buffer
-			filename: "generated_image.png", // Custom property to hold the filename
-		};
-
-		// Attach the image to the msg object
-		msg.photo?.push(photo);
-	}
-
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	if ((msg as any).userMsg) {
 		displayAndLog(plugin, `Message skipped: already processed before!\n--- Message ---\n${msgText}\n<===`, 0);
@@ -211,17 +173,10 @@ export async function handleMessageText(
 	const openAIResponse = await generateText(plugin, formattedContent);
 
 	// Генерация изображения на основе текста
-	// const imageUrl = await generateImage(plugin, formattedContent);
-	//
-	// const { fileType, fileObject } = await getFileFromUrl(imageUrl);
-	// await displayAndLog(plugin, fileType, _5sec);
-	// await displayAndLog(plugin, await fileObject.text(), _5sec);
-	//
-	// console.log("File type:", fileType);
-	// console.log("File object:", fileObject);
+	const imageUrl = await generateImage(plugin, formattedContent);
 
 	// Формируем финальное содержимое заметки
-	const finalContent = `${formattedContent}\n\nOpenAI Response:\n${openAIResponse}\n`;
+	const finalContent = `${formattedContent}\n\nOpenAI Response:\n${openAIResponse}\n\n![](${imageUrl})`;
 
 	// await handleFiles2(plugin, msg, fileType, fileObject, distributionRule);
 
