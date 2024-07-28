@@ -175,7 +175,7 @@ export async function handleMessageText(
 	const imageUrl = await generateImage(plugin, formattedContent);
 
 	// Формируем финальное содержимое заметки
-	const finalContent = `${formattedContent}\n\nOpenAI Response:\n${openAIResponse}\n\nGenerated Image: ${imageUrl}`;
+	const finalContent = `${formattedContent}\n\nOpenAI Response:\n${openAIResponse}\n\n![](${imageUrl})`;
 
 	// Добавляем содержимое в заметку
 	await enqueue(
