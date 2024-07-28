@@ -23,12 +23,13 @@ jobs:
               uses: actions/setup-node@v3
               with:
                   node-version: "18.x"
-
-            - name: Create .env file
+            - name: Create .env file and add API key
               run: |
-                  echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> .env
+                  echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" > .env
               env:
                   OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+
 
             - name: Build plugin main.js
               run: |
