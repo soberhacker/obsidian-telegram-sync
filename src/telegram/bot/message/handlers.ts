@@ -38,14 +38,24 @@ const mediaGroups: MediaGroup[] = [];
 
 let handleMediaGroupIntervalId: NodeJS.Timer | undefined;
 
-async function urlToBuffer(url: string): Promise<ArrayBuffer> {
-	const response = await fetch(url, { mode: "no-cors" });
-	if (!response.ok) {
-		throw new Error(`Failed to fetch image: ${response.statusText}`);
+function base64ToArrayBuffer(base64: string): ArrayBuffer {
+	const binaryString = atob(base64); // Декодируем Base64 в бинарную строку
+	const len = binaryString.length;
+	const bytes = new Uint8Array(len); // Создаем массив байтов
+	for (let i = 0; i < len; i++) {
+		bytes[i] = binaryString.charCodeAt(i); // Заполняем массив байтами
 	}
-	const arrayBuffer = await response.arrayBuffer();
-	return arrayBuffer;
+	return bytes.buffer; // Возвращаем ArrayBuffer
 }
+
+// async function urlToBuffer(url: string): Promise<ArrayBuffer> {
+// 	const response = await fetch(url, { mode: "no-cors" });
+// 	if (!response.ok) {
+// 		throw new Error(`Failed to fetch image: ${response.statusText}`);
+// 	}
+// 	const arrayBuffer = await response.arrayBuffer();
+// 	return arrayBuffer;
+// }
 
 export function clearHandleMediaGroupInterval() {
 	clearInterval(handleMediaGroupIntervalId);
@@ -91,10 +101,11 @@ export async function handleMessage(plugin: TelegramSyncPlugin, msg: TelegramBot
 
 	// Generate the image based on the message text
 	let msgText = (msg.text || msg.caption || fileInfo).replace("\n", "..");
-	const imageUrl = await generateImage(plugin, msgText);
+	// const imageUrl = await generateImage(plugin, msgText);
 
 	// Fetch the image and convert it to buffer
-	const imageBuffer = await urlToBuffer(imageUrl);
+	const base64Image = await generateImage(plugin, msgText); // Получаем Base64-строку изображения
+	const imageBuffer = base64ToArrayBuffer(base64Image); // Конвертируем Base64 в ArrayBuffer
 
 	const width = 123;
 	const height = 12;
