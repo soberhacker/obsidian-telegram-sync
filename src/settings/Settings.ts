@@ -150,6 +150,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 		await this.addOpenAIKey();
 		await this.addOpenAIModel();
 		await this.addOpenAIAudioModel();
+		await this.addOpenAIImageModel();
 		this.addAdvancedSettings();
 
 		new Setting(this.containerEl).setName("Message distribution rules").setHeading();
