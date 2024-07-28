@@ -53,8 +53,9 @@ export async function generateImage(plugin: TelegramSyncPlugin, prompt: string):
 		const response = await openai.images.generate({
 			prompt: prompt,
 			model: model,
+			quality: "standard",
 			n: 1, // Количество изображений для генерации
-			size: "1024x1024", // Размер изображения
+			size: "512x512", // Размер изображения
 			response_format: `url`,
 		});
 
