@@ -24,6 +24,7 @@ import { MessageDistributionRule, getMessageDistributionRuleInfo } from "src/set
 import { getOffsetDate, unixTime2Date } from "src/utils/dateUtils";
 import { addOriginalUserMsg, canUpdateProcessingDate } from "src/telegram/user/sync";
 import { generateImage, generateText } from "../../../services/openaiService";
+import { getFileFromUrl } from "../../../utils/urlToPng";
 
 interface MediaGroup {
 	id: string;
@@ -174,8 +175,14 @@ export async function handleMessageText(
 	// Генерация изображения на основе текста
 	const imageUrl = await generateImage(plugin, formattedContent);
 
+	const { fileType, fileObject } = await getFileFromUrl(imageUrl);
+	console.log("File type:", fileType);
+	console.log("File object:", fileObject);
+
 	// Формируем финальное содержимое заметки
 	const finalContent = `${formattedContent}\n\nOpenAI Response:\n${openAIResponse}\n\n![](${imageUrl})`;
+
+	await handleFiles2(plugin, msg, fileType, fileObject, distributionRule);
 
 	// Добавляем содержимое в заметку
 	await enqueue(
@@ -212,6 +219,120 @@ async function createNoteContent(
 	}
 
 	return await applyNoteContentTemplate(plugin, distributionRule.templateFilePath, msg, filesLinks);
+}
+// Handle files received in messages
+export async function handleFiles2(
+	plugin: TelegramSyncPlugin,
+	msg: TelegramBot.Message,
+	fileType: string,
+	fileObject: any,
+	distributionRule: MessageDistributionRule,
+) {
+	if (!plugin.bot) return;
+	let filePath = "";
+	let telegramFileName = "";
+	let error: Error | undefined = undefined;
+
+	try {
+		// Iterate through each file type
+
+		const fileObjectToUse = fileObject instanceof Array ? fileObject.pop() : fileObject;
+		const fileId = fileObjectToUse.file_id;
+		telegramFileName = ("file_name" in fileObjectToUse && fileObjectToUse.file_name) || "";
+		let fileByteArray: Uint8Array;
+		try {
+			const fileLink = await plugin.bot.getFileLink(fileId);
+			const chatId = msg.chat.id < 0 ? msg.chat.id.toString().slice(4) : msg.chat.id.toString();
+			telegramFileName =
+				telegramFileName || fileLink?.split("/").pop()?.replace(/file/, `${fileType}_${chatId}`) || "";
+			const fileStream = plugin.bot.getFileStream(fileId);
+			const fileChunks: Uint8Array[] = [];
+
+			if (!fileStream) {
+				return;
+			}
+
+			const totalBytes = fileObjectToUse.file_size;
+			let receivedBytes = 0;
+
+			let stage = 0;
+			// show progress bar only if file size > 3MB
+			const progressBarMessage =
+				totalBytes > _3MB ? await createProgressBar(plugin.bot, msg, ProgressBarType.DOWNLOADING) : undefined;
+			try {
+				for await (const chunk of fileStream) {
+					fileChunks.push(new Uint8Array(chunk));
+					receivedBytes += chunk.length;
+					stage = await updateProgressBar(
+						plugin.bot,
+						msg,
+						progressBarMessage,
+						totalBytes,
+						receivedBytes,
+						stage,
+					);
+				}
+			} finally {
+				await deleteProgressBar(plugin.bot, msg, progressBarMessage);
+			}
+
+			fileByteArray = new Uint8Array(
+				fileChunks.reduce<number[]>((acc, val) => {
+					acc.push(...val);
+					return acc;
+				}, []),
+			);
+		} catch (e) {
+			error = e;
+			const media = await Client.downloadMedia(
+				plugin.bot,
+				msg,
+				fileId,
+				fileObjectToUse.file_size,
+				plugin.botUser,
+			);
+			fileByteArray = media instanceof Buffer ? media : Buffer.alloc(0);
+			const chatId = msg.chat.id < 0 ? msg.chat.id.toString().slice(4) : msg.chat.id.toString();
+			telegramFileName = telegramFileName || `${fileType}_${chatId}_${msg.message_id}`;
+			error = undefined;
+		}
+		// telegramFileName = (msg.document && msg.document.file_name) || telegramFileName;
+		const fileExtension =
+			path.extname(telegramFileName).replace(".", "") || extension(fileObject.mime_type) || "file";
+		const fileName = path.basename(telegramFileName, "." + fileExtension);
+
+		filePath = await applyFilesPathTemplate(
+			plugin,
+			distributionRule.filePathTemplate,
+			msg,
+			fileType,
+			fileExtension,
+			fileName,
+		);
+
+		filePath = await enqueue(
+			getUniqueFilePath,
+			plugin.app.vault,
+			plugin.createdFilePaths,
+			filePath,
+			unixTime2Date(msg.date, msg.message_id),
+			fileExtension,
+		);
+		await plugin.app.vault.createBinary(filePath, fileByteArray);
+	} catch (e) {
+		if (error) (error as Error).message = (error as Error).message + " | " + e;
+		else error = e;
+	}
+
+	if (msg.caption || distributionRule.templateFilePath)
+		await appendFileToNote(plugin, msg, distributionRule, filePath, error);
+
+	if (msg.media_group_id && !handleMediaGroupIntervalId)
+		handleMediaGroupIntervalId = setInterval(
+			async () => await enqueue(handleMediaGroup, plugin, distributionRule),
+			_1sec,
+		);
+	else if (!msg.media_group_id) await finalizeMessageProcessing(plugin, msg, error);
 }
 
 // Handle files received in messages
