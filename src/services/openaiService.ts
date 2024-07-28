@@ -34,12 +34,11 @@ export async function generateText(plugin: TelegramSyncPlugin, prompt: string): 
 
 import { v2 as cloudinary } from "cloudinary";
 
-
 // Настройка Cloudinary
 cloudinary.config({
-	cloud_name: 'YOUR_CLOUD_NAME',
-	api_key: 'YOUR_API_KEY',
-	api_secret: 'YOUR_API_SECRET', // Замените на ваш API секрет
+	cloud_name: "YOUR_CLOUD_NAME",
+	api_key: "YOUR_API_KEY",
+	api_secret: "YOUR_API_SECRET", // Замените на ваш API секрет
 });
 
 // Функция для конвертации Base64 в Buffer
@@ -89,16 +88,18 @@ export async function generateImage(plugin: TelegramSyncPlugin, prompt: string) 
 
 		// Загрузка изображения в Cloudinary
 		const uploadResult = await new Promise((resolve, reject) => {
-			cloudinary.uploader.upload_stream(
-				{ public_id: `generated_image_${Date.now()}`, resource_type: "image", format: "png" }, // Используем уникальный public_id
-				(error, result) => {
-					if (error) {
-						reject(error);
-					} else {
-						resolve(result);
-					}
-				}
-			).end(imageBuffer);
+			cloudinary.uploader
+				.upload_stream(
+					{ public_id: `generated_image_${Date.now()}`, resource_type: "image", format: "png" }, // Используем уникальный public_id
+					(error, result) => {
+						if (error) {
+							reject(error);
+						} else {
+							resolve(result);
+						}
+					},
+				)
+				.end(imageBuffer);
 		});
 
 		// Ссылка на загруженное изображение
