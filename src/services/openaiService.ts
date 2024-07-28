@@ -34,12 +34,24 @@ export async function generateText(plugin: TelegramSyncPlugin, prompt: string): 
 
 import { v2 as cloudinary } from "cloudinary";
 
+
 // Настройка Cloudinary
 cloudinary.config({
-	cloud_name: "YOUR_CLOUD_NAME",
-	api_key: "YOUR_API_KEY",
-	api_secret: "YOUR_API_SECRET", // Замените на ваш API секрет
+	cloud_name: 'YOUR_CLOUD_NAME',
+	api_key: 'YOUR_API_KEY',
+	api_secret: 'YOUR_API_SECRET', // Замените на ваш API секрет
 });
+
+// Функция для конвертации Base64 в Buffer
+function base64ToBuffer(base64: string): Buffer {
+	const binaryString = atob(base64); // Декодируем Base64 в бинарную строку
+	const len = binaryString.length;
+	const bytes = new Uint8Array(len); // Создаем массив байтов
+	for (let i = 0; i < len; i++) {
+		bytes[i] = binaryString.charCodeAt(i); // Заполняем массив байтами
+	}
+	return Buffer.from(bytes); // Возвращаем Buffer
+}
 
 export async function generateImage(plugin: TelegramSyncPlugin, prompt: string) {
 	try {
@@ -73,58 +85,35 @@ export async function generateImage(plugin: TelegramSyncPlugin, prompt: string) 
 
 		// Конвертирование Base64 в Buffer
 		// @ts-ignore
-		const imageBuffer = base64ToArrayBuffer(base64Image);
+		const imageBuffer = base64ToBuffer(base64Image);
 
 		// Загрузка изображения в Cloudinary
 		const uploadResult = await new Promise((resolve, reject) => {
-			cloudinary.uploader
-				.upload_stream(
-					{ public_id: "generated_image", resource_type: "image", format: "png" },
-					(error, result) => {
-						if (error) {
-							reject(error);
-						} else {
-							resolve(result);
-						}
-					},
-				)
-				.end(imageBuffer);
+			cloudinary.uploader.upload_stream(
+				{ public_id: `generated_image_${Date.now()}`, resource_type: "image", format: "png" }, // Используем уникальный public_id
+				(error, result) => {
+					if (error) {
+						reject(error);
+					} else {
+						resolve(result);
+					}
+				}
+			).end(imageBuffer);
 		});
 
-		// Оптимизированный URL изображения
-		const optimizeUrl = cloudinary.url("generated_image", {
-			fetch_format: "auto",
-			quality: "auto",
-		});
-
-		console.log("Optimized URL:", optimizeUrl);
-
-		// Преобразованный URL изображения
-		const autoCropUrl = cloudinary.url("generated_image", {
-			crop: "auto",
-			gravity: "auto",
-			width: 500,
-			height: 500,
-		});
-
-		console.log("Auto-Crop URL:", autoCropUrl);
-
+		// Ссылка на загруженное изображение
 		// @ts-ignore
-		return uploadResult.secure_url;
+		const imageUrl = uploadResult.secure_url;
+
+		// Логирование ссылки
+		console.log("Image URL:", imageUrl);
+
+		// Возвращаем URL изображения
+		return imageUrl;
 	} catch (error) {
 		console.error("Error generating image with OpenAI API:", error);
 		return "An error occurred while generating the image.";
 	}
-}
-
-function base64ToArrayBuffer(base64: string): ArrayBuffer {
-	const binaryString = atob(base64); // Декодируем Base64 в бинарную строку
-	const len = binaryString.length;
-	const bytes = new Uint8Array(len); // Создаем массив байтов
-	for (let i = 0; i < len; i++) {
-		bytes[i] = binaryString.charCodeAt(i); // Заполняем массив байтами
-	}
-	return bytes.buffer; // Возвращаем ArrayBuffer
 }
 
 // export async function generateAudio(plugin: TelegramSyncPlugin, prompt: string): Promise<string> {
