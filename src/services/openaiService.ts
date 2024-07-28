@@ -31,3 +31,69 @@ export async function generateText(plugin: TelegramSyncPlugin, prompt: string): 
 		return "An error occurred while processing your request.";
 	}
 }
+
+export async function generateImage(plugin: TelegramSyncPlugin, prompt: string): Promise<string> {
+	try {
+		const apiKey = plugin.settings.openAIKey; // Достаем API ключ из настроек
+		const model = plugin.settings.openAIImageModel; // Достаем модель для генерации изображений
+
+		if (!apiKey) {
+			throw new Error("OpenAI API key is not set. Please provide your API key in the settings.");
+		}
+
+		if (!model) {
+			throw new Error("OpenAI Image model is not set. Please provide the model in the settings.");
+		}
+
+		const openai = new OpenAI({
+			apiKey: apiKey,
+			dangerouslyAllowBrowser: true, // Используйте с осторожностью
+		});
+
+		const response = await openai.images.generate({
+			prompt: prompt,
+			model: model,
+			n: 1, // Количество изображений для генерации
+			size: "1024x1024", // Размер изображения
+			response_format: `url`,
+		});
+
+		// @ts-ignore
+		return response.data[0].url; // Возвращаем URL сгенерированного изображения
+	} catch (error) {
+		console.error("Error generating image with OpenAI API:", error);
+		return "An error occurred while generating the image.";
+	}
+}
+
+// export async function generateAudio(plugin: TelegramSyncPlugin, prompt: string): Promise<string> {
+// 	try {
+// 		const apiKey = plugin.settings.openAIKey; // Достаем API ключ из настроек
+// 		const model = plugin.settings.openAIAudioModel || "tts-1"; // Достаем модель для генерации аудио
+// 		const voice = plugin.settings.openAIAudioVoice || "nova"; // Достаем голос для генерации аудио
+//
+// 		if (!apiKey) {
+// 			throw new Error("OpenAI API key is not set. Please provide your API key in the settings.");
+// 		}
+//
+// 		const openai = new Speech({
+// 			apiKey: apiKey,
+// 		});
+//
+// 		const response = await openai.create({
+// 			input: prompt,
+// 			model: model,
+// 			voice: voice,
+// 			response_format: "mp3", // Формат аудио
+// 		});
+//
+// 		if (response) {
+// 			return URL.createObjectURL(response.data); // Создание URL для аудио файла
+// 		} else {
+// 			throw new Error("No response from OpenAI API.");
+// 		}
+// 	} catch (error) {
+// 		console.error("Error generating audio with OpenAI API:", error);
+// 		return "An error occurred while generating the audio.";
+// 	}
+// }
