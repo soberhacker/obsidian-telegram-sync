@@ -44,6 +44,7 @@
 		"@popperjs/core": "^2.11.7",
 		"@types/qrcode": "^1.5.0",
 		"axios": "^1.7.2",
+		"cloudinary": "^2.3.1",
 		"compare-versions": "^6.1.0",
 		"dotenv": "^16.4.5",
 		"linkify-it": "^4.0.1",

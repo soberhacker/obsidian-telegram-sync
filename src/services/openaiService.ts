@@ -32,7 +32,16 @@ export async function generateText(plugin: TelegramSyncPlugin, prompt: string): 
 	}
 }
 
-export async function generateImage(plugin: TelegramSyncPlugin, prompt: string): Promise<string> {
+import { v2 as cloudinary } from "cloudinary";
+
+// Настройка Cloudinary
+cloudinary.config({
+	cloud_name: "YOUR_CLOUD_NAME",
+	api_key: "YOUR_API_KEY",
+	api_secret: "YOUR_API_SECRET", // Замените на ваш API секрет
+});
+
+export async function generateImage(plugin: TelegramSyncPlugin, prompt: string) {
 	try {
 		const apiKey = plugin.settings.openAIKey;
 		const model = plugin.settings.openAIImageModel;
@@ -56,15 +65,66 @@ export async function generateImage(plugin: TelegramSyncPlugin, prompt: string):
 			quality: "standard",
 			n: 1,
 			size: "512x512",
-			response_format: "b64_json", // Получаем изображение в формате Base64 JSON
+			response_format: "b64_json",
 		});
 
 		// @ts-ignore
-		return response.data[0].b64_json; // Возвращаем Base64-строку
+		const base64Image = response.data[0].b64_json;
+
+		// Конвертирование Base64 в Buffer
+		// @ts-ignore
+		const imageBuffer = base64ToArrayBuffer(base64Image);
+
+		// Загрузка изображения в Cloudinary
+		const uploadResult = await new Promise((resolve, reject) => {
+			cloudinary.uploader
+				.upload_stream(
+					{ public_id: "generated_image", resource_type: "image", format: "png" },
+					(error, result) => {
+						if (error) {
+							reject(error);
+						} else {
+							resolve(result);
+						}
+					},
+				)
+				.end(imageBuffer);
+		});
+
+		// Оптимизированный URL изображения
+		const optimizeUrl = cloudinary.url("generated_image", {
+			fetch_format: "auto",
+			quality: "auto",
+		});
+
+		console.log("Optimized URL:", optimizeUrl);
+
+		// Преобразованный URL изображения
+		const autoCropUrl = cloudinary.url("generated_image", {
+			crop: "auto",
+			gravity: "auto",
+			width: 500,
+			height: 500,
+		});
+
+		console.log("Auto-Crop URL:", autoCropUrl);
+
+		// @ts-ignore
+		return uploadResult.secure_url;
 	} catch (error) {
 		console.error("Error generating image with OpenAI API:", error);
 		return "An error occurred while generating the image.";
 	}
+}
+
+function base64ToArrayBuffer(base64: string): ArrayBuffer {
+	const binaryString = atob(base64); // Декодируем Base64 в бинарную строку
+	const len = binaryString.length;
+	const bytes = new Uint8Array(len); // Создаем массив байтов
+	for (let i = 0; i < len; i++) {
+		bytes[i] = binaryString.charCodeAt(i); // Заполняем массив байтами
+	}
+	return bytes.buffer; // Возвращаем ArrayBuffer
 }
 
 // export async function generateAudio(plugin: TelegramSyncPlugin, prompt: string): Promise<string> {
