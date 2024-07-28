@@ -10,7 +10,7 @@
 // TODO NEXT: bug in connecting to Telegram Client https://t.me/alast0rm
 // TODO NEXT: bur in reconnecting on MacBook https://t.me/sm1rnov_id
 import { compareVersions } from "compare-versions";
-export const releaseVersion = "3.1.1";
+export const releaseVersion = "3.1.2";
 export const showNewFeatures = true;
 export let showBreakingChanges = false;
 

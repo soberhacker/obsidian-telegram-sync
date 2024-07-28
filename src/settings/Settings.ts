@@ -309,7 +309,10 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 						if (apiKey) {
 							try {
 								// Создаем экземпляр OpenAI с текущим ключом
-								const openai = new OpenAI({ apiKey });
+								const openai = new OpenAI({
+									apiKey: apiKey,
+									dangerouslyAllowBrowser: true, // Используйте с осторожностью
+								});
 								// Проверка API ключа путем запроса списка моделей
 								await openai.models.list();
 								displayAndLog(this.plugin, "API Key is valid!", _5sec);
