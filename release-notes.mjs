@@ -18,8 +18,8 @@ const newFeatures = `In this release, the main change is that all processed mess
 export const breakingChanges = `⚠️ <b><i>You must grant your bot admin rights if you want to use reactions in groups and channels.</i></b> ⚠️`;
 export const telegramChannelLink = "https://t.me/obsidian_telegram_sync";
 const telegramChannelAHref = `<a href='${telegramChannelLink}'>channel</a>`;
-const insiderFeaturesAHref = `<a href='${insiderFeaturesLink}'>exclusive insider features</a>`;
-const telegramChannelIntroduction = `You can check the full list of new features in the plugin's ${telegramChannelAHref}! Subscription is free and gives you easy access to the latest beta versions and ${insiderFeaturesAHref}.`;
+const insiderFeaturesAHref = `<a href='${insiderFeaturesLink}'>insider features</a>`;
+const telegramChannelIntroduction = `Subscribe for free to the plugin's ${telegramChannelAHref} and enjoy access to ${insiderFeaturesAHref} and the latest beta versions, several months ahead of public release.`;
 const telegramChatLink = "<a href='https://t.me/tribute/app?startapp=sfFf'>chat</a>";
 const telegramChatIntroduction = `Join the plugin's ${telegramChatLink} - your space to seek advice, ask questions, and share knowledge (access via the @tribute bot).`;
 const donation = `If you appreciate this plugin and would like to support its continued development, please consider donating through the buttons below or via Telegram Stars in the ${telegramChannelAHref}!`;

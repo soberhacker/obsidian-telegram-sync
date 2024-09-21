@@ -5,7 +5,13 @@ import { createProgressBar, updateProgressBar, deleteProgressBar, ProgressBarTyp
 import * as Client from "src/telegram/user/client";
 import { BotSettingsModal } from "./modals/BotSettings";
 import { UserLogInModal } from "./modals/UserLogin";
-import { releaseVersion, versionALessThanVersionB, telegramChannelLink, privacyPolicyLink } from "release-notes.mjs";
+import {
+	releaseVersion,
+	versionALessThanVersionB,
+	telegramChannelLink,
+	privacyPolicyLink,
+	insiderFeaturesLink,
+} from "release-notes.mjs";
 import { _15sec, _1sec, _5sec, displayAndLog, doNotHide } from "src/utils/logUtils";
 import { getTopicId } from "src/telegram/bot/message/getters";
 import * as User from "../telegram/user/user";
@@ -451,19 +457,28 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 	}
 
 	addTelegramChannel() {
-		if (this.subscribedOnInsiderChannel) return;
-
 		const telegramChannelSetting = new Setting(this.containerEl)
 			.setName("Telegram plugin's channel")
 			.setDesc(
-				"If you like this open source plugin and are considering donating to support its continued development, subscribe to the private Telegram channel. In exchange, you will be the first to get all the latest updates and secrets🤫, as well as gain access to beta versions and ",
+				"By connecting your user to the plugin and subscribing to the channel, you'll get access to the latest beta versions, several months ahead of public release, and unlock for free all ",
 			);
+
+		if (this.subscribedOnInsiderChannel)
+			telegramChannelSetting.addButton(async (openChannelButton: ButtonComponent) => {
+				openChannelButton.setButtonText("Open");
+				openChannelButton.onClick(async () => {
+					window.open(telegramChannelLink, "_blank");
+				});
+			});
+
 		telegramChannelSetting.descEl.createEl("a", {
-			href: "https://github.com/soberhacker/obsidian-telegram-sync/blob/main/docs/Telegram%20Sync%20Insider%20Features.md",
+			href: insiderFeaturesLink,
 			text: "insider features",
 		});
+
+		if (this.subscribedOnInsiderChannel) return;
 		new Setting(this.containerEl).addButton((btn: ButtonComponent) => {
-			btn.setButtonText("Subscribe & Unlock features");
+			btn.setButtonText("Join for Free & Unlock Features");
 			btn.setClass("mod-cta");
 			btn.onClick(async () => {
 				displayAndLog(
