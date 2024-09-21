@@ -4,9 +4,9 @@
 <img src="https://img.shields.io/github/v/release/soberhacker/obsidian-telegram-sync?label=plugin&display_name=tag&logo=obsidian&color=purple&logoColor=violet">
 </a>&nbsp;<a href="https://github.com/soberhacker/obsidian-telegram-sync">
 <img src="https://img.shields.io/github/downloads/soberhacker/obsidian-telegram-sync/total?logo=github">
-</a>&nbsp;<a href="https://t.me/tribute/app?startapp=s1uX">
+</a>&nbsp;<a href="https://t.me/obsidian_telegram_sync">
 <img src="https://img.shields.io/badge/Telegram-Channel-blue.svg?logo=telegram">
-</a>&nbsp;<a href="https://t.me/ObsidianTelegramSync">
+</a>&nbsp;<a href="https://t.me/tribute/app?startapp=sfFf">
 <img src="https://img.shields.io/badge/Telegram-Support-red.svg?logo=telegram&logoColor=f5f5f5&color=red">
 </a><br><br>
 
