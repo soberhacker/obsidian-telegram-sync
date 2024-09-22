@@ -113,7 +113,7 @@ myNotes/{{messageDate:YYYY/MM/DD}}/{{messageTime:HHmmssSSS}}.md
 
 ```json
 ⚠️ If a note path template is empty, then notes will not be created
-⚠️ If a note with such name exists then new data will be always appended to this notes
+⚠️ If a note with such name exists then new data will be always appended to this note
 ```
 
 ### File Path Variables
