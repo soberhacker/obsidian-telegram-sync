@@ -166,7 +166,7 @@ export async function applyNotePathTemplate(
 
 	let processedPath = notePathTemplate.endsWith("/") ? notePathTemplate + defaultNoteNameTemplate : notePathTemplate;
 	let textContentMd = "";
-	if (processedPath.includes("{{content")) textContentMd = await convertMessageTextToMarkdown(msg);
+	if (processedPath.includes("{{content")) textContentMd = msg.text || msg.caption || "";
 	processedPath = await processBasicVariables(plugin, msg, processedPath, textContentMd);
 	if (processedPath.endsWith("/.md")) processedPath = processedPath.replace("/.md", "/_.md");
 	if (!path.extname(processedPath)) processedPath = processedPath + ".md";
