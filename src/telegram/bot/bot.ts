@@ -119,3 +119,7 @@ async function checkConnectionAfterError(plugin: TelegramSyncPlugin, intervalInS
 		plugin.checkingBotConnection = false;
 	}
 }
+
+export async function setReaction(plugin: TelegramSyncPlugin, msg: TelegramBot.Message, emoji: string) {
+	await plugin.bot?.setMessageReaction(msg.chat.id, msg.message_id, { reaction: [{ emoji: emoji, type: "emoji" }] });
+}
