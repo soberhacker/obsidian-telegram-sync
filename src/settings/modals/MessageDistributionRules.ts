@@ -135,7 +135,7 @@ export class MessageDistributionRulesModal extends Modal {
 		setting
 			.setName("Reversed order")
 			.setDesc(
-				"Turn on to have new messages appear at the beginning of the note, or, if a heading is specified, above it",
+				`Turn on to have new messages appear at the beginning of the note, or, if a heading is specified, above it. Warning: If "Parallel Message Processing" turn on, it may disrupt message order`,
 			)
 			.addToggle((toggle) => {
 				toggle.setValue(this.messageDistributionRule.reversedOrder);
