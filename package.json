@@ -48,6 +48,6 @@
 		"node-machine-id": "^1.1.12",
 		"node-telegram-bot-api": "^0.66.0",
 		"qrcode": "^1.5.3",
-		"telegram": "2.20.2"
+		"telegram": "^2.25.11"
 	}
 }
