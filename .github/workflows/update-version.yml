@@ -47,6 +47,7 @@ jobs:
                   pull-request-header: "Update version in CHANGELOG.md and package.json"
                   default-branch: develop
                   labels: automerge
+                  last-release-sha: "59b7861318647436eced27dcfc98c2078da7d7ab"
 
             - name: Print release outputs
               env:
