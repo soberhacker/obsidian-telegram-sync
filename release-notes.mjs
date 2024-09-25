@@ -14,6 +14,8 @@ export let showBreakingChanges = true;
 const newFeatures = `In this release, the main change is that all processed messages will be marked with the bot reaction [👾] instead of replying with a separate message [...✅...].`;
 export const breakingChanges = `⚠️ <b><i>Breaking changes!\n\nThe user's connection to the plugin may need to be reestablished due to the GramJs library update.\n\nGrant your bot admin rights if you want to use bot reactions in groups and channels.</i></b> ⚠️`;
 export const telegramChannelLink = "https://t.me/obsidian_telegram_sync";
+export const insiderFeaturesLink =
+	"https://github.com/soberhacker/obsidian-telegram-sync/blob/main/docs/Telegram%20Sync%20Insider%20Features.md";
 const telegramChannelAHref = `<a href='${telegramChannelLink}'>channel</a>`;
 const insiderFeaturesAHref = `<a href='${insiderFeaturesLink}'>insider features</a>`;
 const telegramChannelIntroduction = `Subscribe for free to the plugin's ${telegramChannelAHref} and enjoy access to ${insiderFeaturesAHref} and the latest beta versions, several months ahead of public release.`;
@@ -23,8 +25,6 @@ const donation = `If you appreciate this plugin and would like to support its co
 const bestRegards = "Best regards,\nYour soberhacker🍃🧘💻\n⌞";
 
 export const privacyPolicyLink = "https://github.com/soberhacker/obsidian-telegram-sync/blob/main/PRIVACY-POLICY.md";
-export const insiderFeaturesLink =
-	"https://github.com/soberhacker/obsidian-telegram-sync/blob/main/docs/Telegram%20Sync%20Insider%20Features.md";
 
 export const notes = `
 <u><b>Telegram Sync ${releaseVersion}</b></u>\n
