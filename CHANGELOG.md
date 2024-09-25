@@ -1,5 +1,28 @@
 # Changelog
 
+## [3.1.0](https://github.com/soberhacker/obsidian-telegram-sync/compare/3.0.0...3.1.0) (2024-09-25)
+
+
+### Features
+
+* appending new messages under a note heading ([0b08384](https://github.com/soberhacker/obsidian-telegram-sync/commit/0b0838481bde3b68e4d92f8e7fc923bf96d69e82))
+* getting to the channel from settings ([3644661](https://github.com/soberhacker/obsidian-telegram-sync/commit/364466152999872de496b6b73d4297385653d7b0))
+* ignore formatting (bold, italic, underline) in the notes names ([26c584d](https://github.com/soberhacker/obsidian-telegram-sync/commit/26c584da2c583e67d55c97b9149fa087abc3d243))
+* mark message as processed by bot reaction ([3cd40f4](https://github.com/soberhacker/obsidian-telegram-sync/commit/3cd40f43963cf60bac2d187e3108b34822522311))
+* process old messages after sleep or lack of internet ([6b1b3c4](https://github.com/soberhacker/obsidian-telegram-sync/commit/6b1b3c4b4c3e3f1eaa94a2857bff7fae91d9198d))
+* telegram channel is free ([f73cf0f](https://github.com/soberhacker/obsidian-telegram-sync/commit/f73cf0fba65fe17c82e942901d3ed10a751025b4))
+
+
+### Bug Fixes
+
+* "Bytes or str expected, not Buffer" error on authorizing the user ([cb065ed](https://github.com/soberhacker/obsidian-telegram-sync/commit/cb065ed43264b863e790cf409a6c98b0b1a7dea5))
+* connecting user issues ([b012b59](https://github.com/soberhacker/obsidian-telegram-sync/commit/b012b5989ab0eab99dfaaa3714f399b08b266eeb))
+* duplicate notes with emojis in names in Windows 10 ([365d4ef](https://github.com/soberhacker/obsidian-telegram-sync/commit/365d4efd1d434196d355a72835f58ac783245d89))
+* markdown formatting of messages with attachments ([e164e0a](https://github.com/soberhacker/obsidian-telegram-sync/commit/e164e0ac239337273e2f093d3d8e8bd174cbfcbb))
+* missing first letter of logged message ([be50838](https://github.com/soberhacker/obsidian-telegram-sync/commit/be50838df4d5ee263e8c0031a957bcd467e306aa))
+* not processing edited messages ([71a63bb](https://github.com/soberhacker/obsidian-telegram-sync/commit/71a63bb84f09891ac8619d7513ac1586d27bf748))
+* partially deleting of media groups ([9b52c40](https://github.com/soberhacker/obsidian-telegram-sync/commit/9b52c4054c036f282c8e5dfe82e7de31ca30b165))
+
 ## [3.0.0](https://github.com/soberhacker/obsidian-telegram-sync/compare/3.0.0...3.0.0) (2024-01-08)
 
 ### Bug Fixes
