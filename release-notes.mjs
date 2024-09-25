@@ -1,18 +1,17 @@
 // TODO translating messages
 // TODO notify in setting tab and bottom panel that new beta version is ready for installing
 // TODO add messagesLeftCnt displaying in status bar
-// TODO NEXT: sending notes from Obsidian to Telegram (only for insiders)
+// TODO NEXT: sending notes from Obsidian to Telegram
 // TODO MED:  "delete messages from Telegram" settings for each distribution rules
 // TODO NEXT: save files if no template file
 // TODO NEXT: check reconnecting
-// TODO NEXT: bug in connecting to Telegram Client https://t.me/alast0rm
 // TODO NEXT: bur in reconnecting on MacBook https://t.me/sm1rnov_id
 import { compareVersions } from "compare-versions";
 export const releaseVersion = "3.2.0";
 export const showNewFeatures = true;
 export let showBreakingChanges = true;
 
-const newFeatures = `In this release, the main change is that all processed messages will be marked with the reaction [👍] instead of replying with a separate message [...✅...].`;
+const newFeatures = `In this release, the main change is that all processed messages will be marked with the bot reaction [👾] instead of replying with a separate message [...✅...].`;
 export const breakingChanges = `⚠️ <b><i>Breaking changes!\n\nThe user's connection to the plugin may need to be reestablished due to the GramJs library update.\n\nGrant your bot admin rights if you want to use bot reactions in groups and channels.</i></b> ⚠️`;
 export const telegramChannelLink = "https://t.me/obsidian_telegram_sync";
 const telegramChannelAHref = `<a href='${telegramChannelLink}'>channel</a>`;
