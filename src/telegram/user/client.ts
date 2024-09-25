@@ -65,7 +65,7 @@ export async function init(sessionId: number, sessionType: SessionType, deviceId
 		_sessionId = sessionId;
 		_sessionType = sessionType;
 		client = new TelegramClient(session, config.dIipa, config.hsaHipa, {
-			connectionRetries: 2,
+			connectionRetries: 10,
 			deviceModel: os.hostname() || os.type(),
 			appVersion: releaseVersion,
 			useWSS: true,

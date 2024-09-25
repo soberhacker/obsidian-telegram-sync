@@ -301,14 +301,3 @@ function getFirstMessage(messages: Api.Message[] | Api.Message[][] | undefined):
 		return messages[0];
 	}
 }
-
-export async function processOldMessages(plugin: TelegramSyncPlugin) {
-	if (!plugin.time4processOldMessages) return;
-	if (!plugin.settings.processOldMessages) clearCachedUnprocessedMessages();
-	if (!plugin.userConnected || !plugin.settings.processOldMessages || !plugin.botUser) return;
-	try {
-		await forwardUnprocessedMessages(plugin);
-	} finally {
-		plugin.time4processOldMessages = false;
-	}
-}
