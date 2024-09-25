@@ -24,6 +24,8 @@ import { sanitizeFileName, sanitizeFilePath } from "src/utils/fsUtils";
 import path from "path";
 import { defaultFileNameTemplate, defaultNoteNameTemplate } from "src/settings/messageDistribution";
 import { Api } from "telegram";
+import { setReaction } from "../bot";
+import { emoticonProcessed, emoticonProcessedEdited } from "src/telegram/user/config";
 
 // Delete a message or send a confirmation reply based on settings and message age
 export async function finalizeMessageProcessing(plugin: TelegramSyncPlugin, msg: TelegramBot.Message, error?: Error) {
@@ -54,14 +56,23 @@ export async function finalizeMessageProcessing(plugin: TelegramSyncPlugin, msg:
 	} else {
 		let needReply = true;
 		let errorMessage = "";
+
+		const emoticon = msg.edit_date ? emoticonProcessedEdited : emoticonProcessed;
+		// reacting by bot
 		try {
-			if (plugin.settings.telegramSessionType == "user" && plugin.botUser) {
-				const emoticon = msg.edit_date ? "👌" : "👍";
+			await enqueue(setReaction, plugin, msg, emoticon);
+			needReply = false;
+		} catch (e) {
+			errorMessage = `\n\nCan't "like" the message by bot, ${e}`;
+		}
+		// reacting by user
+		try {
+			if (needReply && plugin.settings.telegramSessionType == "user" && plugin.botUser) {
 				await enqueue(Client.sendReaction, plugin.botUser, msg, emoticon);
 				needReply = false;
 			}
 		} catch (e) {
-			errorMessage = `\n\nCan't "like" the message, ${e}`;
+			errorMessage = `\n\nCan't "like" the message by user, ${e}`;
 		}
 		const ok_msg = msg.edit_date ? "...🆗..." : "...✅...";
 		if (needReply && originalMsg) {
@@ -157,7 +168,7 @@ export async function applyNotePathTemplate(
 
 	let processedPath = notePathTemplate.endsWith("/") ? notePathTemplate + defaultNoteNameTemplate : notePathTemplate;
 	let textContentMd = "";
-	if (processedPath.includes("{{content")) textContentMd = await convertMessageTextToMarkdown(msg);
+	if (processedPath.includes("{{content")) textContentMd = msg.text || msg.caption || "";
 	processedPath = await processBasicVariables(plugin, msg, processedPath, textContentMd);
 	if (processedPath.endsWith("/.md")) processedPath = processedPath.replace("/.md", "/_.md");
 	if (!path.extname(processedPath)) processedPath = processedPath + ".md";

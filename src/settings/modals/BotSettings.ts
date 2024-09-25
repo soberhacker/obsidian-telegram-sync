@@ -29,10 +29,14 @@ export class BotSettingsModal extends Modal {
 		lim24Hours.style.marginLeft = "10px";
 		const limBlocks = document.createElement("div");
 		limBlocks.style.marginLeft = "10px";
-		limBlocks.setText("- Use VPN to bypass blocks in China, Iran, and limited corporate networks ");
+		limBlocks.setText("- Use VPN or proxy to bypass blocks in China, Iran, and limited corporate networks ");
 		limBlocks.createEl("a", {
 			href: "https://github.com/soberhacker/obsidian-telegram-sync/issues/225#issuecomment-1780539957",
-			text: "(ex. config of Clash)",
+			text: "([ex. config of Clash],",
+		});
+		limBlocks.createEl("a", {
+			href: "https://github.com/windingblack/obsidian-global-proxy",
+			text: " [Obsidian Global Proxy])",
 		});
 		limitations.descEl.appendChild(lim24Hours);
 		limitations.descEl.appendChild(limBlocks);

@@ -1,21 +1,27 @@
 // TODO translating messages
-// TODO notify in setting that new beta version is ready for installing
+// TODO notify in setting tab and bottom panel that new beta version is ready for installing
 // TODO add messagesLeftCnt displaying in status bar
+// TODO NEXT: sending notes from Obsidian to Telegram
+// TODO MED:  "delete messages from Telegram" settings for each distribution rules
+// TODO NEXT: save files if no template file
+// TODO NEXT: check reconnecting
+// TODO NEXT: bur in reconnecting on MacBook https://t.me/sm1rnov_id
 import { compareVersions } from "compare-versions";
-export const releaseVersion = "3.1.0";
+export const releaseVersion = "3.2.0";
 export const showNewFeatures = true;
-export let showBreakingChanges = false;
+export let showBreakingChanges = true;
 
-const newFeatures =
-	"This release adds the possibility to append new messages either above or below a specified note heading.";
-export const breakingChanges = `⚠️ <b><i>In this release, approximately 30 files have been changed. Although this version has gone through beta testing, please pay close attention during the initial runs of the plugin with the old message processing feature enabled.</i></b> ⚠️`;
-export const telegramChannelLink = "https://t.me/tribute/app?startapp=s1uX";
+const newFeatures = `In this release, the main change is that all processed messages will be marked with the bot reaction [👾] instead of replying with a separate message [...✅...].`;
+export const breakingChanges = `⚠️ <b><i>Breaking changes!\n\nThe user's connection to the plugin may need to be reestablished due to the GramJs library update.\n\nGrant your bot admin rights if you want to use bot reactions in groups and channels.</i></b> ⚠️`;
+export const telegramChannelLink = "https://t.me/obsidian_telegram_sync";
+export const insiderFeaturesLink =
+	"https://github.com/soberhacker/obsidian-telegram-sync/blob/main/docs/Telegram%20Sync%20Insider%20Features.md";
 const telegramChannelAHref = `<a href='${telegramChannelLink}'>channel</a>`;
-const telegramChannelIntroduction = `Subscribe to the plugin's ${telegramChannelAHref} to not only silence these informational messages in your bot, but also to be the first to get all the latest updates (paid access via the @tribute bot).`;
-const telegramChatLink = "<a href='https://t.me/ObsidianTelegramSync'>chat</a>";
-const telegramChatIntroduction = `For discussions, please feel free to join the plugin's ${telegramChatLink}.`;
-const donation =
-	"If you appreciate this plugin and would like to support its continued development, please consider donating through the buttons below!";
+const insiderFeaturesAHref = `<a href='${insiderFeaturesLink}'>insider features</a>`;
+const telegramChannelIntroduction = `Subscribe for free to the plugin's ${telegramChannelAHref} and enjoy access to ${insiderFeaturesAHref} and the latest beta versions, several months ahead of public release.`;
+const telegramChatLink = "<a href='https://t.me/tribute/app?startapp=sfFf'>chat</a>";
+const telegramChatIntroduction = `Join the plugin's ${telegramChatLink} - your space to seek advice, ask questions, and share knowledge (access via the @tribute bot).`;
+const donation = `If you appreciate this plugin and would like to support its continued development, please consider donating through the buttons below or via Telegram Stars in the ${telegramChannelAHref}!`;
 const bestRegards = "Best regards,\nYour soberhacker🍃🧘💻\n⌞";
 
 export const privacyPolicyLink = "https://github.com/soberhacker/obsidian-telegram-sync/blob/main/PRIVACY-POLICY.md";

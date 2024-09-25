@@ -1,9 +1,9 @@
 import { Api } from "telegram";
-import { checkUserService, subscribedOnInsiderChannel } from "./client";
+import { checkUserService, clientUser, subscribedOnInsiderChannel } from "./client";
 import { getOffsetDate } from "src/utils/dateUtils";
 import TelegramSyncPlugin from "src/main";
 import { Dialog } from "telegram/tl/custom/dialog";
-import { _5sec, cleanErrorCache, displayAndLog, displayAndLogError, doNotHide, errorCache } from "src/utils/logUtils";
+import { _5sec, cleanErrorCache, displayAndLog, displayAndLogError, _day, errorCache } from "src/utils/logUtils";
 import { Notice } from "obsidian";
 import TelegramBot from "node-telegram-bot-api";
 import { extractMediaId } from "../convertors/botFileToMessageMedia";
@@ -11,6 +11,7 @@ import { getFileObject } from "../bot/message/getters";
 import { findUserMsg } from "../convertors/botMessageToClientMessage";
 import bigInt from "big-integer";
 import { getChat, getUser } from "../convertors/clientMessageToBotMessage";
+import { emoticonProcessed, emoticonProcessedEdited } from "./config";
 
 const defaultDaysLimit = 14;
 const defaultDialogsLimit = 100;
@@ -51,7 +52,7 @@ export function getDefaultProcessOldMessagesSettings(): ProcessOldMessagesSettin
 export async function getChatsForSearch(plugin: TelegramSyncPlugin, offsetDays: number): Promise<ChatForSearch[]> {
 	let progress = "\n\n...";
 	let notification = `1 of 3\nSearching for chats with activity in the last "${offsetDays}" days`;
-	const notice = new Notice(notification + progress, doNotHide);
+	const notice = new Notice(notification + progress, _day);
 	const { checkedClient } = await checkUserService();
 	const botUserName = plugin.botUser?.username;
 	if (!botUserName) {
@@ -146,14 +147,25 @@ export async function getUnprocessedMessages(plugin: TelegramSyncPlugin): Promis
 			if (msg.fromId && msg.fromId instanceof Api.PeerUser && msg.fromId.userId.toJSNumber() == botId)
 				return false;
 
+			if (!msg.reactions || msg.reactions.results.length == 0) return true;
 			// skip already processed messages
-			const reactions = msg.reactions?.results;
+			const reactions = [{ userId: "-", reaction: "-" }];
+			if (msg.reactions.canSeeList)
+				msg.reactions.recentReactions?.forEach((r) => {
+					if (!(r.peerId instanceof Api.PeerUser) || !(r.reaction instanceof Api.ReactionEmoji)) return;
+					reactions.push({ userId: r.peerId.userId.toString(), reaction: r.reaction.emoticon });
+				});
+			else
+				msg.reactions.results.forEach((r) => {
+					if (!(r.reaction instanceof Api.ReactionEmoji)) return;
+					reactions.push({ userId: "0", reaction: r.reaction.emoticon });
+				});
+
 			if (
-				reactions &&
 				reactions.find(
-					(reaction) =>
-						reaction.reaction instanceof Api.ReactionEmoji &&
-						["👍", "👌"].includes(reaction.reaction.emoticon),
+					(r) =>
+						[emoticonProcessed, emoticonProcessedEdited].includes(r.reaction) &&
+						["0", botId.toString(), clientUser?.id.toString()].includes(r.userId),
 				)
 			)
 				return false;
@@ -186,7 +198,7 @@ export async function forwardUnprocessedMessages(plugin: TelegramSyncPlugin) {
 				if (message.forward && message.forward.chatId && !message.forward._chat)
 					message.forward._chat = await message.forward.getChat();
 				const forwardedMessage = getFirstMessage(await message.forwardTo(message.inputChat || message.peerId));
-				if (!errorCache) processOldMessagesSettings.lastProcessingDate = message.date;
+				if (!errorCache) processOldMessagesSettings.lastProcessingDate = message.editDate || message.date;
 				cachedUnprocessedMessages.push({ original: message, forwarded: forwardedMessage });
 			} catch (e) {
 				displayAndLogError(

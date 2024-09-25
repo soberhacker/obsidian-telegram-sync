@@ -13,9 +13,9 @@ export const _5min = 5 * _1min;
 export const _30min = 30 * _1min;
 export const _1h = 60 * _1min;
 export const _2h = 2 * _1h;
-export const doNotHide = 24 * _1h;
+export const _day = 24 * _1h;
 
-// TODO in 2024: connect with ConnectionStatus
+// TODO LOW: connect with ConnectionStatus
 export enum StatusMessages {
 	BOT_CONNECTED = "Telegram bot is connected!",
 	BOT_DISCONNECTED = "Telegram bot is disconnected!",
@@ -35,7 +35,7 @@ export function displayAndLog(plugin: TelegramSyncPlugin, message: string, timeo
 	console.log(`${plugin.manifest.name} => ${message}`);
 
 	if (timeout == 0) return;
-	const notice = new Notice(message, timeout || doNotHide);
+	const notice = new Notice(message, timeout || _day);
 
 	const hideBotDisconnectedMessages = message.contains(StatusMessages.BOT_CONNECTED);
 	persistentNotices = persistentNotices.filter((persistentNotice) => {

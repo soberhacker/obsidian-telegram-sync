@@ -102,5 +102,6 @@ export class UserLogInModal extends Modal {
 		const message = this.qrCodeContainer.createEl("pre", { text });
 		if (color) message.style.color = color;
 		message.style.fontWeight = "bold";
+		message.style.whiteSpace = "pre-wrap";
 	}
 }

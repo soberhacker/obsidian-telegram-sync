@@ -75,7 +75,7 @@ export async function getInputPeer(
 	const dialog = dialogs.find((d) => d.id?.toJSNumber() == chatId);
 	if (!dialog && limit <= 20) return await getInputPeer(client, user, botUser, botMsg, limit + 10);
 	else if (!dialog || !dialog.inputEntity) {
-		console.log(dialogs);
+		console.log(`Telegram Sync => Dialogs:\n${dialogs}`);
 		throw new Error(
 			`User ${user.username || user.firstName || user.id} does not have chat with ${
 				botMsg.chat.username || botMsg.chat.title || botMsg.chat.first_name || botMsg.chat.id

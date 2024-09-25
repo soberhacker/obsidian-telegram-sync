@@ -1,6 +1,6 @@
 {
 	"name": "obsidian-telegram-sync",
-	"version": "3.1.0",
+	"version": "3.2.0",
 	"description": "Transfer messages and files from Telegram bot to Obsidian.",
 	"main": "main.js",
 	"scripts": {
@@ -26,7 +26,6 @@
 		"@types/linkify-it": "^3.0.2",
 		"@types/mime-types": "^2.1.1",
 		"@types/node": "^16.11.6",
-		"@types/node-telegram-bot-api": "^0.63.3",
 		"@typescript-eslint/eslint-plugin": "5.29.0",
 		"@typescript-eslint/parser": "5.29.0",
 		"builtin-modules": "3.3.0",
@@ -36,7 +35,7 @@
 		"eslint-plugin-prettier": "latest",
 		"obsidian": "latest",
 		"prettier": "latest",
-		"release-please": "^16.3.0",
+		"release-please": "^16.14.0",
 		"tslib": "2.4.0",
 		"typescript": "4.7.4"
 	},
@@ -47,8 +46,8 @@
 		"linkify-it": "^4.0.1",
 		"mime-types": "^2.1.35",
 		"node-machine-id": "^1.1.12",
-		"node-telegram-bot-api": "^0.64.0",
+		"node-telegram-bot-api": "^0.66.0",
 		"qrcode": "^1.5.3",
-		"telegram": "2.16.4"
+		"telegram": "^2.25.11"
 	}
 }
