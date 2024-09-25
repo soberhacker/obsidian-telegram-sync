@@ -12,7 +12,7 @@ import {
 	privacyPolicyLink,
 	insiderFeaturesLink,
 } from "release-notes.mjs";
-import { _15sec, _1sec, _5sec, displayAndLog, doNotHide } from "src/utils/logUtils";
+import { _15sec, _1sec, _5sec, displayAndLog, _day } from "src/utils/logUtils";
 import { getTopicId } from "src/telegram/bot/message/getters";
 import * as User from "../telegram/user/user";
 import { replaceMainJs } from "src/utils/fsUtils";
@@ -391,7 +391,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 				btn.setWarning();
 				btn.setIcon("install");
 				btn.onClick(async () => {
-					const notice = new Notice("Downloading...", doNotHide);
+					const notice = new Notice("Downloading...", _day);
 					try {
 						const betaRelease = await Client.getLastBetaRelease(this.plugin.manifest.version);
 						notice.setMessage(`Installing...`);
@@ -413,7 +413,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 						new Notice(`You already have the production version of the plugin installed`, _5sec);
 						return;
 					}
-					const notice = new Notice("Installing...", doNotHide);
+					const notice = new Notice("Installing...", _day);
 					try {
 						await replaceMainJs(this.app.vault, "main-prod.js");
 						this.plugin.settings.betaVersion = "";
@@ -444,7 +444,7 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 				});
 			})
 			.addToggle((toggle) => {
-				toggle.setValue(this.plugin.settings.processOldMessages);
+				toggle.setValue(disabled ? false : this.plugin.settings.processOldMessages);
 				toggle.setDisabled(disabled);
 				toggle.onChange(async (value) => {
 					if (!value) clearCachedUnprocessedMessages();
@@ -458,35 +458,28 @@ export class TelegramSyncSettingTab extends PluginSettingTab {
 
 	addTelegramChannel() {
 		const telegramChannelSetting = new Setting(this.containerEl)
-			.setName("Telegram plugin's channel")
+			.setName("Telegram Sync Insider channel")
 			.setDesc(
-				"By connecting your user to the plugin and subscribing to the channel, you'll get access to the latest beta versions, several months ahead of public release, and unlock for free all ",
-			);
-
-		if (this.subscribedOnInsiderChannel)
-			telegramChannelSetting.addButton(async (openChannelButton: ButtonComponent) => {
-				openChannelButton.setButtonText("Open");
-				openChannelButton.onClick(async () => {
+				"By connecting your user to the plugin and subscribing to our Telegram channel, you'll get access to the latest beta versions, several months ahead of public release, and unlock for free ",
+			)
+			.addButton((btn: ButtonComponent) => {
+				if (this.subscribedOnInsiderChannel) btn.setButtonText("Open");
+				else {
+					btn.setButtonText("Unlock Features for Free");
+					btn.setClass("mod-cta");
+				}
+				btn.onClick(async () => {
+					if (!this.subscribedOnInsiderChannel)
+						displayAndLog(
+							this.plugin,
+							"After channel subscription, connect your Telegram user (if not done) and refresh the plugin settings for insider features",
+						);
 					window.open(telegramChannelLink, "_blank");
 				});
 			});
-
 		telegramChannelSetting.descEl.createEl("a", {
 			href: insiderFeaturesLink,
-			text: "insider features",
-		});
-
-		if (this.subscribedOnInsiderChannel) return;
-		new Setting(this.containerEl).addButton((btn: ButtonComponent) => {
-			btn.setButtonText("Join for Free & Unlock Features");
-			btn.setClass("mod-cta");
-			btn.onClick(async () => {
-				displayAndLog(
-					this.plugin,
-					"After channel subscription, connect your Telegram user (if not done) and refresh the plugin settings for insider features",
-				);
-				window.open(telegramChannelLink, "_blank");
-			});
+			text: "all insider features",
 		});
 	}
 

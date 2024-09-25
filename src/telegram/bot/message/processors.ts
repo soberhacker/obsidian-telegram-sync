@@ -25,6 +25,7 @@ import path from "path";
 import { defaultFileNameTemplate, defaultNoteNameTemplate } from "src/settings/messageDistribution";
 import { Api } from "telegram";
 import { setReaction } from "../bot";
+import { emoticonProcessed, emoticonProcessedEdited } from "src/telegram/user/config";
 
 // Delete a message or send a confirmation reply based on settings and message age
 export async function finalizeMessageProcessing(plugin: TelegramSyncPlugin, msg: TelegramBot.Message, error?: Error) {
@@ -55,7 +56,8 @@ export async function finalizeMessageProcessing(plugin: TelegramSyncPlugin, msg:
 	} else {
 		let needReply = true;
 		let errorMessage = "";
-		const emoticon = msg.edit_date ? "👌" : "👍";
+
+		const emoticon = msg.edit_date ? emoticonProcessedEdited : emoticonProcessed;
 		// reacting by bot
 		try {
 			await enqueue(setReaction, plugin, msg, emoticon);

@@ -2,10 +2,8 @@
 // TODO notify in setting tab and bottom panel that new beta version is ready for installing
 // TODO add messagesLeftCnt displaying in status bar
 // TODO NEXT: sending notes from Obsidian to Telegram (only for insiders)
-// TODO NEXT: ignore formatting (bold, italic, underline) in the notes names
 // TODO MED:  "delete messages from Telegram" settings for each distribution rules
 // TODO NEXT: save files if no template file
-// TODO NEXT: no subscription, no enabled process old messages
 // TODO NEXT: check reconnecting
 // TODO NEXT: bug in connecting to Telegram Client https://t.me/alast0rm
 // TODO NEXT: bur in reconnecting on MacBook https://t.me/sm1rnov_id

@@ -4,7 +4,6 @@ import { _1sec, displayAndLog } from "src/utils/logUtils";
 import { handleMessage } from "./message/handlers";
 import { reconnect } from "../user/user";
 import { enqueueByCondition } from "src/utils/queues";
-import { clearCachedUnprocessedMessages, forwardUnprocessedMessages } from "../user/sync";
 
 // Initialize the Telegram bot and set up message handling
 export async function connect(plugin: TelegramSyncPlugin) {
@@ -42,16 +41,11 @@ export async function connect(plugin: TelegramSyncPlugin) {
 		try {
 			plugin.botUser = await bot.getMe();
 			plugin.lastPollingErrors = [];
-
-			if (plugin.settings.processOldMessages && plugin.userConnected && plugin.botUser) {
-				await forwardUnprocessedMessages(plugin);
-			} else if (!plugin.settings.processOldMessages) {
-				clearCachedUnprocessedMessages();
-			}
 		} finally {
 			await bot.startPolling();
 		}
 		plugin.setBotStatus("connected");
+		plugin.time4processOldMessages = true;
 	} catch (error) {
 		if (!plugin.bot || !plugin.bot.isPolling()) {
 			plugin.setBotStatus("disconnected", error);
@@ -115,6 +109,7 @@ async function checkConnectionAfterError(plugin: TelegramSyncPlugin, intervalInS
 		plugin.lastPollingErrors = [];
 		plugin.checkingBotConnection = false;
 		reconnect(plugin);
+		plugin.time4processOldMessages = true;
 	} catch {
 		plugin.checkingBotConnection = false;
 	}

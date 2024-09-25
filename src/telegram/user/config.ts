@@ -7,3 +7,6 @@ const id4 = "MzMzYzVmNDUxNTRjNjM1YmQ=";
 
 export const dIipa = Number(base64ToString(id1) + base64ToString(id2));
 export const hsaHipa = base64ToString(id3) + base64ToString(id4);
+
+export const emoticonProcessed = "👾";
+export const emoticonProcessedEdited = "🦄";

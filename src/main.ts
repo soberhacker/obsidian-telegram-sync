@@ -2,7 +2,16 @@ import { Plugin } from "obsidian";
 import { DEFAULT_SETTINGS, TelegramSyncSettings, TelegramSyncSettingTab } from "./settings/Settings";
 import TelegramBot from "node-telegram-bot-api";
 import { machineIdSync } from "node-machine-id";
-import { _15sec, _2min, displayAndLog, StatusMessages, displayAndLogError, hideMTProtoAlerts } from "./utils/logUtils";
+import {
+	_15sec,
+	_2min,
+	displayAndLog,
+	StatusMessages,
+	displayAndLogError,
+	hideMTProtoAlerts,
+	_1sec,
+	_5sec,
+} from "./utils/logUtils";
 import * as Client from "./telegram/user/client";
 import * as Bot from "./telegram/bot/bot";
 import * as User from "./telegram/user/user";
@@ -21,6 +30,7 @@ import {
 	defaultTelegramFolder,
 } from "./settings/messageDistribution";
 import os from "os";
+import { processOldMessages } from "./telegram/user/sync";
 
 // TODO LOW: add "connecting"
 export type ConnectionStatus = "connected" | "disconnected";
@@ -46,6 +56,11 @@ export default class TelegramSyncPlugin extends Plugin {
 	messagesLeftCnt = 0;
 	connectionStatusIndicator? = new ConnectionStatusIndicator(this);
 	status: PluginStatus = "loading";
+	time4processOldMessages = false;
+	processOldMessagesIntervalId: NodeJS.Timer = setInterval(
+		async () => await enqueue(processOldMessages, this),
+		_5sec,
+	);
 
 	async initTelegram(initType?: Client.SessionType) {
 		this.lastPollingErrors = [];
