@@ -1,4 +1,16 @@
-# How to Contribute
+## 📢 How You Can Contribute Effectively
+
+To ensure your contributions have the greatest impact, there are two important steps to follow:
+
+1. **Notify About Your Task 📨**  
+   Before starting work on a specific task (bug fix or feature enhancement), please send me a direct message [@soberhacker](https://t.me/soberhacker). Let me know which issue you intend to work on, so I can mark it as being in progress by you.
+
+2. **Earn Stars for Your Work 🌟**  
+   If the task you're working on is mentioned on the [Telegram channel](https://t.me/obsidian_telegram_sync), all stars related to that feature or bug will be credited to you once your pull request is successfully merged. This helps acknowledge your contribution to the community and highlights the real value of your work.
+
+---
+
+## 👨‍💻 Steps to Contribute Code
 
 I'm thrilled you're considering making a contribution to my project! The process is straightforward, and I've outlined the steps below.
 
@@ -32,6 +44,6 @@ I'm thrilled you're considering making a contribution to my project! The process
 
 9. **Create a Pull Request**: Go back to your fork on GitHub, select your branch, and click "New pull request". Make sure the target branch for the pull request is `develop` in the original repository.
 
-**Note**: Please ensure your code adheres to the project's standards. Commits that do not comply may be rejected.
+**🤝 Important Note**: Please make sure to adhere to the coding and commit standards. Commits that do not comply may be rejected.
 
-Thank you for your interest in contributing to our project. Your effort and expertise help us continue to improve and grow.
+Thank you for being part of this journey! Your contributions are what keep the project thriving and evolving. 🚀✨
