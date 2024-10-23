@@ -7,11 +7,11 @@
 // TODO NEXT: check reconnecting
 // TODO NEXT: bur in reconnecting on MacBook https://t.me/sm1rnov_id
 import { compareVersions } from "compare-versions";
-export const releaseVersion = "3.2.0";
+export const releaseVersion = "3.3.0";
 export const showNewFeatures = true;
-export let showBreakingChanges = true;
+export let showBreakingChanges = false;
 
-const newFeatures = `In this release, the main change is that all processed messages will be marked with the bot reaction [👾] instead of replying with a separate message [...✅...].`;
+const newFeatures = `In this release, security has been enhanced by encrypting the bot token with a PIN code`;
 export const breakingChanges = `⚠️ <b><i>Breaking changes!\n\nThe user's connection to the plugin may need to be reestablished due to the GramJs library update.\n\nGrant your bot admin rights if you want to use bot reactions in groups and channels.</i></b> ⚠️`;
 export const telegramChannelLink = "https://t.me/obsidian_telegram_sync";
 export const insiderFeaturesLink =

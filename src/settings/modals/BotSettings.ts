@@ -1,6 +1,8 @@
 import { Modal, Setting } from "obsidian";
 import TelegramSyncPlugin from "src/main";
+import { encrypt } from "src/utils/crypto256";
 import { _5sec, displayAndLog } from "src/utils/logUtils";
+import { PinCodeModal } from "./PinCode";
 
 export const mainDeviceIdSettingName = "Main device id";
 
@@ -16,6 +18,7 @@ export class BotSettingsModal extends Modal {
 		this.addBotToken();
 		this.addAllowedChatsSetting();
 		this.addDeviceId();
+		this.addBotTokenEncryption();
 		this.addFooterButtons();
 	}
 
@@ -124,6 +127,34 @@ export class BotSettingsModal extends Modal {
 				if (inputDeviceId && inputDeviceId.value)
 					this.plugin.settings.mainDeviceId = this.plugin.currentDeviceId;
 			});
+	}
+
+	addBotTokenEncryption() {
+		const botTokenSetting = new Setting(this.botSettingsDiv)
+			.setName("Bot token encryption using a PIN code")
+			.setDesc(
+				"Encrypt the bot token for enhanced security. When enabled, a PIN code is required at each Obsidian launch. ",
+			)
+			.addToggle((toggle) => {
+				toggle.setValue(this.plugin.settings.botTokenEncryption);
+				toggle.onChange(async (value) => {
+					this.plugin.settings.botTokenEncryption = value;
+					await this.plugin.saveSettings();
+					if (!value) return;
+					const pinCodeModal = new PinCodeModal(this.plugin, false);
+					pinCodeModal.onClose = async () => {
+						if (pinCodeModal.saved && this.plugin.pinCode) {
+							this.plugin.settings.botToken = encrypt(this.plugin.settings.botToken, this.plugin.pinCode);
+						} else this.plugin.settings.botTokenEncryption = false;
+						await this.plugin.saveSettings();
+					};
+					pinCodeModal.open();
+				});
+			});
+		botTokenSetting.descEl.createEl("a", {
+			href: "https://github.com/soberhacker/obsidian-telegram-sync/blob/main/docs/Bot%20Token%20Encryption.md",
+			text: "What does this can prevent?",
+		});
 	}
 
 	addFooterButtons() {

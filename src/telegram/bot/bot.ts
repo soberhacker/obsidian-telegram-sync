@@ -18,7 +18,7 @@ export async function connect(plugin: TelegramSyncPlugin) {
 			return;
 		}
 		// Create a new bot instance and start polling
-		plugin.bot = new TelegramBot(plugin.settings.botToken);
+		plugin.bot = new TelegramBot(plugin.getBotToken());
 		const bot = plugin.bot;
 		// Set connected flag to false and log errors when a polling error occurs
 		bot.on("polling_error", async (error: unknown) => {

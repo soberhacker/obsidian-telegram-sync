@@ -32,6 +32,8 @@ import {
 } from "./settings/messageDistribution";
 import os from "os";
 import { clearCachedUnprocessedMessages, forwardUnprocessedMessages } from "./telegram/user/sync";
+import { decrypt } from "./utils/crypto256";
+import { PinCodeModal } from "./settings/modals/PinCode";
 
 // TODO LOW: add "connecting"
 export type ConnectionStatus = "connected" | "disconnected";
@@ -59,6 +61,7 @@ export default class TelegramSyncPlugin extends Plugin {
 	status: PluginStatus = "loading";
 	time4processOldMessages = false;
 	processOldMessagesIntervalId?: NodeJS.Timer;
+	pinCode? = "";
 
 	async initTelegram(initType?: Client.SessionType) {
 		this.lastPollingErrors = [];
@@ -272,5 +275,17 @@ export default class TelegramSyncPlugin extends Plugin {
 		if (this.isBotConnected()) displayAndLog(this, StatusMessages.BOT_CONNECTED, 0);
 		else if (!error) displayAndLog(this, StatusMessages.BOT_DISCONNECTED, 0);
 		else displayAndLogError(this, error, StatusMessages.BOT_DISCONNECTED, checkConnectionMessage, undefined, 0);
+	}
+
+	getBotToken(): string {
+		if (!this.settings.botTokenEncryption) return this.settings.botToken;
+		if (!this.pinCode) {
+			const pinCodeModal = new PinCodeModal(this, true);
+			pinCodeModal.onClose = async () => {
+				if (!this.pinCode) displayAndLog(this, "Plugin Telegram Sync stopped. No pin code entered.");
+			};
+			pinCodeModal.open();
+		}
+		return decrypt(this.settings.botToken, this.pinCode);
 	}
 }

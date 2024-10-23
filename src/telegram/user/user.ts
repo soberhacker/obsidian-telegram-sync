@@ -31,7 +31,7 @@ export async function connect(
 		plugin.userConnected = await Client.isAuthorizedAsUser();
 
 		if (sessionType == "bot" || !plugin.userConnected) {
-			await Client.signInAsBot(plugin.settings.botToken);
+			await Client.signInAsBot(plugin.getBotToken());
 		}
 
 		if (sessionType == "user" && !plugin.userConnected) {
