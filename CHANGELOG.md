@@ -1,5 +1,22 @@
 # Changelog
 
+## [4.0.0](https://github.com/soberhacker/obsidian-telegram-sync/compare/3.2.0...4.0.0) (2024-10-30)
+
+
+### ⚠ BREAKING CHANGES
+
+* add encryption by pin code
+
+### Features
+
+* add encryption by pin code ([791178d](https://github.com/soberhacker/obsidian-telegram-sync/commit/791178dbd89178d90b4a00a32238ac77f2249a7c))
+* add encryption for the bot token ([f404ac5](https://github.com/soberhacker/obsidian-telegram-sync/commit/f404ac5b49f11f7318e42b6a3099d4b116695e2f))
+
+
+### Bug Fixes
+
+* missing parsing hashtags containing cyrillic symbols ([bbaf6ce](https://github.com/soberhacker/obsidian-telegram-sync/commit/bbaf6cee956664e68108c50fe3356fc4fe1602b4))
+
 ## [3.2.0](https://github.com/soberhacker/obsidian-telegram-sync/compare/3.1.0...3.2.0) (2024-09-25)
 
 
