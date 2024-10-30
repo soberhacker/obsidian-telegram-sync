@@ -52,7 +52,9 @@ jobs:
 
             - name: Create and merge pull request from main to develop
               run: |
-                  gh pr create -B develop -H main --title 'Merge main into develop' --body 'Merge main into develop'
-                  gh pr merge main --merge --auto --body 'Merge main into develop'
+                  if ! gh pr view -B develop -H main; then
+                    gh pr create -B develop -H main --title 'Merge main into develop' --body 'Merge main into develop'
+                  fi
+                  gh pr merge main --rebase --body 'Merge main into develop'
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
