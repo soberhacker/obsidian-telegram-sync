@@ -122,7 +122,7 @@ export function getHashtag(msg: TelegramBot.Message, num = 1, lookInCaptions = t
 	const text = (msg.text || "") + (lookInCaptions && msg.caption ? msg.caption : "");
 	if (!text) return "";
 
-	const hashtags = text.match(/#\w+/g) || [];
+	const hashtags = text.match(/#[\p{L}\p{N}_]+/gu) || [];
 	return hashtags[num - 1]?.replace("#", "") || "";
 }
 
