@@ -50,7 +50,8 @@ export interface RefreshValues {
 
 export interface TelegramSyncSettings {
 	botToken: string;
-	botTokenEncryption: boolean;
+	encryptionByPinCode: boolean;
+	botTokenEncrypted: boolean;
 	deleteMessagesFromTelegram: boolean;
 	allowedChats: string[];
 	mainDeviceId: string;
@@ -73,7 +74,8 @@ export interface TelegramSyncSettings {
 
 export const DEFAULT_SETTINGS: TelegramSyncSettings = {
 	botToken: "",
-	botTokenEncryption: false,
+	encryptionByPinCode: false,
+	botTokenEncrypted: false,
 	deleteMessagesFromTelegram: false,
 	allowedChats: [""],
 	mainDeviceId: "",

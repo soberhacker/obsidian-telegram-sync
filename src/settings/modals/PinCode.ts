@@ -18,10 +18,15 @@ export class PinCodeModal extends Modal {
 		this.addFooterButtons();
 	}
 
+	success = async () => {
+		this.saved = true;
+		this.close();
+	};
+
 	addHeader() {
 		this.contentEl.empty();
 		this.pinCodeDiv = this.contentEl.createDiv();
-		this.titleEl.setText((this.decrypt ? "Decrypting" : "Encrypting") + "  bot token");
+		this.titleEl.setText("Telegram Sync: " + (this.decrypt ? "Decrypting" : "Encrypting") + "  bot token");
 	}
 
 	addPinCode() {
@@ -37,6 +42,10 @@ export class PinCodeModal extends Modal {
 					}
 					this.plugin.pinCode = value;
 				});
+				text.inputEl.addEventListener("keydown", (event: KeyboardEvent) => {
+					if (!(event.key === "Enter")) return;
+					this.success.call(this);
+				});
 			});
 	}
 
@@ -44,12 +53,7 @@ export class PinCodeModal extends Modal {
 		this.pinCodeDiv.createEl("br");
 		const footerButtons = new Setting(this.contentEl.createDiv());
 		footerButtons.addButton((b) => {
-			b.setTooltip("Connect")
-				.setIcon("checkmark")
-				.onClick(async () => {
-					this.saved = true;
-					this.close();
-				});
+			b.setTooltip("Connect").setIcon("checkmark").onClick(this.success);
 			return b;
 		});
 		footerButtons.addExtraButton((b) => {
@@ -57,7 +61,7 @@ export class PinCodeModal extends Modal {
 				.setTooltip("Cancel")
 				.onClick(async () => {
 					this.saved = false;
-					this.plugin.pinCode = "";
+					this.plugin.pinCode = undefined;
 					this.close();
 				});
 			return b;

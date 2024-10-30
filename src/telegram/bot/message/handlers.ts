@@ -55,6 +55,8 @@ export async function handleMessage(plugin: TelegramSyncPlugin, msg: TelegramBot
 	const { fileObject, fileType } = getFileObject(msg);
 	// skip system messages
 
+	!isChannelPost && (await enqueue(ifNewReleaseThenShowChanges, plugin, msg));
+
 	if (!msg.text && !fileObject) {
 		displayAndLog(plugin, `System message skipped`, 0);
 		return;
@@ -143,7 +145,6 @@ export async function handleMessage(plugin: TelegramSyncPlugin, msg: TelegramBot
 	try {
 		if (!msg.text && distributionRule.filePathTemplate) await handleFiles(plugin, msg, distributionRule);
 		else await handleMessageText(plugin, msg, distributionRule);
-		!isChannelPost && (await enqueue(ifNewReleaseThenShowChanges, plugin, msg));
 	} catch (error) {
 		await displayAndLogError(plugin, error, "", "", msg, _15sec);
 	} finally {
@@ -225,6 +226,7 @@ export async function handleFiles(
 			const chatId = msg.chat.id < 0 ? msg.chat.id.toString().slice(4) : msg.chat.id.toString();
 			telegramFileName =
 				telegramFileName || fileLink?.split("/").pop()?.replace(/file/, `${fileType}_${chatId}`) || "";
+			// TODO add bot file size limits to error "...file is too big..." (https://t.me/c/1536715535/1266)
 			const fileStream = plugin.bot.getFileStream(fileId);
 			const fileChunks: Uint8Array[] = [];
 
@@ -410,7 +412,6 @@ export async function ifNewReleaseThenShowChanges(plugin: TelegramSyncPlugin, ms
 			parse_mode: "HTML",
 			reply_markup: { inline_keyboard: donationInlineKeyboard },
 		};
-
 		await plugin.bot?.sendMessage(msg.chat.id, release.notes, options);
 	}
 

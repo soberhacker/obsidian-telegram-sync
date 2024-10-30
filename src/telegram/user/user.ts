@@ -1,6 +1,7 @@
 import TelegramSyncPlugin from "src/main";
 import * as Client from "./client";
 import { StatusMessages, displayAndLogError } from "src/utils/logUtils";
+import { enqueue } from "src/utils/queues";
 
 export async function connect(
 	plugin: TelegramSyncPlugin,
@@ -31,7 +32,7 @@ export async function connect(
 		plugin.userConnected = await Client.isAuthorizedAsUser();
 
 		if (sessionType == "bot" || !plugin.userConnected) {
-			await Client.signInAsBot(plugin.getBotToken());
+			await Client.signInAsBot(await enqueue(plugin, plugin.getBotToken));
 		}
 
 		if (sessionType == "user" && !plugin.userConnected) {

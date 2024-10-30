@@ -3,7 +3,7 @@ import TelegramSyncPlugin from "src/main";
 import { _1sec, displayAndLog } from "src/utils/logUtils";
 import { handleMessage } from "./message/handlers";
 import { reconnect } from "../user/user";
-import { enqueueByCondition } from "src/utils/queues";
+import { enqueue, enqueueByCondition } from "src/utils/queues";
 
 // Initialize the Telegram bot and set up message handling
 export async function connect(plugin: TelegramSyncPlugin) {
@@ -18,7 +18,7 @@ export async function connect(plugin: TelegramSyncPlugin) {
 			return;
 		}
 		// Create a new bot instance and start polling
-		plugin.bot = new TelegramBot(plugin.getBotToken());
+		plugin.bot = new TelegramBot(await enqueue(plugin, plugin.getBotToken));
 		const bot = plugin.bot;
 		// Set connected flag to false and log errors when a polling error occurs
 		bot.on("polling_error", async (error: unknown) => {
