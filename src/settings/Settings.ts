@@ -40,6 +40,14 @@ export interface Topic {
 	topicId: number;
 }
 
+export interface TranscriptionSettings {
+	enabled: boolean;
+	command: string;
+	path: string;
+	template: string;
+	replyWithTranscription: boolean;
+}
+
 export interface RefreshValues {
 	botConnected?: boolean;
 	userConnected?: boolean;
@@ -53,6 +61,7 @@ export interface TelegramSyncSettings {
 	encryptionByPinCode: boolean;
 	botTokenEncrypted: boolean;
 	deleteMessagesFromTelegram: boolean;
+	transcription: TranscriptionSettings;
 	allowedChats: string[];
 	mainDeviceId: string;
 	pluginVersion: string;
@@ -77,6 +86,13 @@ export const DEFAULT_SETTINGS: TelegramSyncSettings = {
 	encryptionByPinCode: false,
 	botTokenEncrypted: false,
 	deleteMessagesFromTelegram: false,
+	transcription: {
+		enabled: false,
+		command: "",
+		path: "",
+		template: "Transcription:\n{text}",
+		replyWithTranscription: false
+	},
 	allowedChats: [""],
 	mainDeviceId: "",
 	pluginVersion: "",

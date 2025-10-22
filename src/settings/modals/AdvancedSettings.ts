@@ -21,6 +21,7 @@ export class AdvancedSettingsModal extends Modal {
 		this.addDeleteMessagesFromTelegram();
 		this.addMessageDelimiterSetting();
 		this.addParallelMessageProcessing();
+		this.addTranscribeVia3rdParty();
 	}
 
 	addHeader() {
@@ -82,6 +83,80 @@ export class AdvancedSettingsModal extends Modal {
 					this.plugin.settings.deleteMessagesFromTelegram = value;
 					await this.plugin.saveSettings();
 				});
+			});
+	}
+
+	addTranscribeVia3rdParty() {
+		new Setting(this.advancedSettingsDiv).setName("3rd party transcription").setHeading();
+		new Setting(this.advancedSettingsDiv)
+			.setName("Transcribe via 3rd party")
+			.setDesc(
+				"Enable transcription of voice messages and audio files using a 3rd party service"
+			)
+			.addToggle((toggle) => {
+				toggle.setValue(this.plugin.settings.transcription.enabled);
+				toggle.onChange(async (value) => {
+					this.plugin.settings.transcription.enabled = value;
+					await this.plugin.saveSettings();
+				});
+			});
+		
+		new Setting(this.advancedSettingsDiv)
+			.setName("Reply with transcription")
+			.setDesc(
+				"Reply to the original message in Telegram with the transcribed text"
+			)
+			.addToggle((toggle) => {
+				toggle.setValue(this.plugin.settings.transcription.replyWithTranscription);
+				toggle.onChange(async (value) => {
+					this.plugin.settings.transcription.replyWithTranscription = value;
+					await this.plugin.saveSettings();
+				});
+			});
+
+		new Setting(this.advancedSettingsDiv)
+			.setName("Command line")
+			.setDesc(
+				"The command to execute for transcription. Use {{input}} and {{output}} as placeholders for input and output files"
+			)
+			.addTextArea((text) => {
+				text
+					.setPlaceholder("e.g. whisper {{input}} --output_dir {{output}}")
+					.setValue(this.plugin.settings.transcription.command)
+					.onChange(async (value: string) => {
+						this.plugin.settings.transcription.command = value;
+						await this.plugin.saveSettings();
+					});
+			});
+
+		new Setting(this.advancedSettingsDiv)
+			.setName("PATH variable")
+			.setDesc(
+				"Additional PATH environment variable for the transcription command"
+			)
+			.addTextArea((text) => {
+				text
+					.setPlaceholder("e.g. /usr/local/bin:/opt/homebrew/bin")
+					.setValue(this.plugin.settings.transcription.path)
+					.onChange(async (value: string) => {
+						this.plugin.settings.transcription.path = value;
+						await this.plugin.saveSettings();
+					});
+			});
+
+		new Setting(this.advancedSettingsDiv)
+			.setName("Transcription template")
+			.setDesc(
+				"Template for inserting transcription into notes. Use {text} as a placeholder for the transcribed text"
+			)
+			.addTextArea((text) => {
+				text
+					.setPlaceholder("e.g. Transcription:\n{text}")
+					.setValue(this.plugin.settings.transcription.template)
+					.onChange(async (value: string) => {
+						this.plugin.settings.transcription.template = value;
+						await this.plugin.saveSettings();
+					});
 			});
 	}
 

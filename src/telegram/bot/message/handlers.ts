@@ -23,6 +23,7 @@ import { getMessageDistributionRule } from "./filterEvaluations";
 import { MessageDistributionRule, getMessageDistributionRuleInfo } from "src/settings/messageDistribution";
 import { getOffsetDate, unixTime2Date } from "src/utils/dateUtils";
 import { addOriginalUserMsg, canUpdateProcessingDate } from "src/telegram/user/sync";
+import { transcribeFile } from "./transcribe3rdParty";
 
 interface MediaGroup {
 	id: string;
@@ -396,6 +397,19 @@ async function appendFileToNote(
 		plugin.settings.defaultMessageDelimiter ? defaultDelimiter : "",
 		distributionRule.reversedOrder,
 	);
+
+	const transcription = await transcribeFile(filePath, plugin, msg);
+	if (transcription) {
+		await enqueue(
+			appendContentToNote,
+			plugin.app.vault,
+			notePath,
+			transcription,
+			distributionRule.heading,
+			plugin.settings.defaultMessageDelimiter ? defaultDelimiter : "",
+			distributionRule.reversedOrder,
+		);
+	}
 }
 
 // show changes about new release

@@ -18,6 +18,14 @@ export default class ConnectionStatusIndicator {
 
 	constructor(plugin: TelegramSyncPlugin) {
 		this.plugin = plugin;
+		this.create();
+		this.setDisconnected("Connecting");
+	}
+
+	private openSettings() {
+		const setting = (this.plugin.app as any).setting;
+		setting.open();
+		setting.openTabById(this.plugin.manifest.id);
 	}
 
 	private create() {
@@ -27,6 +35,11 @@ export default class ConnectionStatusIndicator {
 		setIcon(this.icon, "send");
 		this.label = this.icon.createEl("label");
 		this.label.setAttr("for", "connection-status-indicator");
+
+		this.icon.style.cursor = "pointer";
+		this.icon.addEventListener("click", () => {
+			this.openSettings();
+		});
 	}
 
 	destroy() {
