@@ -191,9 +191,19 @@ async function createNoteContent(
 	const filesLinks: string[] = [];
 
 	if (!error) {
+		const mediaExtensions = [
+			"jpg", "jpeg", "png", "gif", "bmp", "svg", "webp",
+			"mp4", "webm", "ogv", "mov", "mkv",
+			"mp3", "wav", "ogg", "m4a",
+		];
 		filesPaths.forEach((fp) => {
 			const filePath = plugin.app.vault.getAbstractFileByPath(fp) as TFile;
-			filesLinks.push(plugin.app.fileManager.generateMarkdownLink(filePath, notePath));
+			let link = plugin.app.fileManager.generateMarkdownLink(filePath, notePath);
+			const extension = fp.split(".").pop()?.toLowerCase() || "";
+			if (mediaExtensions.includes(extension) && !link.startsWith("!")) {
+				link = "!" + link;
+			}
+			filesLinks.push(link);
 		});
 	} else {
 		filesLinks.push(`[❌ error while handling file](${error})`);
