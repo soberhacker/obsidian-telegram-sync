@@ -21,6 +21,7 @@ export class AdvancedSettingsModal extends Modal {
 		this.addDeleteMessagesFromTelegram();
 		this.addMessageDelimiterSetting();
 		this.addParallelMessageProcessing();
+		this.addProxyUrl();
 	}
 
 	addHeader() {
@@ -80,6 +81,20 @@ export class AdvancedSettingsModal extends Modal {
 				toggle.setValue(this.plugin.settings.deleteMessagesFromTelegram);
 				toggle.onChange(async (value) => {
 					this.plugin.settings.deleteMessagesFromTelegram = value;
+					await this.plugin.saveSettings();
+				});
+			});
+	}
+
+	addProxyUrl() {
+		new Setting(this.advancedSettingsDiv)
+			.setName("Proxy URL")
+			.setDesc("HTTP proxy for connecting to Telegram (e.g., http://127.0.0.1:7897). Restart the plugin after changing.")
+			.addText((text) => {
+				text.setPlaceholder("http://127.0.0.1:7897");
+				text.setValue(this.plugin.settings.proxyUrl);
+				text.onChange(async (value) => {
+					this.plugin.settings.proxyUrl = value.trim();
 					await this.plugin.saveSettings();
 				});
 			});
