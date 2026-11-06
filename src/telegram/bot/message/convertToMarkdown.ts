@@ -1,7 +1,14 @@
 import TelegramBot from "node-telegram-bot-api";
 import { getInlineUrls } from "./getters";
 
-export async function convertMessageTextToMarkdown(msg: TelegramBot.Message): Promise<string> {
+export async function convertMessageTextToMarkdown(
+	msg: TelegramBot.Message,
+	richMessageMarkdown?: string,
+): Promise<string> {
+	if (richMessageMarkdown !== undefined) {
+		const inlineUrls = getInlineUrls(msg);
+		return richMessageMarkdown + (inlineUrls ? `\n\n${inlineUrls}` : "");
+	}
 	let text = msg.text || msg.caption || "";
 	const entities = msg.entities || msg.caption_entities || [];
 	const copiedEntities: TelegramBot.MessageEntity[] = structuredClone(entities);

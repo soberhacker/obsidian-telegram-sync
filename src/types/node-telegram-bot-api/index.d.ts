@@ -573,6 +573,7 @@ declare module "node-telegram-bot-api" {
 			media_group_id?: string | undefined;
 			author_signature?: string | undefined;
 			text?: string | undefined;
+			rich_message?: import("src/telegram/bot/message/richMessageTypes").RichMessage;
 			entities?: MessageEntity[] | undefined;
 			caption_entities?: MessageEntity[] | undefined;
 			audio?: Audio | undefined;

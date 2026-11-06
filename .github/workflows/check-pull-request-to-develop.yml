@@ -4,6 +4,8 @@ on:
     pull_request:
         types:
             - opened
+            - synchronize
+            - reopened
         branches:
             - develop
 
@@ -12,7 +14,9 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Print github
-              run: echo '${{ toJson(github) }}'
+              env:
+                  GITHUB_CONTEXT: ${{ toJson(github) }}
+              run: printf '%s\n' "$GITHUB_CONTEXT"
 
             - name: Checkout repository
               uses: actions/checkout@v3
@@ -24,6 +28,12 @@ jobs:
 
             - name: Install dependencies
               run: npm ci
+
+            - name: Type check
+              run: npx tsc --noEmit --skipLibCheck
+
+            - name: Run unit tests
+              run: npm run test:unit
 
             - name: Run linter
               run: npm run lint
