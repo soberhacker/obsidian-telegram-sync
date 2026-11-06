@@ -95,6 +95,7 @@ export async function applyNoteContentTemplate(
 	templateFilePath: string,
 	msg: TelegramBot.Message,
 	filesLinks: string[] = [],
+	richMessageMarkdown?: string,
 ): Promise<string> {
 	let templateContent = "";
 	try {
@@ -107,15 +108,15 @@ export async function applyNoteContentTemplate(
 	}
 
 	const allEmbeddedFilesLinks = filesLinks.length > 0 ? filesLinks.join("\n") : "";
-	const allFilesLinks = allEmbeddedFilesLinks.replace("![", "[");
+	const allFilesLinks = allEmbeddedFilesLinks.replace(/!\[/g, "[");
 	let textContentMd = "";
 	if (!templateContent || templateContent.includes("{{content"))
-		textContentMd = await convertMessageTextToMarkdown(msg);
+		textContentMd = await convertMessageTextToMarkdown(msg, richMessageMarkdown);
 	// Check if the message is forwarded and extract the required information
 	const forwardFromLink = getForwardFromLink(msg);
 	const fullContent =
 		(forwardFromLink ? `**Forwarded from ${forwardFromLink}**\n\n` : "") +
-		(allEmbeddedFilesLinks ? allEmbeddedFilesLinks + "\n\n" : "") +
+		(richMessageMarkdown === undefined && allEmbeddedFilesLinks ? allEmbeddedFilesLinks + "\n\n" : "") +
 		textContentMd;
 
 	if (!templateContent) {

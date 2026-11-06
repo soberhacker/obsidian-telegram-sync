@@ -4,6 +4,8 @@ on:
     pull_request:
         types:
             - opened
+            - synchronize
+            - reopened
         branches:
             - develop
 
@@ -24,6 +26,12 @@ jobs:
 
             - name: Install dependencies
               run: npm ci
+
+            - name: Type check
+              run: npx tsc --noEmit --skipLibCheck
+
+            - name: Run unit tests
+              run: npm run test:unit
 
             - name: Run linter
               run: npm run lint

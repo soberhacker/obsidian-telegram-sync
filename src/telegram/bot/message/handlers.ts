@@ -16,6 +16,8 @@ import {
 } from "./processors";
 import { ProgressBarType, _3MB, createProgressBar, deleteProgressBar, updateProgressBar } from "../progressBar";
 import { getFileObject } from "./getters";
+import { richMessageToText } from "./richMessage";
+import { prepareRichMessage, PreparedRichMessage } from "./richMessageFiles";
 import { TFile } from "obsidian";
 import { enqueue } from "src/utils/queues";
 import { _15sec, _1sec, displayAndLog, displayAndLogError } from "src/utils/logUtils";
@@ -44,6 +46,10 @@ export function clearHandleMediaGroupInterval() {
 
 // handle all messages from Telegram
 export async function handleMessage(plugin: TelegramSyncPlugin, msg: TelegramBot.Message, isChannelPost = false) {
+	// Route rich text through existing filters and filename templates without
+	// mutating the incoming payload or reusing legacy entity offsets.
+	if (msg.rich_message)
+		msg = { ...msg, text: richMessageToText(msg.rich_message) || "Rich message", entities: undefined };
 	if (!plugin.isBotConnected()) {
 		plugin.setBotStatus("connected");
 		plugin.lastPollingErrors = [];
@@ -69,12 +75,12 @@ export async function handleMessage(plugin: TelegramSyncPlugin, msg: TelegramBot
 
 	// Skip processing if the message is a "/start" command
 	// https://github.com/soberhacker/obsidian-telegram-sync/issues/109
-	if (msg.text === "/start") {
+	if (!msg.rich_message && msg.text === "/start") {
 		return;
 	}
 
 	// Store topic name if "/topicName " command
-	if (msg.text?.includes("/topicName")) {
+	if (!msg.rich_message && msg.text?.includes("/topicName")) {
 		await plugin.settingsTab?.storeTopicName(msg);
 		return;
 	}
@@ -143,7 +149,10 @@ export async function handleMessage(plugin: TelegramSyncPlugin, msg: TelegramBot
 
 	++plugin.messagesLeftCnt;
 	try {
-		if (!msg.text && distributionRule.filePathTemplate) await handleFiles(plugin, msg, distributionRule);
+		if (msg.rich_message) {
+			const richContent = await prepareRichMessage(plugin, msg, distributionRule);
+			await handleMessageText(plugin, msg, distributionRule, richContent);
+		} else if (!msg.text && distributionRule.filePathTemplate) await handleFiles(plugin, msg, distributionRule);
 		else await handleMessageText(plugin, msg, distributionRule);
 	} catch (error) {
 		await displayAndLogError(plugin, error, "", "", msg, _15sec);
@@ -160,8 +169,15 @@ export async function handleMessageText(
 	plugin: TelegramSyncPlugin,
 	msg: TelegramBot.Message,
 	distributionRule: MessageDistributionRule,
+	richContent?: PreparedRichMessage,
 ) {
-	const formattedContent = await applyNoteContentTemplate(plugin, distributionRule.templateFilePath, msg);
+	const formattedContent = await applyNoteContentTemplate(
+		plugin,
+		distributionRule.templateFilePath,
+		msg,
+		richContent?.filesLinks,
+		richContent?.markdown,
+	);
 	const notePath = await applyNotePathTemplate(plugin, distributionRule.notePathTemplate, msg);
 
 	let noteFolderPath = path.dirname(notePath);
