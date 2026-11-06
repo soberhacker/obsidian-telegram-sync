@@ -14,7 +14,9 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Print github
-              run: echo '${{ toJson(github) }}'
+              env:
+                  GITHUB_CONTEXT: ${{ toJson(github) }}
+              run: printf '%s\n' "$GITHUB_CONTEXT"
 
             - name: Checkout repository
               uses: actions/checkout@v3
